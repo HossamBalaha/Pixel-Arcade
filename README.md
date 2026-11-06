@@ -68,7 +68,6 @@ provided for entertainment and educational purposes only.
 - [📄 License &amp; community files](#-license--community-files)
 - [🙋 FAQ](#-faq)
 - [⚠️ Disclaimer](#-disclaimer)
-- [🤖 AI credits](#-ai-credits)
 
 ---
 
