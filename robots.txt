@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# No sensitive URLs in this static site.
+Sitemap: https://hossambalaha.github.io/Pixel-Arcade/sitemap.xml

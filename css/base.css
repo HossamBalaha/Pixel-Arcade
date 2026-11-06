@@ -1,0 +1,2159 @@
+/* ============================================================
+   Base layout & shared UI components
+   ============================================================ */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 0 0 var(--radius-sm) 0;
+    z-index: 999;
+    font-weight: 600;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Animated theme transitions */
+html, body, * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1rem; /* relative to html — needed for a11y font scaling */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Arcade/cartoon fonts need bigger base size — keep them relative too */
+[data-theme="arcade"] body {
+    font-size: 1.125rem;
+    line-height: 1.3;
+}
+
+[data-theme="cartoon"] body {
+    font-size: 1.0625rem;
+    line-height: 1.45;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+}
+
+[data-theme="arcade"] h1, [data-theme="arcade"] h2, [data-theme="arcade"] h3 {
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 22px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+}
+
+.topbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.topbar .brand .logo {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    box-shadow: var(--glow);
+}
+
+[data-theme="arcade"] .topbar .brand .logo {
+    border-radius: 0;
+}
+
+.topbar .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    transition: transform 0.1s, background 0.15s;
+}
+
+.icon-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Theme menu */
+.menu {
+    position: relative;
+}
+
+.menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    min-width: 220px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 10px;
+    z-index: 100;
+    display: none;
+}
+
+.menu-panel.open {
+    display: block;
+}
+
+.menu-panel h4 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 8px 10px 4px;
+    font-family: var(--font-body);
+    font-weight: 600;
+}
+
+.menu-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 4px 10px 10px;
+}
+
+.menu-chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.menu-chip:hover {
+    border-color: var(--accent);
+}
+
+.menu-chip.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+[data-theme="arcade"] .menu-chip.active {
+    color: #0a0a16;
+}
+
+/* ---------- Accessibility panel ---------- */
+.a11y-panel {
+    min-width: 280px;
+    padding: 12px 14px 14px;
+}
+
+.a11y-section {
+    padding: 6px 0 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.a11y-section:last-of-type {
+    border-bottom: none;
+}
+
+.a11y-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.a11y-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.a11y-btn {
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.a11y-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.a11y-btn:active {
+    transform: scale(0.95);
+}
+
+.a11y-val {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    padding: 4px 0;
+}
+
+.a11y-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.a11y-toggle input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.a11y-select {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.a11y-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.a11y-reset-all {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.a11y-reset-all:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ---------- A11Y runtime effects ----------
+   These MUST override any active theme. Theme rules use selector
+   specificity like [data-theme="X"][data-mode="Y"] (0,2,1) which would
+   normally beat html[data-a11y-contrast="on"] (0,1,1). We mark every
+   a11y override with !important so accessibility always wins. */
+html[data-a11y-contrast="on"] {
+    --text: #000 !important;
+    --text-muted: #333 !important;
+    --bg: #fff !important;
+    --bg-elev: #fff !important;
+    --bg-elev-2: #f5f5f5 !important;
+    --bg-soft: #eee !important;
+    --border: #000 !important;
+    --border-strong: #000 !important;
+    --accent: #000 !important;
+    --accent-2: #000 !important;
+    --accent-soft: rgba(0, 0, 0, 0.1) !important;
+    --success: #006400 !important;
+    --warning: #663300 !important;
+    --danger: #8b0000 !important;
+    --info: #000 !important;
+}
+
+html[data-a11y-contrast="on"][data-mode="dark"] {
+    --text: #fff !important;
+    --text-muted: #ddd !important;
+    --bg: #000 !important;
+    --bg-elev: #000 !important;
+    --bg-elev-2: #111 !important;
+    --bg-soft: #1a1a1a !important;
+    --border: #fff !important;
+    --border-strong: #fff !important;
+    --accent: #fff !important;
+    --accent-2: #fff !important;
+    --accent-soft: rgba(255, 255, 255, 0.15) !important;
+    --success: #00ff00 !important;
+    --warning: #ffff00 !important;
+    --danger: #ff0000 !important;
+    --info: #fff !important;
+}
+
+html[data-a11y-contrast="on"] .hero h1 {
+    -webkit-text-fill-color: var(--text) !important;
+    background: none !important;
+}
+
+html[data-a11y-contrast="on"] a {
+    text-decoration: underline !important;
+}
+
+html[data-a11y-motion="on"] *,
+html[data-a11y-motion="on"] *::before,
+html[data-a11y-motion="on"] *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+    scroll-behavior: auto !important;
+}
+
+html[data-a11y-dyslexia="on"] body,
+html[data-a11y-dyslexia="on"] input,
+html[data-a11y-dyslexia="on"] button,
+html[data-a11y-dyslexia="on"] select,
+html[data-a11y-dyslexia="on"] textarea,
+html[data-a11y-dyslexia="on"] .card .title,
+html[data-a11y-dyslexia="on"] .card .desc,
+html[data-a11y-dyslexia="on"] .hero h1,
+html[data-a11y-dyslexia="on"] .hero p,
+html[data-a11y-dyslexia="on"] h1,
+html[data-a11y-dyslexia="on"] h2,
+html[data-a11y-dyslexia="on"] h3,
+html[data-a11y-dyslexia="on"] h4,
+html[data-a11y-dyslexia="on"] p,
+html[data-a11y-dyslexia="on"] li,
+html[data-a11y-dyslexia="on"] span,
+html[data-a11y-dyslexia="on"] label,
+html[data-a11y-dyslexia="on"] #game-stage,
+html[data-a11y-dyslexia="on"] #game-stage * {
+    font-family: "Comic Sans MS", "Comic Sans", "OpenDyslexic", "Lexend", "Atkinson Hyperlegible", system-ui, sans-serif !important;
+    letter-spacing: 0.04em !important;
+    word-spacing: 0.08em !important;
+    line-height: 1.6 !important;
+}
+
+/* Large focus rings — apply to both :focus and :focus-visible so it works
+   for keyboard nav, mouse clicks, and programmatic focus. */
+html[data-a11y-focus="on"] *:focus,
+html[data-a11y-focus="on"] *:focus-visible {
+    outline: 3px solid var(--accent) !important;
+    outline-offset: 2px !important;
+    border-radius: 4px;
+}
+
+/* Color-blind mode: apply the matching SVG filter to the main content
+   containers. We avoid filtering <body> directly because that would
+   create a containing block for fixed-position elements (.game-view,
+   .modal-backdrop, .toast-area) and break their viewport-anchored layout. */
+html[data-a11y-cb="protanopia"] main,
+html[data-a11y-cb="protanopia"] .game-view,
+html[data-a11y-cb="protanopia"] .modal,
+html[data-a11y-cb="deuteranopia"] main,
+html[data-a11y-cb="deuteranopia"] .game-view,
+html[data-a11y-cb="deuteranopia"] .modal,
+html[data-a11y-cb="tritanopia"] main,
+html[data-a11y-cb="tritanopia"] .game-view,
+html[data-a11y-cb="tritanopia"] .modal {
+    filter: url(#cb-filter-protanopia);
+}
+
+html[data-a11y-cb="deuteranopia"] main,
+html[data-a11y-cb="deuteranopia"] .game-view,
+html[data-a11y-cb="deuteranopia"] .modal {
+    filter: url(#cb-filter-deuteranopia);
+}
+
+html[data-a11y-cb="tritanopia"] main,
+html[data-a11y-cb="tritanopia"] .game-view,
+html[data-a11y-cb="tritanopia"] .modal {
+    filter: url(#cb-filter-tritanopia);
+}
+
+/* ---------- Main container ---------- */
+main {
+    flex: 1;
+    padding: 24px 22px;
+    max-width: 1280px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* ---------- Home hero ---------- */
+.hero {
+    margin-bottom: 24px;
+    text-align: center;
+    padding: 28px 0 18px;
+}
+
+.hero h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="arcade"] .hero h1 {
+    -webkit-text-fill-color: var(--accent);
+}
+
+.hero p {
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ---------- Filter bar ---------- */
+.filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    align-items: center;
+}
+
+.filters-extra {
+    margin-bottom: 18px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border);
+    padding-top: 12px;
+}
+
+.filter-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-right: 2px;
+    margin-left: 4px;
+}
+
+.filter-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-chip:hover {
+    border-color: var(--accent);
+}
+
+.filter-chip.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+[data-theme="arcade"] .filter-chip.active {
+    color: #0a0a16;
+}
+
+.filter-select {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.filter-select:hover {
+    border-color: var(--accent);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+#filters-reset {
+    margin-left: auto;
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+#filters-reset:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.filter-count {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    padding: 4px 8px;
+    background: var(--bg-elev);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    min-width: 50px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .filter-label {
+        display: none;
+    }
+
+    .filters-extra {
+        gap: 6px;
+    }
+
+    .filter-select {
+        font-size: 0.78rem;
+        padding: 5px 8px;
+    }
+}
+
+.search {
+    flex: 1;
+    min-width: 160px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+}
+
+.search:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ---------- Game grid ---------- */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+}
+
+.card .icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+}
+
+.card .thumb {
+    width: 100%;
+    aspect-ratio: 11/7;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    margin-bottom: 4px;
+}
+
+[data-theme="arcade"] .card .icon {
+    border-radius: 0;
+    font-size: 32px;
+}
+
+.card .title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+}
+
+.card .desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.card .meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.card .tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+}
+
+.card .fav {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: color 0.15s, transform 0.1s;
+}
+
+.card .fav:hover {
+    color: var(--accent-2);
+}
+
+.card .fav.active {
+    color: var(--accent-2);
+}
+
+.card .fav.active:hover {
+    transform: scale(1.15);
+}
+
+.card .best {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.card .badges {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.card .badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+}
+
+.card .badge-diff {
+    color: var(--accent);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+}
+
+.card .badge-easy {
+    background: rgba(22, 163, 74, 0.18);
+    color: var(--success);
+    border-color: rgba(22, 163, 74, 0.35);
+}
+
+.card .badge-medium {
+    background: var(--bg-soft);
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+.card .badge-hard {
+    background: rgba(220, 38, 38, 0.15);
+    color: var(--danger);
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+.card .badge-dur {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.card .badge-2p {
+    background: rgba(245, 158, 11, 0.18);
+    color: var(--warning);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* ---------- Game view (overlay) ---------- */
+.game-view {
+    position: relative;
+    background: var(--bg);
+    z-index: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.game-view.active {
+    display: flex;
+}
+
+/* Game header — thin title bar, visually distinct from the topbar.
+   Uses a softer background and smaller height so it doesn't look like
+   a second copy of the main navigation. */
+.game-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 0 0 auto;
+}
+
+.game-header #game-icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+}
+
+.game-header #game-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.game-header .breadcrumb {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.game-header .breadcrumb::before {
+    content: " › ";
+    opacity: 0.6;
+}
+
+/* Game controls bar — centered toolbar below the title bar.
+   Pill-shaped container, visually distinct from both the topbar and
+   the game-header. Groups related actions with separators. */
+.game-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+}
+
+.game-controls-bar .ctrl-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.game-controls-bar .btn-sm {
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+}
+
+.game-body {
+    flex: 1;
+    overflow: auto;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+
+.game-stage {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ---------- Similar & recent rails (in-game) ---------- */
+.game-rails {
+    width: 100%;
+    max-width: 880px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+}
+
+.rail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rail-title {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 700;
+    padding: 0 4px;
+}
+
+.rail-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+    scrollbar-width: thin;
+}
+
+.rail-row::-webkit-scrollbar {
+    height: 6px;
+}
+
+.rail-row::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+}
+
+.rail-card {
+    flex: 0 0 auto;
+    min-width: 130px;
+    max-width: 160px;
+    padding: 10px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.1s, border-color 0.15s;
+}
+
+.rail-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.rail-card:active {
+    transform: scale(0.97);
+}
+
+.rail-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.rail-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    font-family: var(--font-heading);
+}
+
+.rail-cat {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+}
+
+/* Home "Recently played" rail */
+.home-recent,
+.home-rail {
+    margin-bottom: 18px;
+    padding: 12px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.home-recent .rail-row,
+.home-rail .rail-row {
+    padding: 6px 2px 8px;
+}
+
+/* Recently played rail-title now holds a span + Clear button.
+   Lay them out as a row with the button on the right. */
+.home-recent .rail-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.home-recent .rail-title > span {
+    flex: 1;
+}
+
+.rail-clear-btn {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    padding: 2px 8px;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.rail-clear-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+}
+
+.rail-clear-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Topbar extras ---------- */
+.badge-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent-2);
+    box-shadow: 0 0 0 2px var(--bg);
+}
+
+#achv-btn {
+    position: relative;
+}
+
+.offline-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--warning);
+    color: #fff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ---------- Install + Daily banners ---------- */
+.install-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
+.install-banner button {
+    margin-left: auto;
+}
+
+.install-banner button + button {
+    margin-left: 0;
+}
+
+.daily-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: var(--radius);
+    color: #fff;
+    box-shadow: var(--shadow-lg);
+}
+
+.daily-banner .daily-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    opacity: 0.85;
+    font-weight: 700;
+}
+
+.daily-banner .daily-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    margin-top: 2px;
+}
+
+.daily-banner .daily-desc {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.daily-banner button {
+    flex: 0 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--accent);
+    border: none;
+    font-weight: 700;
+}
+
+/* ---------- Screen-reader-only ---------- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------- Achievement badges (redesigned) ---------- */
+.achv-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.achv-progress-ring {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+}
+
+.achv-progress-ring svg {
+    transform: rotate(-90deg);
+}
+
+.achv-progress-ring .ring-bg {
+    fill: none;
+    stroke: var(--bg-soft);
+    stroke-width: 6;
+}
+
+.achv-progress-ring .ring-fg {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.achv-progress-ring .ring-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--accent);
+}
+
+.achv-header-text {
+    flex: 1;
+}
+
+.achv-header-text h3 {
+    font-size: 1.1rem;
+    margin-bottom: 2px;
+}
+
+.achv-header-text p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.achv-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.achv-card {
+    position: relative;
+    padding: 16px 12px 12px;
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    overflow: hidden;
+}
+
+.achv-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+}
+
+.achv-card.unlocked {
+    background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-elev) 100%);
+    border-color: var(--accent);
+}
+
+.achv-card.unlocked::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.achv-card.locked {
+    opacity: 0.7;
+}
+
+.achv-card .achv-icon {
+    font-size: 2.4rem;
+    line-height: 1;
+    filter: grayscale(0);
+}
+
+.achv-card.locked .achv-icon {
+    filter: grayscale(1) opacity(0.4);
+}
+
+.achv-card .achv-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text);
+    font-family: var(--font-heading);
+}
+
+.achv-card.locked .achv-title {
+    color: var(--text-muted);
+}
+
+.achv-card .achv-desc {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.achv-card .achv-status {
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.achv-card.unlocked .achv-status {
+    color: var(--success);
+}
+
+.achv-card.locked .achv-status {
+    color: var(--text-muted);
+}
+
+/* ---------- Back to top button ---------- */
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    transition: transform 0.15s, opacity 0.2s;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    transform: translateY(-2px) scale(1.05);
+}
+
+.back-to-top:active {
+    transform: scale(0.95);
+}
+
+.back-to-top svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* ---------- Confetti (achievement unlock) ---------- */
+.confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 300;
+    overflow: hidden;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    animation: confetti-fall 2.5s linear forwards;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0.3;
+    }
+}
+
+/* ---------- Toast slide-in animation ---------- */
+.toast {
+    animation: toast-slide-in 0.3s ease;
+}
+
+@keyframes toast-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ---------- Card stagger animation ---------- */
+.card {
+    animation: card-fade-in 0.25s ease both;
+}
+
+@keyframes card-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---------- Custom scrollbar ---------- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-soft);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) var(--bg-soft);
+}
+
+/* ---------- Win rate donut (stats) ---------- */
+.donut {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.donut svg {
+    transform: rotate(-90deg);
+}
+
+.donut .donut-bg {
+    fill: none;
+    stroke: var(--bg-soft);
+    stroke-width: 8;
+}
+
+.donut .donut-fg {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.donut .donut-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+/* ---------- Search clear button ---------- */
+.search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 160px;
+}
+
+.search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: none;
+    place-items: center;
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.search-clear.visible {
+    display: grid;
+}
+
+.search-clear:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+/* ---------- Card hover tooltip (stats preview) ---------- */
+.card-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 50;
+    box-shadow: var(--shadow);
+}
+
+.card:hover .card-tooltip {
+    opacity: 1;
+}
+
+/* ---------- NEW badge for recent games ---------- */
+.card .new-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--accent-2);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ---------- Greeting in hero ---------- */
+.hero-greeting {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-style: italic;
+}
+
+/* ---------- Sort dropdown ---------- */
+.sort-select {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.sort-select:hover {
+    border-color: var(--accent);
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* ---------- Empty state ---------- */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+
+.empty-state .empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+.empty-state .empty-desc {
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+/* ---------- Keyboard shortcut hint ---------- */
+.kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ---------- Print-friendly ---------- */
+@media print {
+    .topbar, .filters, .game-view, .toast-area, .back-to-top, .install-banner, .daily-banner, .home-rail, .home-recent, .home-new {
+        display: none !important;
+    }
+
+    .modal-backdrop {
+        position: static;
+        background: none;
+    }
+
+    .modal {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+}
+
+/* ---------- Stats modal ---------- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.stat-card {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.stat-card .stat-val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-mono);
+}
+
+.stat-card .stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.stats-breakdown {
+    margin-top: 14px;
+}
+
+.stats-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    font-size: 0.85rem;
+}
+
+.stats-bar-label {
+    width: 80px;
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+.stats-bar-track {
+    flex: 1;
+    height: 14px;
+    background: var(--bg-soft);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.stats-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 999px;
+    transition: width 0.3s;
+}
+
+.stats-bar-val {
+    width: 40px;
+    text-align: right;
+    font-family: var(--font-mono);
+}
+
+/* ---------- Game completion progress (stats modal + hero greeting) ---------- */
+.stats-completion {
+    margin: 4px 0 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--accent-soft), transparent);
+    border: 1px solid var(--accent);
+    text-align: left;
+}
+
+.stats-completion .completion-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.stats-completion .completion-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.stats-completion .completion-val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-mono);
+}
+
+.stats-completion .completion-bar {
+    height: 12px;
+    background: var(--bg-soft);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.stats-completion .completion-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+/* ---------- 30-day streak calendar (stats modal) ---------- */
+.stats-calendar {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    gap: 3px;
+    margin-top: 8px;
+    padding: 6px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.stats-calendar .cal-square {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: var(--border);
+    opacity: 0.5;
+}
+
+.stats-calendar .cal-square.played {
+    background: var(--success, #22c55e);
+    opacity: 1;
+}
+
+.stats-calendar .cal-square.today {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.calendar-legend .cal-sample {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* ---------- "New games" rail (v4 batch on home) ---------- */
+.home-new {
+    margin-bottom: 18px;
+    padding: 12px;
+    background: var(--bg-elev);
+    border: 1px solid var(--accent-2);
+    border-radius: var(--radius);
+    position: relative;
+}
+
+.home-new .rail-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-2);
+}
+
+.home-new .rail-title::after {
+    content: "NEW";
+    font-size: 0.55rem;
+    background: var(--accent-2);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+}
+
+.home-new .rail-row {
+    padding: 6px 2px 8px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+[data-theme="arcade"] .btn.primary {
+    color: #0a0a16;
+}
+
+.btn.primary:hover {
+    filter: brightness(1.1);
+}
+
+.btn.ghost {
+    background: transparent;
+}
+
+.btn.danger {
+    color: var(--danger);
+    border-color: var(--border);
+}
+
+.btn.danger:hover {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: var(--danger);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+/* ---------- Toasts ---------- */
+.toast-area {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    box-shadow: var(--shadow-lg);
+    font-size: 0.92rem;
+    animation: toast-in 0.3s ease, toast-out 0.3s ease 2.4s forwards;
+}
+
+.toast.success {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.toast.error {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.toast.info {
+    border-color: var(--info);
+    color: var(--info);
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-out {
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+/* ---------- Modal dialog ---------- */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 150;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-backdrop.open {
+    display: flex;
+}
+
+.modal {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 24px;
+    max-width: 440px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.modal.modal-wide {
+    max-width: 640px;
+    text-align: left;
+}
+
+.modal h3 {
+    margin-bottom: 12px;
+}
+
+.modal p {
+    color: var(--text-muted);
+    margin-bottom: 18px;
+}
+
+.modal .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Close (×) button — top-right of the modal. Easy touch target on mobile. */
+.modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+}
+
+.modal-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Position the modal so the close button can anchor to its top-right. */
+.modal {
+    position: relative;
+}
+
+/* ---------- Footer ---------- */
+footer {
+    padding: 18px 22px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+}
+
+/* ---------- Utility ---------- */
+.row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gap-2 {
+    gap: 8px;
+}
+
+.gap-3 {
+    gap: 12px;
+}
+
+.gap-4 {
+    gap: 16px;
+}
+
+.mt-2 {
+    margin-top: 8px;
+}
+
+.mt-3 {
+    margin-top: 12px;
+}
+
+.mt-4 {
+    margin-top: 16px;
+}
+
+.mb-2 {
+    margin-bottom: 8px;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-sm {
+    font-size: 0.85rem;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.mono {
+    font-family: var(--font-mono);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+    .topbar {
+        padding: 12px 14px;
+    }
+
+    .topbar .brand {
+        font-size: 1rem;
+    }
+
+    main {
+        padding: 16px 14px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+
+    .card {
+        padding: 14px;
+    }
+
+    .card .icon {
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
+    }
+
+    /* Collapse the stacked game-header + controls-bar so together they
+       stay under ~100px on mobile (default desktop: 162px combined). */
+    .game-header {
+        padding: 4px 8px;
+        font-size: 0.85rem;
+        gap: 6px;
+    }
+
+    .game-header #game-icon {
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+    }
+
+    .game-header .breadcrumb {
+        font-size: 0.65rem;
+    }
+
+    .game-controls-bar {
+        padding: 3px 6px;
+        gap: 3px;
+    }
+
+    .game-controls-bar .ctrl-sep {
+        display: none;
+    }
+
+    .game-controls-bar .btn-sm {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    .game-body {
+        padding: 16px 14px;
+    }
+
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

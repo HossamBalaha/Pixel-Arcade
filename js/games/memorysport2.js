@@ -1,0 +1,110 @@
+/* memorysport2 — Sport Memory 2 (auto-generated themed memory) */
+(function () {
+  "use strict";
+  const EMOJIS = ["\u26bd", "\ud83c\udfc0", "\ud83c\udfc8", "\u26be", "\ud83e\udd4e", "\ud83c\udfbe", "\ud83c\udfd0", "\ud83c\udfc9", "\ud83e\udd4f", "\ud83c\udfb1", "\ud83c\udfd3", "\ud83c\udff8", "\ud83e\udd45", "\ud83c\udfd2", "\ud83c\udfd1", "\ud83e\udd4d"];
+
+  function shuffle(a) {
+    const x = a.slice();
+    for (let i = x.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [x[i], x[j]] = [x[j], x[i]];
+    }
+    return x;
+  }
+
+  GameRegistry.register({
+    id: "memorysport2", name: "Sport Memory 2", icon: "⚽", category: "logic",
+    description: "Sport Memory 2 \u2014 flip pairs of cards to clear the deck.", tags: ["memory", "themed"],
+    age: ["kids", "teens", "adults"], difficulty: "easy", duration: "quick", players: "single",
+    mount: function (root, ctx) {
+      const {App, AudioFX} = ctx;
+      let alive = true, cards = [], flipped = [], matched = 0, lock = false, moves = 0;
+
+      function start() {
+        const chosen = shuffle(EMOJIS).slice(0, 8);
+        cards = shuffle([...chosen, ...chosen]).map((e, i) => ({emoji: e, idx: i, matched: false, flipped: false}));
+        flipped = [];
+        matched = 0;
+        lock = false;
+        moves = 0;
+        render();
+      }
+
+      function flip(i) {
+        if (lock || cards[i].flipped || cards[i].matched) return;
+        cards[i].flipped = true;
+        flipped.push(i);
+        AudioFX.flip();
+        if (flipped.length === 2) {
+          moves++;
+          const [a, b] = flipped;
+          if (cards[a].emoji === cards[b].emoji) {
+            cards[a].matched = cards[b].matched = true;
+            matched++;
+            AudioFX.pop();
+            flipped = [];
+            if (matched === 8) {
+              App.recordResult(true, moves);
+              AudioFX.win();
+              App.toast("Cleared in " + moves + " moves!", "success");
+            }
+          } else {
+            lock = true;
+            setTimeout(() => {
+              if (!alive) return;
+              if (!alive) return;
+              cards[a].flipped = false;
+              cards[b].flipped = false;
+              flipped = [];
+              lock = false;
+              render();
+            }, 800);
+          }
+        }
+        render();
+      }
+
+      function render() {
+        const stage = root.querySelector("#memorysport2-stage");
+        if (!stage) return;
+        stage.innerHTML = "";
+        cards.forEach((c, i) => {
+          const b = document.createElement("button");
+          b.className = "mm-card" + (c.flipped || c.matched ? " flipped" : "") + (c.matched ? " matched" : "");
+          b.innerHTML = c.flipped || c.matched ? c.emoji : "?";
+          b.addEventListener("click", () => flip(i));
+          stage.appendChild(b);
+        });
+        const mv = root.querySelector("#memorysport2-moves");
+        if (mv) mv.textContent = moves;
+        const mt = root.querySelector("#memorysport2-matched");
+        if (mt) mt.textContent = matched + "/8";
+      }
+
+      root.innerHTML = `
+        <style>
+          .mm-stage { display:grid; grid-template-columns: repeat(4, 64px); gap:8px; justify-content:center; padding:14px; }
+          .mm-card { width:64px; height:64px; font-size:2rem; border-radius:10px;
+            border:2px solid var(--border,#d1d5db); background:var(--bg-elev,#fff); color:var(--text,#111);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; transition: transform 0.2s; }
+          .mm-card:hover { transform: scale(1.05); }
+          .mm-card.flipped { background:var(--accent-soft,#e0e7ff); }
+          .mm-card.matched { opacity:0.55; cursor:default; }
+        </style>
+        <div style="text-align:center; margin-bottom:10px; color:var(--text-muted,#64748b); font-size:0.9rem;">
+          Matched: <span id="memorysport2-matched">0/8</span> | Moves: <span id="memorysport2-moves">0</span>
+        </div>
+        <div id="memorysport2-stage" class="mm-stage"></div>
+        <div style="text-align:center; margin-top:14px;"><button class="btn primary" id="memorysport2-new">New game</button></div>
+      `;
+      root.querySelector("#memorysport2-new").addEventListener("click", start);
+      start();
+      return function cleanup() {
+        alive = false;
+      };
+    },
+    help: function () {
+      App.showModal("How to play Sport Memory 2", "Flip cards two at a time. Find all 8 matching pairs.");
+    },
+  });
+})();

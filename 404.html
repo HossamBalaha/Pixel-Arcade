@@ -1,0 +1,116 @@
+<!doctype html>
+<html data-mode="light" data-theme="minimal" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+  <meta content="#6366f1" name="theme-color"/>
+  <meta content="Page not found — Pixel Arcade" name="description"/>
+  <title>404 — Pixel Arcade</title>
+  <link href="assets/icons/logo.svg" rel="icon" type="image/svg+xml"/>
+  <link href="css/themes.css" rel="stylesheet"/>
+  <link href="css/base.css" rel="stylesheet"/>
+  <style>
+    .nf-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      text-align: center;
+    }
+
+    .nf-code {
+      font-family: var(--font-heading), system-ui, sans-serif;
+      font-size: clamp(5rem, 18vw, 9rem);
+      line-height: 1;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .nf-title {
+      font-family: var(--font-heading), system-ui, sans-serif;
+      font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .nf-desc {
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 24px;
+      line-height: 1.55;
+    }
+
+    .nf-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: var(--radius, 10px);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid var(--border, #e2e8f0);
+      background: var(--bg-elev, #fff);
+      color: var(--text);
+      transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background: var(--bg-soft, #f1f5f9);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn.primary:hover {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+    }
+  </style>
+</head>
+<body>
+<main class="nf-wrap">
+  <div class="nf-code">404</div>
+  <div class="nf-title">Game over — but not in a fun way</div>
+  <p class="nf-desc">
+    The page you were looking for isn't here. It may have been moved, renamed, or never existed.
+    Pick a new game below or head back to the arcade.
+  </p>
+  <div class="nf-actions">
+    <a class="btn primary" href="index.html">← Back to Pixel Arcade</a>
+    <button class="btn" id="nf-random">🎲 Surprise me</button>
+  </div>
+</main>
+<script>
+  // Pick a random hash-routed game so the "Surprise me" button drops the
+  // visitor straight into a playable game instead of just the hub.
+  (function () {
+    var btn = document.getElementById("nf-random");
+    if (!btn) return;
+    // We don't have access to the registry here (no app.js loaded on 404),
+    // so just navigate to the hub — App.route() will pick a daily game.
+    btn.addEventListener("click", function () {
+      window.location.href = "index.html";
+    });
+  })();
+</script>
+</body>
+</html>

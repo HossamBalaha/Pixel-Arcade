@@ -1,0 +1,733 @@
+<!doctype html>
+<html data-mode="light" data-theme="minimal" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" name="viewport"/>
+  <meta content="Pixel Arcade — 300 classic browser games with advanced filters by age, difficulty, length, and players. Vanilla HTML/CSS/JS. Playable offline, perfect for GitHub Pages."
+        name="description"/>
+  <meta content="#6366f1" name="theme-color"/>
+  <meta content="Hossam Magdy Balaha" name="author"/>
+  <title>Pixel Arcade — Play 300 Classic Games</title>
+
+  <!-- Content-Security-Policy: lock the static site to known sources.
+       script-src allows 'self' plus 'unsafe-inline' for the existing inline
+       service-worker registration block and the font <link> onload handler.
+       Style-src allows 'unsafe-inline' for per-game <style> blocks and the
+       Google Fonts stylesheet. connect-src whitelists the public APIs the
+       app calls at runtime; everything else (third-party CDNs, unknown
+       origins) is blocked. -->
+  <meta content="default-src 'self';
+             img-src 'self' data:;
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+             font-src 'self' https://fonts.gstatic.com;
+             script-src 'self' 'unsafe-inline';
+             connect-src 'self' https://en.wikipedia.org https://opentdb.com;
+             manifest-src 'self';"
+        http-equiv="Content-Security-Policy"/>
+
+  <!-- iOS PWA — standalone mode when added to iPhone/iPad home screen -->
+  <meta content="yes" name="apple-mobile-web-app-capable"/>
+  <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+  <meta content="Pixel Arcade" name="apple-mobile-web-app-title"/>
+
+  <!-- Google Fonts: Inter, Press Start 2P, VT323, Baloo 2, Nunito, Playfair Display, JetBrains Mono.
+       Loaded non-blocking via media="print" + onload swap so first paint isn't held up
+       by the CDN; CSS already falls back to system fonts via --font-body/heading. -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&family=VT323&family=Baloo+2:wght@500;700&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@500;700&family=Creepster&family=Mountains+of+Christmas:wght@700&display=swap"
+      media="print"
+      onload="this.media='all'"
+      rel="stylesheet"/>
+
+  <link href="css/themes.css" rel="stylesheet"/>
+  <link href="css/base.css" rel="stylesheet"/>
+  <link href="css/games.css" rel="stylesheet"/>
+
+  <!-- PWA / favicon assets -->
+  <link href="assets/icons/logo.svg" rel="icon" type="image/svg+xml"/>
+  <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+  <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+  <link href="assets/icons/favicon-96x96.png" rel="icon" sizes="96x96" type="image/png"/>
+  <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+  <link href="site.webmanifest" rel="manifest"/>
+  <meta content="#6366f1" name="msapplication-TileColor"/>
+  <meta content="browserconfig.xml" name="msapplication-config"/>
+</head>
+<body>
+<!-- Skip link for keyboard users — target depends on which view is active.
+     When a game is open the hash routing jumps focus into #game-stage; on
+     the home view the cards live in #game-grid. Both targets exist; the
+     link points to the one most useful to the current view. -->
+<a class="skip-link" data-skip-target href="#game-grid">Skip to games</a>
+<!-- SVG filters for color-blind simulation (referenced from CSS data-a11y-cb) -->
+<svg aria-hidden="true" height="0" style="position:absolute" width="0">
+  <defs>
+    <!-- Protanopia (red-blind) — approximated Viénot/Brettel matrix -->
+    <filter id="cb-filter-protanopia">
+      <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/>
+    </filter>
+    <!-- Deuteranopia (green-blind) -->
+    <filter id="cb-filter-deuteranopia">
+      <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/>
+    </filter>
+    <!-- Tritanopia (blue-blind) -->
+    <filter id="cb-filter-tritanopia">
+      <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/>
+    </filter>
+  </defs>
+</svg>
+<!-- Top bar -->
+<header class="topbar">
+  <div class="brand" id="brand">
+    <div class="logo">🎮</div>
+    <span>Pixel Arcade</span>
+  </div>
+  <div class="actions">
+    <button aria-label="Favorites filter" class="icon-btn" id="fav-only-btn" title="Show favorites only">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 21s-7-4.5-9.5-9C.5 8 3 4 7 4c2 0 3.5 1 5 3 1.5-2 3-3 5-3 4 0 6.5 4 4.5 8C19 16.5 12 21 12 21z"/>
+      </svg>
+    </button>
+    <button aria-label="View your stats" class="icon-btn" id="stats-btn" title="Your stats">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <line x1="6" x2="6" y1="20" y2="12"/>
+        <line x1="12" x2="12" y1="20" y2="4"/>
+        <line x1="18" x2="18" y1="20" y2="14"/>
+      </svg>
+    </button>
+    <button aria-label="View achievements" class="icon-btn" id="achv-btn" title="Achievements">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="6"/>
+        <path d="M8.5 14L7 22l5-3 5 3-1.5-8"/>
+      </svg>
+      <span class="badge-dot" id="achv-dot" style="display:none;"></span>
+    </button>
+    <button aria-label="Toggle sound" class="icon-btn" id="sound-btn" title="Toggle sound">
+      <svg fill="none" id="sound-on" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M3 10v4h4l5 5V5L7 10H3z"/>
+        <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+        <path d="M18 5a9 9 0 0 1 0 14"/>
+      </svg>
+      <svg class="hidden" fill="none" id="sound-off" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M3 10v4h4l5 5V5L7 10H3z"/>
+        <line x1="22" x2="16" y1="9" y2="15"/>
+        <line x1="16" x2="22" y1="9" y2="15"/>
+      </svg>
+    </button>
+    <button aria-label="Toggle light/dark" class="icon-btn" id="mode-btn" title="Toggle light/dark">
+      <svg fill="none" id="mode-sun" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <line x1="12" x2="12" y1="2" y2="4"/>
+        <line x1="12" x2="12" y1="20" y2="22"/>
+        <line x1="2" x2="4" y1="12" y2="12"/>
+        <line x1="20" x2="22" y1="12" y2="12"/>
+        <line x1="5" x2="6.5" y1="5" y2="6.5"/>
+        <line x1="17.5" x2="19" y1="17.5" y2="19"/>
+        <line x1="5" x2="6.5" y1="19" y2="17.5"/>
+        <line x1="17.5" x2="19" y1="6.5" y2="5"/>
+      </svg>
+      <svg class="hidden" fill="none" id="mode-moon" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>
+      </svg>
+    </button>
+    <span class="offline-badge" id="offline-badge" style="display:none;" title="You're offline — games still work">Offline</span>
+    <div class="menu">
+      <button aria-label="Accessibility options" class="icon-btn" id="a11y-btn" title="Accessibility options">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="4" r="2"/>
+          <path d="M19 7v0M5 7v0M9 7c1.5 1 2.5 1 3 1s1.5 0 3-1M12 8v5l-2 7m4-7l2 7"/>
+        </svg>
+      </button>
+      <div class="menu-panel a11y-panel" id="a11y-panel">
+        <h4>Accessibility</h4>
+        <div class="a11y-section">
+          <div class="a11y-label">Font size</div>
+          <div class="a11y-row">
+            <button class="a11y-btn" data-a11y="fontDec" title="Decrease font size">A−</button>
+            <span class="a11y-val" id="a11y-font-val">100%</span>
+            <button class="a11y-btn" data-a11y="fontInc" title="Increase font size">A+</button>
+            <button class="a11y-btn a11y-reset" data-a11y="fontReset" title="Reset font size">Reset</button>
+          </div>
+        </div>
+        <div class="a11y-section">
+          <div class="a11y-label">Display</div>
+          <label class="a11y-toggle"><input id="a11y-contrast" type="checkbox"/> High contrast</label>
+          <label class="a11y-toggle"><input id="a11y-motion" type="checkbox"/> Reduce motion</label>
+          <label class="a11y-toggle"><input id="a11y-dyslexia" type="checkbox"/> Dyslexia-friendly font</label>
+          <label class="a11y-toggle"><input id="a11y-focus" type="checkbox"/> Large focus rings</label>
+        </div>
+        <div class="a11y-section">
+          <div class="a11y-label">Color-blind mode</div>
+          <select class="a11y-select" id="a11y-cb">
+            <option value="off">Off</option>
+            <option value="protanopia">Red-blind (Protanopia)</option>
+            <option value="deuteranopia">Green-blind (Deuteranopia)</option>
+            <option value="tritanopia">Blue-blind (Tritanopia)</option>
+          </select>
+        </div>
+        <div class="a11y-section">
+          <div class="a11y-label">Your data</div>
+          <div class="a11y-row" style="flex-wrap:wrap;">
+            <button class="a11y-btn" id="data-export" title="Download favorites, scores, stats as JSON">⬇ Export
+            </button>
+            <button class="a11y-btn" id="data-import" title="Restore from a JSON backup">⬆ Import</button>
+            <button class="a11y-btn" id="data-reset" style="color:var(--danger);" title="Erase all saved data">Reset
+              all
+            </button>
+          </div>
+          <input accept="application/json" id="data-import-file" style="display:none;" type="file"/>
+        </div>
+        <button class="btn btn-sm a11y-reset-all" id="a11y-reset-all" title="Reset all accessibility settings">Reset
+          accessibility
+        </button>
+      </div>
+    </div>
+    <div class="menu">
+      <button aria-label="Change theme" class="icon-btn" id="theme-btn" title="Change theme">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3a9 9 0 0 0 0 18 4.5 4.5 0 0 1 0-9 4.5 4.5 0 0 0 0-9z"/>
+        </svg>
+      </button>
+      <div class="menu-panel" id="theme-panel">
+        <h4>Theme</h4>
+        <div class="menu-row" id="theme-choices">
+          <button class="menu-chip" data-theme-id="minimal">Modern Minimal</button>
+          <button class="menu-chip" data-theme-id="arcade">Retro Arcade</button>
+          <button class="menu-chip" data-theme-id="cartoon">Playful Cartoon</button>
+          <button class="menu-chip" data-theme-id="casino">Dark Neon Casino</button>
+          <button class="menu-chip" data-theme-id="forest">Forest</button>
+          <button class="menu-chip" data-theme-id="sunset">Sunset</button>
+          <button class="menu-chip" data-theme-id="cyberpunk">Cyberpunk</button>
+          <button class="menu-chip" data-theme-id="mono">Mono Print</button>
+          <button class="menu-chip" data-theme-id="8bit">8-Bit NES</button>
+          <button class="menu-chip" data-theme-id="gameboy">Game Boy</button>
+          <button class="menu-chip" data-theme-id="cga">CGA Palette</button>
+          <button class="menu-chip" data-theme-id="msdos">MS-DOS</button>
+          <button class="menu-chip" data-theme-id="matrix">Matrix</button>
+          <button class="menu-chip" data-theme-id="crt">CRT Amber</button>
+          <button class="menu-chip" data-theme-id="vaporwave">Vaporwave</button>
+          <button class="menu-chip" data-theme-id="paperwhite">Paperwhite</button>
+          <button class="menu-chip" data-theme-id="sepia">Sepia</button>
+          <button class="menu-chip" data-theme-id="newspaper">Newspaper</button>
+          <button class="menu-chip" data-theme-id="halloween">🎃 Halloween</button>
+          <button class="menu-chip" data-theme-id="christmas">🎄 Christmas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main: home view -->
+<main id="home-view">
+  <section class="hero">
+    <div class="hero-greeting" id="hero-greeting"></div>
+    <h1>Pixel Arcade — Play 300 Classic Games</h1>
+    <p>300 games — word puzzles, logic, arcade, strategy, quiz — all in your browser. No installs. No login. No backend.
+      20 themes. Advanced filters, stats, achievements, daily challenge &amp; more.</p>
+  </section>
+
+  <!-- PWA install prompt — shown by app.js when beforeinstallprompt fires.
+       The third button pre-caches all 300 game scripts so the user can play
+       every game fully offline, not just the ones they've already opened. -->
+  <div class="install-banner" id="install-banner" style="display:none;">
+    <span>📱 Install Pixel Arcade for offline play</span>
+    <button class="btn btn-sm primary" id="install-accept">Install</button>
+    <button class="btn btn-sm" id="install-cache-all" title="Pre-cache all 300 games for full offline play (~3 MB)">⬇
+      Cache all games
+    </button>
+    <button class="btn btn-sm" id="install-dismiss">Not now</button>
+  </div>
+
+  <!-- Daily challenge — featured game rotates daily -->
+  <div class="daily-banner" id="daily-banner" style="display:none;">
+    <div class="daily-left">
+      <div class="daily-label">Daily challenge</div>
+      <div class="daily-name" id="daily-name">—</div>
+      <div class="daily-desc" id="daily-desc">—</div>
+    </div>
+    <button class="btn primary" id="daily-play">Play today's →</button>
+  </div>
+
+  <div class="filters">
+    <span class="filter-label">Type</span>
+    <button class="filter-chip active" data-dim="category" data-filter="all">All</button>
+    <button class="filter-chip" data-dim="category" data-filter="word">Word</button>
+    <button class="filter-chip" data-dim="category" data-filter="logic">Logic</button>
+    <button class="filter-chip" data-dim="category" data-filter="arcade">Arcade</button>
+    <button class="filter-chip" data-dim="category" data-filter="strategy">Strategy</button>
+    <button class="filter-chip" data-dim="category" data-filter="quiz">Quiz</button>
+    <div class="search-wrap">
+      <input class="search" id="search" placeholder="Search games…" type="search"/>
+      <button aria-label="Clear search" class="search-clear" id="search-clear" title="Clear search">×</button>
+    </div>
+    <select aria-label="Sort games" class="sort-select" id="sort-select">
+      <option value="default">Default order</option>
+      <option value="name">Name (A–Z)</option>
+      <option value="plays">Most played</option>
+      <option value="recent">Recently played</option>
+      <option value="best">Best score</option>
+    </select>
+  </div>
+
+  <div class="filters filters-extra">
+    <span class="filter-label">Age</span>
+    <select aria-label="Filter by age group" class="filter-select" id="age-filter">
+      <option value="all">All ages</option>
+      <option value="kids">Kids (6+)</option>
+      <option value="teens">Teens (13+)</option>
+      <option value="adults">Adults (18+)</option>
+    </select>
+    <span class="filter-label">Difficulty</span>
+    <select aria-label="Filter by difficulty" class="filter-select" id="diff-filter">
+      <option value="all">Any</option>
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+    <span class="filter-label">Length</span>
+    <select aria-label="Filter by session length" class="filter-select" id="dur-filter">
+      <option value="all">Any</option>
+      <option value="quick">Quick (&lt;2 min)</option>
+      <option value="medium">Medium (2–10)</option>
+      <option value="long">Long (&gt;10 min)</option>
+    </select>
+    <span class="filter-label">Players</span>
+    <select aria-label="Filter by player count" class="filter-select" id="players-filter">
+      <option value="all">Any</option>
+      <option value="single">1-Player</option>
+      <option value="2p">2-Player</option>
+    </select>
+    <button class="btn btn-sm" id="filters-reset" title="Reset all filters">Reset</button>
+    <span aria-live="polite" class="filter-count" id="filter-count"></span>
+  </div>
+
+  <!-- Recommended — merges trending (most-played this week) with
+       personalized for-you picks, capped at 8 cards. Hidden when filters
+       are active or when there is too little play history to suggest. -->
+  <div class="home-rail" id="home-recommended" style="display:none;">
+    <div class="rail-title">Recommended for you</div>
+    <div class="rail-row" id="home-recommended-row"></div>
+  </div>
+
+  <!-- Recently played — small horizontal rail at the top of the home view.
+       Populated by app.js from Storage.getRecent(). Hidden when empty.
+       The Clear button empties the recent list (Storage.clearRecent). -->
+  <div class="home-recent" id="home-recent" style="display:none;">
+    <div class="rail-title">
+      <span>Recently played</span>
+      <button aria-label="Clear recently played list" class="rail-clear-btn" id="home-recent-clear" title="Clear recently played list"
+              type="button">Clear
+      </button>
+    </div>
+    <div class="rail-row" id="home-recent-row"></div>
+  </div>
+
+  <!-- New games — the 25 newest additions (v4 batch). Shown only on the
+       unfiltered home view so first-time visitors can discover them. -->
+  <div class="home-new" id="home-new" style="display:none;">
+    <div class="rail-title">New games</div>
+    <div class="rail-row" id="home-new-row"></div>
+  </div>
+
+  <div class="grid" id="game-grid"><!-- game cards injected by app.js --></div>
+</main>
+
+<!-- Game view (overlay) -->
+<section class="game-view" id="game-view">
+  <header class="game-header">
+    <button aria-label="Back to hub" class="icon-btn" id="back-btn" title="Back to hub">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+    <span class="icon" id="game-icon">🎮</span>
+    <span id="game-title">Game</span>
+    <span class="breadcrumb" id="game-breadcrumb"></span>
+  </header>
+  <nav aria-label="Game controls" class="game-controls-bar">
+    <button class="btn btn-sm" id="game-fav-btn" title="Add to favorites">♡</button>
+    <button class="btn btn-sm" id="game-share-btn" title="Share result">🔗 Share</button>
+    <span class="ctrl-sep"></span>
+    <button class="btn btn-sm" id="game-hint-btn" title="Get a hint">💡 Hint</button>
+    <button class="btn btn-sm" id="game-solve-btn" title="Show solution">✓ Solve</button>
+    <button class="btn btn-sm" id="game-help-btn" title="How to play">❔ Help</button>
+    <span class="ctrl-sep"></span>
+    <button class="btn btn-sm primary" id="game-restart-btn" title="Restart game">↻ Restart</button>
+  </nav>
+  <div class="game-body">
+    <div class="game-stage" id="game-stage"><!-- game content --></div>
+    <!-- aria-live region: app.js announces game state changes here for screen readers -->
+    <div aria-atomic="true" aria-live="polite" class="sr-only" id="aria-live"></div>
+    <!-- Similar games + Recently played rails; populated by app.js -->
+    <div class="game-rails" id="game-rails" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- Toast area -->
+<div class="toast-area" id="toast-area"></div>
+
+<!-- Back to top button — appears when scrolled down -->
+<button aria-label="Back to top" class="back-to-top" id="back-to-top" title="Back to top">
+  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</button>
+
+<!-- Confetti container — for achievement unlock celebrations -->
+<div class="confetti" id="confetti" style="display:none;"></div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal">
+    <button aria-label="Close" class="modal-close" id="modal-close" title="Close" type="button">×</button>
+    <h3 id="modal-title">Title</h3>
+    <p id="modal-body">Body</p>
+    <div class="actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<footer>
+  Built with vanilla JS by <strong>Hossam Magdy Balaha</strong> · Drop into GitHub Pages · <span
+    id="footer-count">0</span> games loaded
+</footer>
+
+<!-- Core framework -->
+<script defer src="js/storage.js"></script>
+<script defer src="js/audio.js"></script>
+<script defer src="js/registry.js"></script>
+<script defer src="js/achievements.js"></script>
+<script defer src="js/wikifetch.js"></script>
+<!-- Comprehensive English word list (4/5/6-letter words from the NLTK corpus) -->
+<script defer src="js/wordlist.js"></script>
+
+<!-- Games (order doesn't matter — each registers itself) -->
+<script defer src="js/games/tictactoe.js"></script>
+<script defer src="js/games/wordle.js"></script>
+<script defer src="js/games/hangman.js"></script>
+<script defer src="js/games/2048.js"></script>
+<script defer src="js/games/memory.js"></script>
+<script defer src="js/games/connect4.js"></script>
+<script defer src="js/games/mastermind.js"></script>
+<script defer src="js/games/minesweeper.js"></script>
+<script defer src="js/games/sudoku.js"></script>
+<script defer src="js/games/snake.js"></script>
+<script defer src="js/games/battleship.js"></script>
+<script defer src="js/games/simon.js"></script>
+<script defer src="js/games/numberguess.js"></script>
+<script defer src="js/games/rps.js"></script>
+<script defer src="js/games/scramble.js"></script>
+<script defer src="js/games/trivia.js"></script>
+<script defer src="js/games/mathquiz.js"></script>
+<script defer src="js/games/higherlower.js"></script>
+<!-- New games (v1.5 → 50 total) -->
+<script defer src="js/games/checkers.js"></script>
+<script defer src="js/games/reversi.js"></script>
+<script defer src="js/games/slidingpuzzle.js"></script>
+<script defer src="js/games/lightsout.js"></script>
+<script defer src="js/games/blockdrop.js"></script>
+<script defer src="js/games/breakout.js"></script>
+<script defer src="js/games/pong.js"></script>
+<script defer src="js/games/reactiontest.js"></script>
+<script defer src="js/games/colormatch.js"></script>
+<script defer src="js/games/wordsearch.js"></script>
+<script defer src="js/games/anagramhunt.js"></script>
+<script defer src="js/games/memorysequence.js"></script>
+<script defer src="js/games/nback.js"></script>
+<script defer src="js/games/reactionwall.js"></script>
+<script defer src="js/games/minimines.js"></script>
+<script defer src="js/games/ttt4.js"></script>
+<script defer src="js/games/connect5.js"></script>
+<script defer src="js/games/sudoku4.js"></script>
+<script defer src="js/games/kakuro.js"></script>
+<script defer src="js/games/hexpuzzle.js"></script>
+<script defer src="js/games/fifteenpuzzle.js"></script>
+<script defer src="js/games/hangmanreverse.js"></script>
+<script defer src="js/games/hanoi.js"></script>
+<script defer src="js/games/pegsolitaire.js"></script>
+<script defer src="js/games/simonreverse.js"></script>
+<script defer src="js/games/wordhunt.js"></script>
+<script defer src="js/games/typingspeed.js"></script>
+<script defer src="js/games/stroop.js"></script>
+<script defer src="js/games/diceroll.js"></script>
+<script defer src="js/games/lottopicker.js"></script>
+<script defer src="js/games/coinflip.js"></script>
+<script defer src="js/games/slotmachine.js"></script>
+<!-- Wordle variants & similar guessing games (v1.6 → 59 total) -->
+<script defer src="js/games/quordle.js"></script>
+<script defer src="js/games/octordle.js"></script>
+<script defer src="js/games/nerdle.js"></script>
+<script defer src="js/games/worldle.js"></script>
+<script defer src="js/games/crosswordle.js"></script>
+<script defer src="js/games/framed.js"></script>
+<script defer src="js/games/heardle.js"></script>
+<script defer src="js/games/semantle.js"></script>
+<script defer src="js/games/contexto.js"></script>
+<!-- New thinking games (v1.7 → 75 total) -->
+<script defer src="js/games/spellingbee.js"></script>
+<script defer src="js/games/connections.js"></script>
+<script defer src="js/games/cryptoquote.js"></script>
+<script defer src="js/games/wordladder.js"></script>
+<script defer src="js/games/nonogram.js"></script>
+<script defer src="js/games/binairo.js"></script>
+<script defer src="js/games/hidato.js"></script>
+<script defer src="js/games/sumplete.js"></script>
+<script defer src="js/games/sudokux.js"></script>
+<script defer src="js/games/starbattle.js"></script>
+<script defer src="js/games/tents.js"></script>
+<script defer src="js/games/skyscrapers.js"></script>
+<script defer src="js/games/kenken.js"></script>
+<script defer src="js/games/boggle.js"></script>
+<script defer src="js/games/letterboxed.js"></script>
+<script defer src="js/games/codewords.js"></script>
+<!-- v2 batch — 25 more games → 100 total -->
+<script defer src="js/games/wordsquare.js"></script>
+<script defer src="js/games/wordpyramid.js"></script>
+<script defer src="js/games/letterweaver.js"></script>
+<script defer src="js/games/ghostword.js"></script>
+<script defer src="js/games/anagramcross.js"></script>
+<script defer src="js/games/hitori.js"></script>
+<script defer src="js/games/akari.js"></script>
+<script defer src="js/games/slitherlink.js"></script>
+<script defer src="js/games/hashi.js"></script>
+<script defer src="js/games/fillomino.js"></script>
+<script defer src="js/games/masyu.js"></script>
+<script defer src="js/games/shikaku.js"></script>
+<script defer src="js/games/twentyfour.js"></script>
+<script defer src="js/games/equationbuilder.js"></script>
+<script defer src="js/games/crossmath.js"></script>
+<script defer src="js/games/mancala.js"></script>
+<script defer src="js/games/solitaire.js"></script>
+<script defer src="js/games/dotsboxes.js"></script>
+<script defer src="js/games/tetris.js"></script>
+<script defer src="js/games/frogger.js"></script>
+<script defer src="js/games/capitalsquiz.js"></script>
+<script defer src="js/games/flagquiz.js"></script>
+<script defer src="js/games/geographyquiz.js"></script>
+<script defer src="js/games/sciencequiz.js"></script>
+<script defer src="js/games/pathpuzzle.js"></script>
+<!-- Augment already-registered games with extra filter metadata -->
+<!-- v3 batch — 25 more games → 125 total -->
+<script defer src="js/games/jotto.js"></script>
+<script defer src="js/games/wordchain.js"></script>
+<script defer src="js/games/vocabquiz.js"></script>
+<script defer src="js/games/idiomguess.js"></script>
+<script defer src="js/games/rhymetime.js"></script>
+<script defer src="js/games/pangramhunt.js"></script>
+<script defer src="js/games/anagramquiz.js"></script>
+<script defer src="js/games/futoshiki.js"></script>
+<script defer src="js/games/numberlink.js"></script>
+<script defer src="js/games/nurikabe.js"></script>
+<script defer src="js/games/rippleeffect.js"></script>
+<script defer src="js/games/sudokuhyper.js"></script>
+<script defer src="js/games/yajilin.js"></script>
+<script defer src="js/games/gomoku.js"></script>
+<script defer src="js/games/nim.js"></script>
+<script defer src="js/games/war.js"></script>
+<script defer src="js/games/concentration.js"></script>
+<script defer src="js/games/flappy.js"></script>
+<script defer src="js/games/asteroids.js"></script>
+<script defer src="js/games/missilecommand.js"></script>
+<script defer src="js/games/helicopter.js"></script>
+<script defer src="js/games/historyquiz.js"></script>
+<script defer src="js/games/truefalse.js"></script>
+<script defer src="js/games/colorquiz.js"></script>
+<script defer src="js/games/lettercount.js"></script>
+
+<!-- v4 batch — 25 more trendy games → 150 total -->
+<script defer src="js/games/wordleverse.js"></script>
+<script defer src="js/games/swordle.js"></script>
+<script defer src="js/games/emojidle.js"></script>
+<script defer src="js/games/anagramrace.js"></script>
+<script defer src="js/games/wordtower.js"></script>
+<script defer src="js/games/minisudoku.js"></script>
+<script defer src="js/games/picross3d.js"></script>
+<script defer src="js/games/logicgrid.js"></script>
+<script defer src="js/games/towersofhanoi3.js"></script>
+<script defer src="js/games/magicsquare.js"></script>
+<script defer src="js/games/tictactoextreme.js"></script>
+<script defer src="js/games/connect3.js"></script>
+<script defer src="js/games/gomokumini.js"></script>
+<script defer src="js/games/avoidance.js"></script>
+<script defer src="js/games/memorybattleship.js"></script>
+<script defer src="js/games/blockstacker.js"></script>
+<script defer src="js/games/balloonpop.js"></script>
+<script defer src="js/games/colorswitch.js"></script>
+<script defer src="js/games/doodlejump.js"></script>
+<script defer src="js/games/spacetapper.js"></script>
+<script defer src="js/games/emojiquiz.js"></script>
+<script defer src="js/games/logoguess.js"></script>
+<script defer src="js/games/lyricsquiz.js"></script>
+<script defer src="js/games/foodquiz.js"></script>
+<script defer src="js/games/animalquiz.js"></script>
+
+
+<!-- v5 batch — 150 new games (ancient + old + modern) -->
+<script defer src="js/games/chesstinychess.js"></script>
+<script defer src="js/games/tablamorris.js"></script>
+<script defer src="js/games/tablut.js"></script>
+<script defer src="js/games/senet.js"></script>
+<script defer src="js/games/royalur.js"></script>
+<script defer src="js/games/pachisilite.js"></script>
+<script defer src="js/games/snakesladders.js"></script>
+<script defer src="js/games/baghchal.js"></script>
+<script defer src="js/games/fanorona.js"></script>
+<script defer src="js/games/seega.js"></script>
+<script defer src="js/games/mahjongsolitaire.js"></script>
+<script defer src="js/games/tangram.js"></script>
+<script defer src="js/games/liarsdice.js"></script>
+<script defer src="js/games/pigdice.js"></script>
+<script defer src="js/games/farkle.js"></script>
+<script defer src="js/games/mexicodice.js"></script>
+<script defer src="js/games/pokerdice.js"></script>
+<script defer src="js/games/yachtdice.js"></script>
+<script defer src="js/games/dominoessolitaire.js"></script>
+<script defer src="js/games/dominoeschain.js"></script>
+<script defer src="js/games/sprouts.js"></script>
+<script defer src="js/games/othello6x6.js"></script>
+<script defer src="js/games/othello10x10.js"></script>
+<script defer src="js/games/kuphkido.js"></script>
+<script defer src="js/games/palindromehunt.js"></script>
+<script defer src="js/games/anagramjunior.js"></script>
+<script defer src="js/games/wordwheelclassic.js"></script>
+<script defer src="js/games/cryptogram.js"></script>
+<script defer src="js/games/codewordclassic.js"></script>
+<script defer src="js/games/wordsearchjunior.js"></script>
+<script defer src="js/games/bogglemini4x4.js"></script>
+<script defer src="js/games/mastermindclassic.js"></script>
+<script defer src="js/games/bullscows.js"></script>
+<script defer src="js/games/numbrix.js"></script>
+<script defer src="js/games/futoshiki7x7.js"></script>
+<script defer src="js/games/hitori9x9.js"></script>
+<script defer src="js/games/kakuro15.js"></script>
+<script defer src="js/games/skyscrapers6x6.js"></script>
+<script defer src="js/games/nonogram10x10.js"></script>
+<script defer src="js/games/proverbmatch.js"></script>
+<script defer src="js/games/idiomguess2.js"></script>
+<script defer src="js/games/animalswl.js"></script>
+<script defer src="js/games/foodwl.js"></script>
+<script defer src="js/games/countrieswl.js"></script>
+<script defer src="js/games/citieswl.js"></script>
+<script defer src="js/games/colorswl.js"></script>
+<script defer src="js/games/sportswl.js"></script>
+<script defer src="js/games/musicwl.js"></script>
+<script defer src="js/games/moviewl.js"></script>
+<script defer src="js/games/techwl.js"></script>
+<script defer src="js/games/naturewl.js"></script>
+<script defer src="js/games/spacewl.js"></script>
+<script defer src="js/games/oceanwl.js"></script>
+<script defer src="js/games/weatherwl.js"></script>
+<script defer src="js/games/bodywl.js"></script>
+<script defer src="js/games/clothwl.js"></script>
+<script defer src="js/games/toolswl.js"></script>
+<script defer src="js/games/jobswl.js"></script>
+<script defer src="js/games/mythwl.js"></script>
+<script defer src="js/games/emotionwl.js"></script>
+<script defer src="js/games/magicwl.js"></script>
+<script defer src="js/games/ancientwl.js"></script>
+<script defer src="js/games/elementswl.js"></script>
+<script defer src="js/games/treewl.js"></script>
+<script defer src="js/games/birdwl.js"></script>
+<script defer src="js/games/ancientquiz.js"></script>
+<script defer src="js/games/greekmythquiz.js"></script>
+<script defer src="js/games/norsemythquiz.js"></script>
+<script defer src="js/games/egyptquiz.js"></script>
+<script defer src="js/games/romequiz.js"></script>
+<script defer src="js/games/modernhistoryquiz.js"></script>
+<script defer src="js/games/sciencequiz2.js"></script>
+<script defer src="js/games/geographyquiz2.js"></script>
+<script defer src="js/games/techquiz.js"></script>
+<script defer src="js/games/movietriviaquiz.js"></script>
+<script defer src="js/games/musictriviaquiz.js"></script>
+<script defer src="js/games/sportstriviaquiz.js"></script>
+<script defer src="js/games/literaturequiz.js"></script>
+<script defer src="js/games/cuisinequiz.js"></script>
+<script defer src="js/games/languagesquiz.js"></script>
+<script defer src="js/games/chessquiz.js"></script>
+<script defer src="js/games/philosophyquiz.js"></script>
+<script defer src="js/games/artquiz.js"></script>
+<script defer src="js/games/memoryanimals2.js"></script>
+<script defer src="js/games/memoryfood2.js"></script>
+<script defer src="js/games/memoryfruit2.js"></script>
+<script defer src="js/games/memoryveggies2.js"></script>
+<script defer src="js/games/memorytransport2.js"></script>
+<script defer src="js/games/memoryweather2.js"></script>
+<script defer src="js/games/memorysport2.js"></script>
+<script defer src="js/games/memoryinstrument2.js"></script>
+<script defer src="js/games/memorysymbol2.js"></script>
+<script defer src="js/games/memorycolor2.js"></script>
+<script defer src="js/games/memorymyth2.js"></script>
+<script defer src="js/games/memoryplace2.js"></script>
+<script defer src="js/games/memoryflag2.js"></script>
+<script defer src="js/games/numguess1to10.js"></script>
+<script defer src="js/games/numguess1to50.js"></script>
+<script defer src="js/games/numguess1to100.js"></script>
+<script defer src="js/games/numguess1to500.js"></script>
+<script defer src="js/games/numguess1to1000.js"></script>
+<script defer src="js/games/numguessevens.js"></script>
+<script defer src="js/games/numguessprime.js"></script>
+<script defer src="js/games/quicktap.js"></script>
+<script defer src="js/games/colorcatch.js"></script>
+<script defer src="js/games/dotdashmini.js"></script>
+<script defer src="js/games/catmousegame.js"></script>
+<script defer src="js/games/dodgeballgame.js"></script>
+<script defer src="js/games/brickbreakermini.js"></script>
+<script defer src="js/games/speedtap.js"></script>
+<script defer src="js/games/reflextest2.js"></script>
+<script defer src="js/games/dropcatchgame.js"></script>
+<script defer src="js/games/jumpcatchgame.js"></script>
+<script defer src="js/games/lightsout3x3.js"></script>
+<script defer src="js/games/lightsout5x5.js"></script>
+<script defer src="js/games/lightsout7x7.js"></script>
+<script defer src="js/games/lightsoutwrap.js"></script>
+<script defer src="js/games/lightsoutcorners.js"></script>
+<script defer src="js/games/lightsoutplus.js"></script>
+<script defer src="js/games/lightsoutxor.js"></script>
+<script defer src="js/games/lightsoutcross.js"></script>
+<script defer src="js/games/sliding3x3.js"></script>
+<script defer src="js/games/sliding4x4.js"></script>
+<script defer src="js/games/sliding5x5.js"></script>
+<script defer src="js/games/slidingnumber.js"></script>
+<script defer src="js/games/slidingletter.js"></script>
+<script defer src="js/games/slidingcolor.js"></script>
+<script defer src="js/games/ttt5x5.js"></script>
+<script defer src="js/games/ttt6x6.js"></script>
+<script defer src="js/games/ttttorus.js"></script>
+<script defer src="js/games/tttmisere.js"></script>
+<script defer src="js/games/tttnotakto.js"></script>
+<script defer src="js/games/tttvoid.js"></script>
+<script defer src="js/games/tttshift.js"></script>
+<script defer src="js/games/reactioncolor.js"></script>
+<script defer src="js/games/reactionshape.js"></script>
+<script defer src="js/games/reactionnumber.js"></script>
+<script defer src="js/games/reactionarrow.js"></script>
+<script defer src="js/games/match3classic.js"></script>
+<script defer src="js/games/match3fruit.js"></script>
+<script defer src="js/games/match3jewel.js"></script>
+<script defer src="js/games/simoncolors.js"></script>
+<script defer src="js/games/simonsounds.js"></script>
+<script defer src="js/games/simonshapes.js"></script>
+<script defer src="js/games/hangmanancient.js"></script>
+<script defer src="js/games/hangmantech.js"></script>
+<script defer src="js/games/hangmangeography.js"></script>
+<script defer src="js/games/wordjumbleeasy.js"></script>
+<script defer src="js/games/wordjumblemedium.js"></script>
+<script defer src="js/games/wordjumblehard.js"></script>
+<script defer src="js/game-metadata.js"></script>
+
+<!-- Main app -->
+<script defer src="js/app.js"></script>
+<script>
+  // Register service worker for offline play — only on http/https (not file://)
+  if ("serviceWorker" in navigator && (location.protocol === "http:" || location.protocol === "https:")) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (e) {
+        console.warn("Service worker registration failed:", e);
+      });
+    });
+  }
+</script>
+</body>
+</html>

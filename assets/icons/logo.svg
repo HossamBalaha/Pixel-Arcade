@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Pixel Arcade">
+    <!-- Background: rounded indigo gradient -->
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#6366f1"/>
+            <stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient>
+        <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0f172a"/>
+            <stop offset="100%" stop-color="#1e293b"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Outer rounded rect -->
+    <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)"/>
+
+    <!-- Arcade cabinet body -->
+    <rect x="116" y="100" width="280" height="312" rx="20" fill="#0f172a"/>
+    <rect x="116" y="100" width="280" height="312" rx="20" fill="none" stroke="#1e293b" stroke-width="3"/>
+
+    <!-- Screen -->
+    <rect x="140" y="124" width="232" height="156" rx="10" fill="url(#screen)"/>
+
+    <!-- Pixel-style "play" triangle inside the screen -->
+    <polygon points="200,160 200,244 268,202" fill="#00f5d4"/>
+
+    <!-- Decorative screen pixels -->
+    <rect x="296" y="148" width="14" height="14" fill="#ff00aa"/>
+    <rect x="316" y="148" width="14" height="14" fill="#00f5d4"/>
+    <rect x="336" y="148" width="14" height="14" fill="#ffd700"/>
+    <rect x="296" y="168" width="14" height="14" fill="#00f5d4"/>
+    <rect x="316" y="168" width="14" height="14" fill="#ffd700"/>
+    <rect x="336" y="168" width="14" height="14" fill="#ff00aa"/>
+    <rect x="296" y="246" width="62" height="14" fill="#00f5d4" opacity="0.7"/>
+    <rect x="296" y="262" width="42" height="8" fill="#ff00aa" opacity="0.5"/>
+
+    <!-- Marquee text strip above screen -->
+    <rect x="140" y="296" width="232" height="20" rx="4" fill="#1e293b"/>
+    <text x="256" y="311" text-anchor="middle" font-family="monospace" font-size="14" font-weight="700" fill="#00f5d4"
+          letter-spacing="2">PIXEL ARCADE
+    </text>
+
+    <!-- Joystick -->
+    <circle cx="180" cy="370" r="22" fill="#1e293b" stroke="#475569" stroke-width="3"/>
+    <circle cx="180" cy="370" r="8" fill="#ff00aa"/>
+    <rect x="178" y="332" width="4" height="22" fill="#475569"/>
+
+    <!-- Two buttons -->
+    <circle cx="280" cy="370" r="14" fill="#ffd700"/>
+    <circle cx="280" cy="370" r="6" fill="#1e293b" opacity="0.6"/>
+    <circle cx="330" cy="370" r="14" fill="#00f5d4"/>
+    <circle cx="330" cy="370" r="6" fill="#1e293b" opacity="0.6"/>
+
+    <!-- Bottom vent line -->
+    <rect x="180" y="394" width="152" height="6" rx="2" fill="#1e293b"/>
+</svg>

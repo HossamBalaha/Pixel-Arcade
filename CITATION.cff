@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Pixel Arcade"
+abstract: "Pixel Arcade is a collection of 300 classic browser games — word puzzles, logic, arcade, strategy, and quiz — built with pure HTML, CSS, and JavaScript. No build step, no backend, no dependencies. Perfect for GitHub Pages hosting and offline play."
+authors:
+  - family-names: Balaha
+    given-names: "Hossam Magdy"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+keywords:
+  - "browser-games"
+  - "vanilla-js"
+  - "html-css-js"
+  - "github-pages"
+  - "pwa"
+  - "offline-first"
+  - "minimax"
+  - "wordle"
+  - "2048"
+license: "MIT"
+license-url: "https://spdx.org/licenses/MIT.html"
+type: software
+version: "1.5.0"
+date-released: "2026-11-06"
+repository-code: "https://github.com/HossamBalaha/Pixel-Arcade"
+url: "https://hossambalaha.github.io/Pixel-Arcade/"
+preferred-citation:
+  type: software
+  title: "Pixel Arcade"
+  authors:
+    - family-names: Balaha
+      given-names: "Hossam Magdy"
+  year: 2026
