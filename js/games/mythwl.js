@@ -1,7 +1,7 @@
 /* mythwl — Mythical Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["HYDRA", "PEGASUS", "GRIFFON", "SIREN", "GOLEM", "GARGOYLE", "MERMAID", "CENTAUR", "MINOTAUR", "PHOENIX", "UNICORN", "KRAKEN", "VALKYRIE", "ANUBIS", "SPHINX", "YETI", "BASILISK", "WYVERN", "HARPY", "CYCLOPS"];
+  const WORDS = ["HYDRA", "SIREN", "SATYR", "NYMPH", "TROLL", "OGRES", "ELVES", "FAIRY", "PIXIE", "HARPY", "ANGEL", "DEMON", "TITAN", "HADES", "KARMA", "TOTEM", "RUNES", "QUEST", "MAGIC", "CURSE"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

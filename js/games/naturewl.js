@@ -1,7 +1,7 @@
 /* naturewl — Nature Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["RIVER", "OCEAN", "DELTA", "CREEK", "GROVE", "MARSH", "MEADOW", "FOREST", "VALLEY", "DUNES", "BLUFF", "CANYON", "GLACIER", "STREAM", "SUMMIT", "TUNDRA", "SAVANNA", "JUNGLE", "PRAIRIE", "BEACH"];
+  const WORDS = ["RIVER", "OCEAN", "BEACH", "CLIFF", "RIDGE", "SLOPE", "CREST", "PLAIN", "SWAMP", "MARSH", "BROOK", "CREEK", "HILLS", "GRASS", "BLOOM", "FLORA", "FAUNA", "TRAIL", "CEDAR", "MAPLE"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

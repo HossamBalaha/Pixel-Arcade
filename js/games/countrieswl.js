@@ -1,7 +1,7 @@
 /* countrieswl — Country Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["SPAIN", "ITALY", "JAPAN", "CHINA", "INDIA", "EGYPT", "KENYA", "IRAN", "IRAQ", "CHILE", "NEPAL", "PERU", "TOGO", "MALTA", "QATAR", "TONGA", "SUDAN", "CONGO", "GABON", "LIBYA"];
+  const WORDS = ["SPAIN", "ITALY", "JAPAN", "CHINA", "INDIA", "EGYPT", "KENYA", "CHILE", "NEPAL", "MALTA", "QATAR", "TONGA", "SUDAN", "CONGO", "GABON", "LIBYA", "GHANA", "BENIN", "SYRIA", "YEMEN"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

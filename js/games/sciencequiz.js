@@ -66,9 +66,9 @@
       a: 1
     },
     {q: "Which planet is famous for its prominent rings?", opts: ["Jupiter", "Saturn", "Uranus", "Neptune"], a: 1},
-    {q: "What is the main gas in the air we breathe?", opts: ["Oxygen", "Carbon dioxide", "Nitrogen", "Argon"], a: 2},
+    {q: "Roughly what percentage of the adult human body is water?", opts: ["30%", "50%", "60%", "90%"], a: 2},
     {q: "Which scientist developed the vaccine for rabies?", opts: ["Pasteur", "Fleming", "Salk", "Koch"], a: 0},
-    {q: "What is the largest organ in the human body?", opts: ["Heart", "Liver", "Skin", "Brain"], a: 2},
+    {q: "What is the largest bone in the human body?", opts: ["Femur", "Tibia", "Humerus", "Fibula"], a: 0},
     {q: "What is the chemical symbol for iron?", opts: ["Ir", "Fe", "I", "In"], a: 1},
     {q: "How many bones are in the adult human hand?", opts: ["14", "19", "27", "32"], a: 2},
     {q: "What is the most abundant element in Earth's crust?", opts: ["Silicon", "Iron", "Oxygen", "Aluminum"], a: 2},

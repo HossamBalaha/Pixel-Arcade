@@ -1,7 +1,7 @@
 /* jobswl — Job Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["BAKER", "FARMER", "NURSE", "PILOT", "ACTOR", "WRITER", "LAWYER", "JUDGE", "CHEF", "TAILOR", "ARTIST", "TEACHER", "SCIENTIST", "DOCTOR", "PLUMBER", "WELDER", "MINER", "RANGER", "BARBER", "BROKER"];
+  const WORDS = ["BAKER", "NURSE", "PILOT", "ACTOR", "JUDGE", "TUTOR", "CLERK", "MODEL", "DIVER", "COACH", "GUARD", "NANNY", "SMITH", "MASON", "CABBY", "MEDIC", "CHIEF", "MAYOR", "SCOUT", "GUIDE"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

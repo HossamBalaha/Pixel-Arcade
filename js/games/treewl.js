@@ -1,7 +1,7 @@
 /* treewl — Tree Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["OAK", "PINE", "MAPLE", "BIRCH", "WILLOW", "CEDAR", "SPRUCE", "FICUS", "LARCH", "ALDER", "ASPEN", "BEECH", "POPLAR", "WALNUT", "CHESTNUT", "CYPRESS", "PALM", "WILLOW", "ROWAN", "HAZEL"];
+  const WORDS = ["MAPLE", "BIRCH", "CEDAR", "ASPEN", "ELDER", "HAZEL", "BEECH", "OLIVE", "MANGO", "LEMON", "PEACH", "APPLE", "ALDER", "LARCH", "ROWAN", "HOLLY", "PALMS", "EBONY", "PECAN", "BRIAR"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

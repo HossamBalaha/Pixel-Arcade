@@ -1,7 +1,7 @@
 /* emotionwl — Emotion Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["HAPPY", "SAD", "ANGRY", "CALM", "FEAR", "PRIDE", "SHAME", "ENVY", "HOPE", "GRIEF", "BLISS", "GLOOM", "SCORN", "GLEE", "PANIC", "TRUST", "PITY", "AWE", "IRE", "MIRTH"];
+  const WORDS = ["HAPPY", "ANGRY", "PRIDE", "SHAME", "GRIEF", "BLISS", "GLOOM", "SCORN", "PANIC", "TRUST", "MIRTH", "CHEER", "ANGST", "GUILT", "SHOCK", "DREAD", "WORRY", "WRATH", "PEACE", "PROUD"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

@@ -33,7 +33,7 @@
     },
     {
       lyric: "Is you is or is you ain't my baby?",
-      opts: ["My Baby Just Cares for Me", "Ain't No Sunshine", "What a Wonderful World", "Blueberry Hill"],
+      opts: ["Is You Is or Is You Ain't My Baby", "Ain't No Sunshine", "What a Wonderful World", "Blueberry Hill"],
       a: 0
     },
     {
@@ -162,11 +162,6 @@
     {
       lyric: "Creep — I wish I was special…",
       opts: ["Karma Police", "Creep", "No Surprises", "Fake Plastic Trees"],
-      a: 1
-    },
-    {
-      lyric: "Smells like teen spirit…",
-      opts: ["Come As You Are", "Smells Like Teen Spirit", "Lithium", "Heart-Shaped Box"],
       a: 1
     },
     {lyric: "Blackbird singing in the dead of night…", opts: ["Blackbird", "Hey Jude", "Yesterday", "Let It Be"], a: 0},

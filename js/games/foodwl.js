@@ -1,7 +1,7 @@
 /* foodwl — Food Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["BREAD", "PASTA", "SUSHI", "CURRY", "PIZZA", "BAGEL", "SALAD", "STEAK", "TACOS", "WOKHE", "HONEY", "MANGO", "LEMON", "BASIL", "THYME", "CUMIN", "APPLE", "OLIVE", "FUDGE", "DATES"];
+  const WORDS = ["BREAD", "PASTA", "SUSHI", "CURRY", "PIZZA", "BAGEL", "SALAD", "STEAK", "TACOS", "WHEAT", "HONEY", "MANGO", "LEMON", "BASIL", "THYME", "CUMIN", "APPLE", "OLIVE", "FUDGE", "DATES"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

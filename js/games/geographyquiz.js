@@ -90,7 +90,7 @@
     {q: "What is the capital of Egypt?", opts: ["Alexandria", "Giza", "Cairo", "Luxor"], a: 2},
     {
       q: "Which country borders only one other country?",
-      opts: ["Monaco", "San Marino", "Vatican City", "Liechtenstein"],
+      opts: ["Monaco", "Liechtenstein", "Andorra", "Luxembourg"],
       a: 0
     },
     {
@@ -99,9 +99,9 @@
       a: 0
     },
     {
-      q: "What is the smallest independent country in the world by area?",
-      opts: ["Monaco", "Nauru", "Vatican City", "Tuvalu"],
-      a: 2
+      q: "What is the smallest island country in the world by area?",
+      opts: ["Monaco", "Nauru", "Tuvalu", "Malta"],
+      a: 1
     },
     {q: "Which country is shaped like a boot?", opts: ["Greece", "Spain", "Italy", "Portugal"], a: 2},
   ];

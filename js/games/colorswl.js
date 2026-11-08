@@ -1,7 +1,7 @@
 /* colorswl — Color Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["AMBER", "AZURE", "IVORY", "INDIGO", "RUBY", "CORAL", "KHAKI", "OLIVE", "BEIGE", "PLUM", "ROSE", "JADE", "TEAL", "MAUVE", "SEPIA", "VIOLET", "SILVER", "MAROON", "FUCHSIA", "SALMON"];
+  const WORDS = ["AMBER", "AZURE", "IVORY", "CORAL", "KHAKI", "OLIVE", "BEIGE", "MAUVE", "SEPIA", "GREEN", "WHITE", "BLACK", "BROWN", "PEACH", "LEMON", "LILAC", "OCHRE", "CREAM", "SLATE", "PEARL"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

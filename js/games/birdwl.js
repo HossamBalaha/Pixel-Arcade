@@ -1,7 +1,7 @@
 /* birdwl — Bird Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["ROBIN", "EAGLE", "SPARROW", "FINCH", "CROW", "DOVE", "HAWK", "OWL", "SWAN", "DUCK", "GOOSE", "HERON", "RAVEN", "STORK", "CRANE", "LARK", "WREN", "JAY", "JAY", "FINCH"];
+  const WORDS = ["EGRET", "CRANE", "STORK", "RAVEN", "QUAIL", "EAGLE", "GOOSE", "FINCH", "MACAW", "SWIFT", "SNIPE", "BOOBY", "MYNAH", "PIPIT", "STINT", "GALAH", "PRION", "CHICK", "DIVER", "OUZEL"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

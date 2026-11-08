@@ -1,7 +1,7 @@
 /* techwl — Tech Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["LINUX", "PYTHON", "KERNEL", "CACHE", "PIXEL", "ROUTER", "BINARY", "BYTES", "MOUSE", "CABLE", "MODEM", "SERVER", "CLOUD", "ARRAY", "DEBUG", "CLASS", "QUEUE", "STACK", "REGEX", "THREAD"];
+  const WORDS = ["LINUX", "ROBOT", "CACHE", "PIXEL", "CHIPS", "BYTES", "MOUSE", "CABLE", "MODEM", "EMAIL", "CLOUD", "ARRAY", "DEBUG", "CLASS", "QUEUE", "STACK", "REGEX", "CODES", "LINKS", "LOGIN"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

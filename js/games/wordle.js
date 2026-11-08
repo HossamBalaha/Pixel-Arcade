@@ -9,24 +9,30 @@
   // Common 4-letter English words — Easy mode fallback (and accepted as valid guesses)
   const FALLBACK_4 = ("able acid alms also area army away baby back bake ball band bank bare bark barn base bath beam bean bear beat beef been beer bell belt bend best bide bike bind bird bite blew blow blue boat body bold bolt bone book boom born boss both bowl bred brew bulb bulk burn bury bush busy cafe cake calm came camp card care case cash cast cave cell chat chef chip city clay clip club coal coat code cold come cook cool cope copy core cork corn cost crab crew crop cube cuff cult cute dad damn dark dart data date dawn days dead deaf deal dear debt deck deep deer demo desk dial dice diet dime dine dirt dish dive dock does doll done door dope dose down doze drab drag draw drew drop drug drum dual duck dude dull dump dust duty each earn ease east easy edge edit else ever evil exit face fact fade fail fair fall fame fare farm fast fate fear feat feed feel feet fell felt file fill film find fine fire firm fish five flag flat flaw fled flew flex flip flow foam fold folk food foot ford fork form fort four fowl free from fuel full fund gain game gate gave gear gene gift give glad glow glue goal goes gold golf gone good grab gray grew grid grip grow gulf hair half hall hand hang hard harm hate have head heal heat heir held hell help here hero high hike hill hint hire hold hole holy home hope horn host hour huge hung hunt hurt hush icon idea idle inch into iron item jail jazz join jolt joke jump june just keep kept kick kind king kiss knee knew know lace lack lady laid lake lamb lamp land lane last late lava lawn lazy lead leaf lean leap left lend lens less lest lift like lily lime line link lion lips list live load loan lock logo long look loop lord lose loss lost loud love luck lump lung made mail main make male mall many mark mass mate math maze meal mean meat meet melt menu mile milk mill mind mine miss mode mold mood moon more most move much must nail name navy near neat neck need nest news next nice nine node none noon nose note noun nude null oath odds ogre okay omen once only onto open opal oral ours oven owes over pace pack page paid pain pair pale palm park part pass past path peak peal pear peel peer perk pick pier pile pine pink pipe plan play plea plot plug plus poem poke pole poll pond pool poor pore port pose post pour pray prey pull pump punk pure push quit quiz race rage rail rain rank rare rate read real reap rear redo reed reef reek rely rent rest rice rich ride ring rise risk rite road roar robe rock role roll roof room root rope rose ruby rude rule rush rust safe sage said sail sake sale salt same sand sane sang save scan seal seat seed seek seen self sell send sent shed ship shoe shop shot show shut sick side sift sigh sign silk sing sink site size skin skip slam slap sled slim slip slow snap snow soap soda sofa soft soil sold sole some song soon sort soul soup sour sown span spat spin spot stab stag star stay stem step stir stop stub such suit sung sunk sure swap tail take tale talk tall tame tank tape task team tear tech teen tell tend tent term test text than that them then they thin this thus tide tied tire toad toll tone took tool tops toss tour town trap tree trim trip true tube tuna turn twig twin type ugly unit upon urge used user vain vary vase vast vein very veto vice view vile vine void vote wage wait wake walk wall want ward warm warn wart wash wasp wave weak wear week well went were west what when whim whip wide wife wild will wind wine wing wink wire wise wish with woke wolf wood wool word wore work worm worn wrap yard yarn yawn yeah year yell yoga yolk your zero zone zoom").split(" ");
 
+  // Common 6-letter words — Hard mode fallback (used only if wordlist.js
+  // fails to load; otherwise the curated ANSWERS_6 pool is used)
+  const FALLBACK_6 = ("absent accept access across action active advice afford afraid almost always animal answer anyone appeal arrive artist aspect assist assume attack attend author avenue become before behind belief belong beside better beyond border bottle bottom branch breath bridge bright broken budget butter camera cancel carbon career castle center certain change choice choose chosen church circle coming common cookie corner cottage couple county course create credit crisis custom damage danger decade defend define demand depend desert design desire detail detect device dinner direct divide dollar domain double driver effect effort either eleven emerge employ enable endure energy engine enough ensure entire escape estate expand expect expert extend extent family famous father figure finger finish flight follow forest forget formal format foster fourth friend future garden gather gentle global ground growth hammer handle happen health heaven height hidden higher holder honest horror ignore impact import income indeed inform inside island itself jacket junior ladder launch leader league legend length lesson letter listen little living luxury manage margin master matter member memory mental method middle minute mirror mobile modern moment moving murder muscle mystery nearest normal notice number object observe obtain obvious online option orbit origin output outside parade parent partner passage patent people perfect period permit person phrase picnic pigeon pirate planet player please pocket police policy ponder popular prefer prepare present pretty prince prison profit proper protect provide purpose quality quarter racing rather reader reason recent record reduce region regret relate release relief remain remove repair repeat report require rescue result return reveal review rhythm rocket school season second secret secure select senior series server settle severe should shower signal silent silver simple single sister sketch slight slowly smooth soccer social solid spring square stable standard station stomach storage street strong student subject submit suburb sudden suffer suggest supply surface survey suspect sustain symbol system talent target tender tennis terrible thanks theory though thought threat ticket traffic trouble tunnel typical unique united update upward useful usually valley victim vision visual volume wanted wealth weapon weekly whether winner winter wisdom within wonder worker yellow").split(" ");
+
   const LEVELS = {
     easy: {len: 4, max: 6},
     classic: {len: 5, max: 6},
     hard: {len: 6, max: 7},
   };
 
-  // Use the comprehensive NLTK-based word list when available; the small
-  // fallback lists above are kept so the game still works if wordlist.js
-  // is missing or fails to load.
+  // Answer selection uses the curated ANSWERS_* pools from wordlist.js when
+  // available (see dictFor below); the small fallback lists above are kept so
+  // the game still works if wordlist.js is missing or fails to load.
   function dictFor(len) {
+    // Answer pools (curated common words — always real English words)
     if (typeof window !== "undefined") {
-      if (len === 4 && window.WORDS_4) return window.WORDS_4;
-      if (len === 5 && window.WORDS_5) return window.WORDS_5;
-      if (len === 6 && window.WORDS_6) return window.WORDS_6;
+      if (len === 4 && window.ANSWERS_4 && window.ANSWERS_4.length) return window.ANSWERS_4;
+      if (len === 5 && window.ANSWERS_5 && window.ANSWERS_5.length) return window.ANSWERS_5;
+      if (len === 6 && window.ANSWERS_6 && window.ANSWERS_6.length) return window.ANSWERS_6;
     }
+    // Bundled fallbacks if wordlist.js failed to load
     if (len === 4) return FALLBACK_4;
     if (len === 5) return WORDS;
-    return WORDS; // hard mode falls back to 5-letter if no 6-letter dict
+    return FALLBACK_6;
   }
 
   function evaluate(guess, answer) {
@@ -486,7 +492,7 @@
         <br>• <b>Easy</b> — 4-letter word, 6 tries
         <br>• <b>Classic</b> — 5-letter word, 6 tries
         <br>• <b>Hard</b> — 6-letter word, 7 tries
-        <br><br>Answers are fetched live from Wikipedia when online (falling back to a bundled list of common English words offline). Valid guesses are checked against a comprehensive dictionary of ~8,500 five-letter words (built from the NLTK English word list).
+        <br><br>Answers come from a curated list of common English words. When online, fresh answers are fetched live from Wikipedia — but only accepted if they are real single-word dictionary entries (acronyms and proper-noun titles are rejected, falling back to the bundled list). Valid guesses are checked against a comprehensive dictionary of ~15,000 five-letter words (the official Wordle word list, bundled locally in <code>js/wordlist.js</code>).
         <br><br>After each guess, the tiles change color:
         <br>🟩 <b>Green</b> — letter is in the word and in the correct spot.
         <br>🟨 <b>Yellow</b> — letter is in the word but in the wrong spot.

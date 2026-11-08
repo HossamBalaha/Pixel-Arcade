@@ -1,7 +1,7 @@
 /* ancientwl — Ancient Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["ROME", "SPARTA", "TROY", "ATHENS", "MEMPHIS", "THEBES", "OLYMPUS", "DELPHI", "KNOSSOS", "BABYLON", "AKSUM", "CARTHAGE", "NINEVEH", "PETRA", "MACHU", "ANGKOR", "GIZA", "PYRAMID", "MUMMY", "SPHINX"];
+  const WORDS = ["AKSUM", "PETRA", "MUMMY", "EGYPT", "ROMAN", "GREEK", "ARENA", "RUINS", "SPEAR", "ARMOR", "OLIVE", "LOTUS", "OASIS", "ATLAS", "AUGUR", "RUNES", "TUNIC", "TOGAS", "FORUM", "CROWN"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

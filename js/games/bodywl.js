@@ -1,7 +1,7 @@
 /* bodywl — Body Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["HEART", "BRAIN", "LIVER", "SPINE", "ANKLE", "WRIST", "ELBOW", "TORSO", "ORGAN", "TENDON", "MUSCLE", "BLOOD", "VEINS", "ARTERY", "NERVE", "JOINT", "SKULL", "PELVIS", "RIB", "SPINE"];
+  const WORDS = ["HEART", "BRAIN", "LIVER", "SPINE", "ANKLE", "WRIST", "ELBOW", "TORSO", "ORGAN", "BLOOD", "VEINS", "NERVE", "JOINT", "SKULL", "THIGH", "TEETH", "MOUTH", "THUMB", "CHEEK", "NAILS"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

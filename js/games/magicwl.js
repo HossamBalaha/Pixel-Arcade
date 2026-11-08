@@ -1,7 +1,7 @@
 /* magicwl — Magic Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["SPELL", "WAND", "POTION", "SCROLL", "RUNE", "CHARM", "CURSE", "MAGIC", "WIZARD", "WITCH", "SORCERER", "CRYSTAL", "CAULDRON", "FAMILIAR", "ENCHANTED", "AMULET", "TALISMAN", "RITUAL", "SUMMON", "HEX"];
+  const WORDS = ["SPELL", "CHARM", "CURSE", "MAGIC", "WITCH", "RUNES", "STAFF", "CLOAK", "FAIRY", "PIXIE", "ELVES", "TROLL", "OGRES", "DEMON", "NYMPH", "SHADE", "TOTEM", "SIGIL", "RITES", "COVEN"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

@@ -1,7 +1,7 @@
 /* moviewl — Movie Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["TITANIC", "ROCKY", "JAWS", "ALIENS", "MATRIX", "AVATAR", "BATMAN", "GHOST", "FARGO", "GODFATHER", "GREASE", "JUNO", "JUMANJI", "TWILIGHT", "SHREK", "BOLT", "DUNE", "FROZEN", "RENT", "AMADEUS"];
+  const WORDS = ["ALIEN", "ROCKY", "GHOST", "SPEED", "TWINS", "GIANT", "SHANE", "MOANA", "BALTO", "BAMBI", "DUMBO", "BRAVE", "MULAN", "SHREK", "VENOM", "LOGAN", "WONKA", "TAKEN", "MUMMY", "HITCH"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

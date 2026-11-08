@@ -1,7 +1,7 @@
 /* weatherwl — Weather Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["STORM", "RAIN", "SNOW", "HAIL", "SLEET", "CLOUD", "FOGGY", "MIST", "WIND", "BREEZE", "GALE", "CYCLONE", "TORNADO", "BLIZZARD", "THUNDER", "LIGHTNING", "MONSOON", "DRIZZLE", "SUNNY", "FROSTY"];
+  const WORDS = ["STORM", "CLOUD", "SUNNY", "RAINY", "WINDY", "FOGGY", "MISTY", "SLEET", "FROST", "GALES", "GUSTS", "WINDS", "HUMID", "MUGGY", "VAPOR", "CHILL", "SNOWY", "FLOOD", "RAINS", "SNOWS"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

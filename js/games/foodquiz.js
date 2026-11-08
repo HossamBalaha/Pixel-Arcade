@@ -8,7 +8,7 @@
       a: 0
     },
     {
-      ingredients: "Rice, raw fish, nori, wasabi, soy sauce",
+      ingredients: "Rice, raw fish, wasabi, soy sauce",
       opts: ["Sashimi", "Nigiri Sushi", "Maki Roll", "Tempura"],
       a: 1
     },
@@ -32,7 +32,7 @@
       opts: ["Tikka Masala", "Butter Chicken", "Korma", "Vindaloo"],
       a: 1
     },
-    {ingredients: "Soy sauce, noodles, pork, egg, scallions", opts: ["Ramen", "Udon", "Yakisoba", "Lo Mein"], a: 2},
+    {ingredients: "Soy sauce, noodles, pork, egg, scallions", opts: ["Ramen", "Udon", "Yakisoba", "Lo Mein"], a: 3},
     {
       ingredients: "Rice, saffron, chicken, seafood, vegetables",
       opts: ["Paella", "Risotto", "Biryani", "Jambalaya"],
@@ -46,7 +46,7 @@
     {
       ingredients: "Corn tortilla, shredded chicken, mole sauce",
       opts: ["Enchilada", "Tamale", "Mole Poblano", "Tostada"],
-      a: 2
+      a: 0
     },
     {ingredients: "Phyllo dough, nuts, honey, cinnamon", opts: ["Baklava", "Knafeh", "Turkish Delight", "Halva"], a: 0},
     {
@@ -101,17 +101,17 @@
       a: 0
     },
     {
-      ingredients: "Cornmeal, water, salt, shaped into porridge",
+      ingredients: "Cornmeal, water, salt, butter, parmesan — an Italian porridge",
       opts: ["Polenta", "Grits", "Couscous", "Porridge"],
-      a: 1
+      a: 0
     },
     {
       ingredients: "Whipped cream, condensed milk, sugar, frozen",
       opts: ["Ice Cream", "Semifreddo", "Gelato", "Mousse"],
-      a: 2
+      a: 0
     },
     {
-      ingredients: "Beef, cabbage, root vegetables, slow-cooked",
+      ingredients: "Corned beef, cabbage, potatoes, carrots, slow-boiled",
       opts: ["Stew", "Corned Beef & Cabbage", "Borscht", "Goulash"],
       a: 1
     },
@@ -132,9 +132,9 @@
       a: 0
     },
     {
-      ingredients: "Tomato, cucumber, pepper, onion, feta, olives",
+      ingredients: "Tomato, mozzarella, basil, olive oil, balsamic glaze",
       opts: ["Greek Salad", "Caprese", "Cobb Salad", "Niçoise"],
-      a: 0
+      a: 1
     },
     {
       ingredients: "Pita bread, chickpea fritters, tahini, salad",
@@ -147,12 +147,12 @@
       a: 0
     },
     {
-      ingredients: "Thin batter, fried in oil, dusted with sugar",
+      ingredients: "Star-piped dough, fried until crisp, rolled in cinnamon sugar",
       opts: ["Funnel Cake", "Churro", "Beignet", "Donut"],
       a: 1
     },
     {
-      ingredients: "Shredded potato, fried into a crispy patty",
+      ingredients: "Shredded potato and onion pancake, fried in oil — a Hanukkah classic",
       opts: ["Hash Browns", "Latke", "Tater Tots", "Rösti"],
       a: 1
     },
@@ -172,7 +172,11 @@
       opts: ["Pepperoni Pizza", "Margherita", "Calzone", "Stromboli"],
       a: 0
     },
-    {ingredients: "Dumpling wrapper, pork, cabbage, steamed", opts: ["Dumpling", "Wonton", "Gyoza", "Baozi"], a: 2},
+    {
+      ingredients: "Thin wrapper, pork and cabbage filling, pan-fried then steamed",
+      opts: ["Dumpling", "Wonton", "Gyoza", "Baozi"],
+      a: 2
+    },
     {
       ingredients: "Cabbage, carrots, mayonnaise, sometimes vinegar",
       opts: ["Coleslaw", "Sauerkraut", "Kimchi", "Pickles"],
@@ -206,9 +210,9 @@
       a: 0
     },
     {
-      ingredients: "Black beans, rice, plantain, pork, Cuban bread",
+      ingredients: "Black beans and white rice, cooked together with onion and spices",
       opts: ["Cuban Plate", "Moros y Cristianos", "Arroz con Pollo", "Maduros"],
-      a: 0
+      a: 1
     },
     {
       ingredients: "Coffee, hot water, whipped sugar, cream",

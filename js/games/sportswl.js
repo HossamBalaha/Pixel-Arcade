@@ -1,7 +1,7 @@
 /* sportswl — Sport Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["RUGBY", "GOLF", "JUDO", "POLO", "SKATE", "SURF", "YOGA", "SKIING", "RACING", "SOCCER", "TENNIS", "DIVING", "BOXING", "CRICKET", "ROWING", "KARATE", "SQUASH", "KABADDI", "CURLING", "ARCHERY"];
+  const WORDS = ["CHESS", "RUGBY", "DARTS", "RACES", "RELAY", "EVENT", "MEDAL", "COACH", "TEAMS", "GOALS", "SCORE", "MATCH", "GAMES", "SPORT", "RACER", "RIDER", "SKIER", "DIVER", "ROWER", "PITCH"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

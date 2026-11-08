@@ -21,7 +21,6 @@
     {q: "Which country's flag is 🇦🇺?", opts: ["New Zealand", "Australia", "UK", "Fiji"], a: 1},
     {q: "Which country's flag is 🇿🇦?", opts: ["South Africa", "Zimbabwe", "Zambia", "Namibia"], a: 0},
     {q: "Which country's flag is 🇪🇬?", opts: ["Iraq", "Egypt", "Yemen", "Syria"], a: 1},
-    {q: "Which country's flag is 🇮🇹?", opts: ["Italy", "Mexico", "Ireland", "Hungary"], a: 0},
     {q: "Which country's flag is 🇳🇱?", opts: ["Luxembourg", "Netherlands", "France", "Russia"], a: 1},
     {q: "Which country's flag is 🇧🇪?", opts: ["Germany", "Belgium", "Netherlands", "France"], a: 1},
     {q: "Which country's flag is 🇵🇹?", opts: ["Spain", "Portugal", "Italy", "Brazil"], a: 1},
@@ -53,7 +52,7 @@
     {q: "Which country's flag is 🇰🇪?", opts: ["Uganda", "Kenya", "Tanzania", "Rwanda"], a: 1},
     {q: "Which country's flag is 🇳🇬?", opts: ["Nigeria", "Niger", "Ghana", "Ivory Coast"], a: 0},
     {q: "Which country's flag is 🇲🇦?", opts: ["Algeria", "Morocco", "Tunisia", "Libya"], a: 1},
-    {q: "Which country's flag is 🇦🇷?", opts: ["Argentina", "Uruguay", "Chile", "Paraguay"], a: 0},
+    {q: "Which country's flag is 🇺🇾?", opts: ["Argentina", "Uruguay", "Chile", "Paraguay"], a: 1},
     {q: "Which country's flag is 🇨🇱?", opts: ["Argentina", "Chile", "Peru", "Bolivia"], a: 1},
     {q: "Which country's flag is 🇵🇪?", opts: ["Peru", "Mexico", "Spain", "Italy"], a: 0},
   ];

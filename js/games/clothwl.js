@@ -1,7 +1,7 @@
 /* clothwl — Clothing Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["SHIRT", "PANTS", "SKIRT", "DRESS", "HAT", "SCARF", "GLOVE", "COAT", "SOCK", "SHOE", "BOOTS", "SANDAL", "VEIL", "CLOAK", "TUNIC", "KIMONO", "SARI", "KILT", "BERET", "BOWTIE"];
+  const WORDS = ["SHIRT", "PANTS", "SKIRT", "DRESS", "SCARF", "GLOVE", "BOOTS", "CLOAK", "TUNIC", "BERET", "JEANS", "PARKA", "SHAWL", "SMOCK", "FROCK", "ROBES", "BELTS", "DERBY", "MITTS", "HEELS"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

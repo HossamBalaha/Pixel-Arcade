@@ -11,7 +11,7 @@
     {q: "Capital of Spain?", opts: ["Barcelona", "Madrid", "Seville", "Valencia"], a: 1},
     {q: "Capital of Germany?", opts: ["Munich", "Hamburg", "Berlin", "Frankfurt"], a: 2},
     {q: "Capital of Egypt?", opts: ["Cairo", "Alexandria", "Giza", "Luxor"], a: 0},
-    {q: "Capital of India?", opts: ["Mumbai", "Delhi", "Kolkata", "Chennai"], a: 1},
+    {q: "Capital of India?", opts: ["Mumbai", "New Delhi", "Kolkata", "Chennai"], a: 1},
     {q: "Capital of China?", opts: ["Shanghai", "Hong Kong", "Beijing", "Guangzhou"], a: 2},
     {q: "Capital of Mexico?", opts: ["Cancún", "Guadalajara", "Mexico City", "Tijuana"], a: 2},
     {q: "Capital of Argentina?", opts: ["Córdoba", "Buenos Aires", "Rosario", "Mendoza"], a: 1},

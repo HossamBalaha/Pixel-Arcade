@@ -1,41 +1,63 @@
-/* Word Ladder (Semantle) — transform the START word into the END word, one letter at a time */
+/* Semantle — guess the secret word by semantic similarity (offline edition).
+   Each guess is scored 0-100% for how semantically close it is to the target.
+   100% = the word itself. The hallmark: an ever-growing list of guesses
+   sorted by similarity, so you home in on the target. */
 (function () {
-  // 10 inline puzzles. Each has a start, end, and a known solution ladder.
+  // 10 inline puzzles. Each has a target word and a curated list of associated
+  // words with their similarity to the target (percent). Curated by hand —
+  // an offline stand-in for real word-vector similarity.
   const PUZZLES = [
-    {start: "COLD", end: "WARM", solution: ["COLD", "CORD", "CARD", "WARD", "WARM"]},
-    {start: "HEAD", end: "TAIL", solution: ["HEAD", "HEAL", "HEAR", "HEIR", "HAIR", "HAIL", "TAIL"]},
-    {start: "LOVE", end: "HATE", solution: ["LOVE", "LONE", "LANE", "LATE", "HATE"]},
-    {start: "SHIP", end: "DOCK", solution: ["SHIP", "SHOP", "CHOP", "COOP", "COOK", "COCK", "DOCK"]},
-    {start: "FISH", end: "BIRD", solution: ["FISH", "WISH", "WISP", "WASP", "WARP", "WARD", "BARD", "BIRD"]},
-    {start: "RIDE", end: "WALK", solution: ["RIDE", "RILE", "TILE", "TALE", "TALK", "WALK"]},
-    {start: "WEST", end: "EAST", solution: ["WEST", "VEST", "VAST", "EAST"]},
-    {start: "RICH", end: "POOR", solution: ["RICH", "RICK", "ROCK", "ROOK", "BOOK", "BOOR", "POOR"]},
-    {start: "FIRE", end: "WOOD", solution: ["FIRE", "FIRM", "FORM", "FORD", "FOOD", "WOOD"]},
-    {start: "WARM", end: "COOL", solution: ["WARM", "WORM", "WORD", "WOOD", "WOOL", "COOL"]},
+    {
+      target: "coffee",
+      assoc: [["espresso", 96], ["caffeine", 94], ["latte", 92], ["mocha", 91], ["brew", 88], ["cappuccino", 86], ["beans", 84], ["mug", 82], ["roast", 80], ["morning", 78], ["drink", 76], ["cafe", 74], ["barista", 72], ["kettle", 70], ["sugar", 68], ["cream", 66], ["cup", 64], ["bitter", 62], ["aroma", 60], ["grounds", 58], ["decaf", 56], ["filter", 54], ["java", 50], ["black", 44], ["hot", 42], ["tea", 40]]
+    },
+    {
+      target: "mountain",
+      assoc: [["peak", 96], ["summit", 95], ["alps", 92], ["everest", 90], ["climb", 88], ["slope", 84], ["valley", 82], ["hill", 80], ["altitude", 78], ["ridge", 76], ["glacier", 74], ["cliff", 72], ["rocks", 70], ["hiking", 68], ["snow", 66], ["base", 64], ["goats", 60], ["range", 58], ["terrain", 54], ["foothills", 52], ["pass", 48], ["pines", 46], ["fog", 44], ["top", 42]]
+    },
+    {
+      target: "book",
+      assoc: [["novel", 96], ["read", 94], ["pages", 92], ["story", 90], ["chapter", 88], ["author", 86], ["library", 84], ["cover", 82], ["shelf", 80], ["literature", 78], ["paperback", 76], ["plot", 74], ["bookstore", 72], ["words", 70], ["fiction", 68], ["spine", 66], ["bookmark", 64], ["publisher", 62], ["edition", 60], ["reader", 58], ["text", 56], ["prose", 54], ["title", 52], ["poetry", 44], ["diary", 46], ["essay", 48], ["writing", 42]]
+    },
+    {
+      target: "rain",
+      assoc: [["drizzle", 96], ["shower", 94], ["storm", 92], ["wet", 90], ["umbrella", 88], ["clouds", 86], ["downpour", 84], ["puddles", 82], ["thunder", 80], ["weather", 78], ["damp", 76], ["monsoon", 74], ["drops", 72], ["mist", 70], ["flood", 68], ["coat", 66], ["boots", 64], ["season", 62], ["grey", 60], ["water", 58], ["snow", 56], ["forecast", 54], ["sleet", 52], ["window", 50], ["spring", 46], ["autumn", 44], ["dry", 42]]
+    },
+    {
+      target: "bread",
+      assoc: [["loaf", 96], ["toast", 94], ["crust", 92], ["baker", 90], ["slices", 88], ["dough", 86], ["sandwich", 84], ["wheat", 82], ["bakery", 80], ["butter", 78], ["crumbs", 76], ["flour", 74], ["bake", 72], ["grain", 70], ["rolls", 68], ["sourdough", 66], ["oven", 64], ["yeast", 62], ["baguette", 60], ["rye", 58], ["knead", 50], ["bagels", 46], ["biscuit", 44], ["hungry", 42]]
+    },
+    {
+      target: "clock",
+      assoc: [["watch", 96], ["time", 94], ["hour", 92], ["minute", 90], ["tick", 88], ["alarm", 86], ["hands", 84], ["chime", 82], ["dial", 80], ["seconds", 78], ["timer", 76], ["noon", 74], ["midnight", 72], ["pendulum", 70], ["quartz", 68], ["wall", 66], ["wrist", 64], ["digital", 62], ["analog", 60], ["cuckoo", 56], ["bells", 54], ["late", 52], ["early", 50], ["sundial", 48], ["hourglass", 46], ["stopwatch", 44], ["gears", 42]]
+    },
+    {
+      target: "garden",
+      assoc: [["flowers", 96], ["plants", 94], ["soil", 92], ["seeds", 90], ["bloom", 88], ["weeds", 86], ["vegetables", 84], ["lawn", 82], ["roses", 78], ["sprout", 76], ["greenhouse", 74], ["compost", 72], ["rake", 70], ["hose", 68], ["tulips", 66], ["fence", 64], ["plot", 62], ["gardener", 60], ["shrubs", 58], ["mulch", 56], ["petals", 54], ["pruning", 52], ["harvest", 50], ["bees", 48], ["dirt", 46], ["spade", 44], ["watering", 42]]
+    },
+    {
+      target: "dream",
+      assoc: [["nightmare", 96], ["sleep", 94], ["wish", 92], ["fantasy", 90], ["night", 88], ["visions", 86], ["imagine", 84], ["pillow", 82], ["hope", 80], ["memory", 78], ["daydream", 76], ["surreal", 74], ["wake", 72], ["unconscious", 70], ["reverie", 68], ["aspiration", 66], ["goals", 64], ["mind", 62], ["subconscious", 60], ["lucid", 58], ["bedroom", 56], ["sheep", 54], ["illusion", 52], ["desire", 50], ["slumber", 48], ["bedtime", 46], ["reality", 44], ["snoring", 42]]
+    },
+    {
+      target: "bridge",
+      assoc: [["span", 96], ["river", 94], ["cross", 92], ["arch", 90], ["cables", 88], ["towers", 86], ["suspension", 84], ["steel", 82], ["road", 80], ["golden", 78], ["gap", 76], ["planks", 74], ["truss", 72], ["pier", 70], ["ferry", 68], ["lanes", 66], ["brooklyn", 64], ["engineers", 62], ["overpass", 60], ["rope", 58], ["viaduct", 56], ["crossing", 54], ["pillars", 52], ["drawbridge", 50], ["deck", 48], ["traffic", 46], ["rail", 44]]
+    },
+    {
+      target: "honey",
+      assoc: [["bees", 96], ["sweet", 94], ["sugar", 92], ["hive", 90], ["nectar", 88], ["comb", 86], ["flowers", 84], ["golden", 82], ["syrup", 80], ["beeswax", 78], ["amber", 76], ["dipper", 74], ["sticky", 72], ["jars", 70], ["queen", 68], ["pollen", 66], ["harvest", 64], ["lemon", 62], ["tea", 60], ["mead", 58], ["beekeeper", 56], ["wax", 54], ["clover", 50], ["drips", 48], ["bears", 46], ["spread", 44]]
+    },
   ];
   const MAX_HINTS = 3;
-
-  // ~270 common 4-letter English words (dictionary for valid moves).
-  const DICT = new Set(("able acid alms also area army away baby back bake ball band bank bare bard bark barn base bath beam bean bear beat beef been beer bell belt bend best bide bike bind bird bite blew blow blue boat body bold bolt bone book boom boor born boss both bowl bred brew bulb bulk burn bury bush busy cafe cake calm came camp card care case cash cast cave cell chat chef chip chop city clay clip club coal coat code cold come cook cool coop cock cord cope copy core cork corn cost crab crew crop cube cuff cult cute dark dart data date dawn dead deaf deal dear debt deck deep deer demo desk dial dice diet dime dine dirt dish dive dock does doll done door dope dose down doze drab drag draw drew drop drug drum dual duck dude dull dump dust duty each earn ease east easy edge edit else ever evil exit face fact fade fail fair fall fame fare farm fast fate fear feat feed feel feet fell felt file fill film find fine fire firm fish five flag flat flaw fled flew flex flip flow foam fold folk food foot ford fork form fort four fowl free from fuel full fund gain game gate gave gear gene gift give glad glow glue goal goes gold golf gone good grab gray grew grid grip grow gulf hair half hail hall hand hang hard harm hate have head heal hear heat heir held hell help here hero high hike hill hint hire hold hole holy home hope horn host hour huge hung hunt hurt hush icon idea idle inch into iron item jail jazz join jolt joke jump june just keep kept kick kind king kiss knee knew know lace lack lady laid lake lamb lamp land lane last late lava lawn lazy lead leaf lean leap left lend lens less lest lice lift like lily lime line link lion lips list live load loan lock logo long look loop lord lose loss lost loud love luck lump lung lone made mail main make male mall many mark mass mate math maze meal mean meat meet melt menu mile milk mill mind mine miss mode mold mood moon more most move much must nail name navy near neat neck need nest news next nice nine node none noon nose note noun nude null oath odds ogre okay omen once only onto open opal oral ours oven owes over pace pack page paid pain pair pale palm park part pass past path peak peal pear peel peer perk pick pier pile pine pink pipe plan play plea plot plug plus poem poke pole poll pond pool poor pore port pose post pour pray prey pull pump punk pure push quit quiz race rage rail rain rank rare rate read real reap rear redo reed reef reek rely rent rest rice rich ride rick rile ring rise risk rite road roar robe rock role roll rook roof room root rope rose ruby rude rule rush rust safe sage said sail sake sale salt same sand sane sang save scan seal seat seed seek seen self sell send sent shed ship shoe shop shot show shut sick side sift sigh sign silk sing sink site size skin skip slam slap sled slim slip slow snap snow soap soda sofa soft soil sold sole some song soon sort soul soup sour sown span spat spin spot stab stag star stay stem step stir stop stub such suit sung sunk sure swap tail take tale talk tall tame tank tape task team tear tech teen tell tend tent term test text than that them then they thin this thus tide tied tile tire toad toll tone took tool tops toss tour town trap tree trim trip true tube tuna turn twig twin type ugly unit upon urge used user vain vary vase vast vein vest very veto vice view vile vine void vote wage wait wake walk wall want ward warm warn warp wart wash wasp wave weak wear week well went were west what when whim whip wide wife wild will wind wine wing wink wire wise wish with woke wolf wisp wood wool word wore work worm worn wrap yard yarn yawn yeah year yell yoga yolk your zero zone zoom").split(" "));
-
-  function differByOne(a, b) {
-    if (a.length !== b.length) return false;
-    let d = 0;
-    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) {
-      d++;
-      if (d > 1) return false;
-    }
-    return d === 1;
-  }
 
   let live = null;
 
   GameRegistry.register({
     id: "semantle",
-    name: "Word Ladder",
-    icon: "🪜",
+    name: "Semantle",
+    icon: "🌡️",
     category: "word",
-    description: "Transform the START word into the END word, one letter at a time",
+    description: "Guess the secret word — similarity percentage tells you how close you are",
     tags: ["word", "logic", "variant"],
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
@@ -44,273 +66,236 @@
       function later(fn, ms) {
         const id = setTimeout(() => {
           if (!alive) return;
-          if (!alive) return;
-          if (alive) fn();
+          fn();
         }, ms);
         pendingTimers.push(id);
         return id;
       }
 
       let puzzle = null;
-      let ladder = []; // [START, w1, w2, ...]
+      let assoc = null;      // Map<word, similarity>
+      let guesses = [];      // [{word, sim}]
       let over = false;
       let revealed = false;
       let hintsUsed = 0;
-      let attempts = 0;
 
       root.innerHTML = `
         <div class="scoreboard">
-          <div class="score-cell"><div class="label">Start</div><div class="val" id="sm-start">—</div></div>
-          <div class="score-cell"><div class="label">End</div><div class="val" id="sm-end">—</div></div>
-          <div class="score-cell"><div class="label">Steps</div><div class="val" id="sm-steps">0</div></div>
+          <div class="score-cell"><div class="label">Guesses</div><div class="val" id="sm-guesses">0</div></div>
+          <div class="score-cell"><div class="label">Closest</div><div class="val" id="sm-closest">—</div></div>
           <div class="score-cell"><div class="label">Best</div><div class="val" id="sm-best">—</div></div>
         </div>
-        <div class="status info" id="sm-status">Transform START into END one letter at a time</div>
-        <div id="sm-ladder" class="col" style="gap:6px;align-items:center;"></div>
-        <div class="row" style="justify-content:center;gap:8px;margin-top:8px;">
-          <input id="sm-input" type="text" maxlength="4" autocomplete="off" placeholder="Type a 4-letter word…"
-            style="padding:10px 14px;background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.2em;width:140px;text-align:center;" />
-          <button class="btn primary" id="sm-submit">Submit</button>
-          <button class="btn" id="sm-back">⌫ Back</button>
+        <div class="status info" id="sm-status">Guess any word — its similarity to the secret word appears below</div>
+        <div class="row" style="justify-content:center;gap:8px;">
+          <input id="sm-input" type="text" autocomplete="off" placeholder="Type any word…"
+            style="padding:10px 14px;background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;flex:1;max-width:280px;" />
+          <button class="btn primary" id="sm-submit">Guess</button>
         </div>
-        <p class="hint">Each step must differ by exactly one letter from the previous word and be a real 4-letter word. Stuck? <b>Hint</b> (max 3) or <b>Solve</b>.</p>
+        <div class="col" id="sm-past" style="gap:6px;max-height:300px;overflow-y:auto;"></div>
+        <p class="hint">Type a word and press <b>Enter</b>. 100% = the secret word. Higher = closer. Words not in the puzzle's association space show as "cold". <b>Hint</b> reveals a letter of the secret word (max ${MAX_HINTS}).</p>
       `;
 
       const statusEl = root.querySelector("#sm-status");
-      const ladderEl = root.querySelector("#sm-ladder");
+      const pastEl = root.querySelector("#sm-past");
       const inputEl = root.querySelector("#sm-input");
 
-      function renderLadder() {
-        ladderEl.innerHTML = "";
-        for (let i = 0; i < ladder.length; i++) {
-          const w = ladder[i];
+      function simColor(s) {
+        if (s >= 90) return "var(--success)";
+        if (s >= 70) return "var(--accent-2)";
+        if (s >= 50) return "var(--warning)";
+        if (s >= 30) return "var(--text-muted)";
+        return "var(--bg-soft)";
+      }
+
+      function simLabel(s) {
+        if (s === 100) return "the word!";
+        if (s >= 90) return "burning hot";
+        if (s >= 70) return "hot";
+        if (s >= 50) return "warm";
+        if (s >= 30) return "cool";
+        if (s >= 12) return "cold";
+        return "freezing";
+      }
+
+      // Deterministic pseudo-similarity for words outside the curated list:
+      // a small value derived from letter overlap with the target, so repeated
+      // guesses of unrelated words stay consistently chilly.
+      function fallbackSim(word) {
+        const t = puzzle.target.split("");
+        let shared = 0;
+        for (const ch of new Set(word.split(""))) {
+          if (t.includes(ch)) shared++;
+        }
+        const uniq = new Set(word.split("")).size || 1;
+        return Math.round(Math.min(11, (shared / uniq) * 11));
+      }
+
+      function similarity(word) {
+        if (word === puzzle.target) return 100;
+        if (assoc.has(word)) return assoc.get(word);
+        return fallbackSim(word);
+      }
+
+      function renderPast() {
+        pastEl.innerHTML = "";
+        if (guesses.length === 0) {
+          const p = document.createElement("p");
+          p.className = "hint";
+          p.textContent = "Your guesses will appear here, sorted by similarity (closest first).";
+          pastEl.appendChild(p);
+          return;
+        }
+        const sorted = guesses.slice().sort((a, b) => b.sim - a.sim);
+        for (const g of sorted) {
           const row = document.createElement("div");
           row.style.display = "flex";
           row.style.alignItems = "center";
-          row.style.gap = "8px";
-          const num = document.createElement("span");
-          num.textContent = (i + 1) + ".";
-          num.style.color = "var(--text-muted)";
-          num.style.width = "24px";
-          num.style.textAlign = "right";
-          const word = document.createElement("span");
-          word.textContent = w;
-          word.style.fontFamily = "var(--font-mono)";
-          word.style.fontSize = "1.4rem";
-          word.style.fontWeight = "700";
-          word.style.letterSpacing = "0.2em";
-          word.style.padding = "6px 14px";
-          word.style.background = "var(--bg-elev)";
-          word.style.border = "1px solid var(--border)";
-          word.style.borderRadius = "var(--radius-sm)";
-          if (i === 0) {
-            word.style.borderColor = "var(--accent)";
-            word.style.color = "var(--accent)";
-          } else if (w === puzzle.end) {
-            word.style.borderColor = "var(--success)";
-            word.style.color = "var(--success)";
+          row.style.justifyContent = "space-between";
+          row.style.padding = "8px 12px";
+          row.style.background = "var(--bg-elev)";
+          row.style.border = "1px solid var(--border)";
+          row.style.borderRadius = "var(--radius-sm)";
+          if (g.sim === 100) {
+            row.style.borderColor = "var(--success)";
+            row.style.background = "rgba(22, 163, 74, 0.1)";
           }
-          row.appendChild(num);
-          row.appendChild(word);
-          ladderEl.appendChild(row);
+          if (g.sim < 12) row.style.opacity = "0.55";
+          const left = document.createElement("div");
+          left.innerHTML = `<b style="font-family:var(--font-mono);">${g.word}</b> <span style="color:var(--text-muted);font-size:0.85rem;">— ${simLabel(g.sim)}</span>`;
+          const right = document.createElement("div");
+          right.style.fontFamily = "var(--font-mono)";
+          right.style.fontWeight = "700";
+          right.style.color = simColor(g.sim);
+          right.textContent = g.sim + "%";
+          row.appendChild(left);
+          row.appendChild(right);
+          pastEl.appendChild(row);
         }
-        root.querySelector("#sm-steps").textContent = Math.max(0, ladder.length - 1);
       }
 
-      function submit() {
-        if (over) return;
-        const raw = inputEl.value.trim().toUpperCase();
-        inputEl.value = "";
-        if (!raw || raw.length !== 4 || !/^[A-Z]+$/.test(raw)) {
-          AudioFX.error();
-          statusEl.textContent = "Type a 4-letter word using only letters";
-          statusEl.className = "status lose";
-          later(() => {
-            if (alive && !over) resetStatus();
-          }, 1500);
-          return;
+      function renderStats() {
+        const gEl = root.querySelector("#sm-guesses");
+        const cEl = root.querySelector("#sm-closest");
+        const bEl = root.querySelector("#sm-best");
+        if (gEl) gEl.textContent = guesses.length;
+        if (cEl) {
+          if (over) cEl.textContent = puzzle.target;
+          else if (guesses.length) {
+            const best = Math.max(...guesses.map(g => g.sim));
+            cEl.textContent = best + "%";
+          } else cEl.textContent = "—";
         }
-        const current = ladder[ladder.length - 1];
-        if (raw === current) {
-          AudioFX.error();
-          statusEl.textContent = `"${raw}" is the current word — pick a different one`;
-          statusEl.className = "status lose";
-          later(() => {
-            if (alive && !over) resetStatus();
-          }, 1500);
-          return;
+        if (bEl) {
+          const best = Storage.getBest("semantle");
+          bEl.textContent = best ? best + " guesses" : "—";
         }
-        if (!differByOne(raw, current)) {
-          AudioFX.error();
-          statusEl.textContent = `"${raw}" differs by more than one letter from "${current}"`;
-          statusEl.className = "status lose";
-          later(() => {
-            if (alive && !over) resetStatus();
-          }, 1500);
-          return;
-        }
-        if (!DICT.has(raw.toLowerCase())) {
-          AudioFX.error();
-          statusEl.textContent = `"${raw}" isn't in the dictionary`;
-          statusEl.className = "status lose";
-          later(() => {
-            if (alive && !over) resetStatus();
-          }, 1500);
-          return;
-        }
-        // Already in ladder? Disallow (avoid loops)
-        if (ladder.includes(raw)) {
-          AudioFX.error();
-          statusEl.textContent = `"${raw}" is already in your ladder — no loops allowed`;
-          statusEl.className = "status lose";
-          later(() => {
-            if (alive && !over) resetStatus();
-          }, 1500);
-          return;
-        }
-        ladder.push(raw);
-        attempts++;
-        AudioFX.place();
-        renderLadder();
+      }
 
-        if (revealed) {
-          over = true;
-          statusEl.textContent = `Solution revealed — full ladder shown in modal`;
+      function submitGuess() {
+        if (over || !puzzle) return;
+        const raw = (inputEl.value || "").trim().toLowerCase();
+        if (!raw) return;
+        if (!/^[a-z]+$/.test(raw)) {
+          statusEl.textContent = "Letters only, please.";
           statusEl.className = "status lose";
-          AudioFX.lose();
           return;
         }
-        if (raw === puzzle.end) {
+        if (guesses.some(g => g.word === raw)) {
+          statusEl.textContent = `You already tried "${raw}" (${similarity(raw)}%).`;
+          statusEl.className = "status info";
+          return;
+        }
+        const sim = similarity(raw);
+        guesses.push({word: raw, sim});
+        inputEl.value = "";
+        AudioFX.flip();
+        if (sim === 100) {
           over = true;
-          statusEl.textContent = `🎉 Reached ${puzzle.end} in ${ladder.length - 1} step${ladder.length - 1 === 1 ? "" : "s"} (${attempts} attempt${attempts === 1 ? "" : "s"})!`;
+          statusEl.textContent = `🎉 Found it! The word was "${puzzle.target}" — ${guesses.length} guesses.`;
           statusEl.className = "status win";
           AudioFX.win();
-          const metric = (ladder.length - 1) * 100 + attempts; // fewer steps AND fewer attempts = better
+          App.recordResult(true, guesses.length);
           const best = Storage.getBest("semantle");
-          // Lower is better — use a different metric (negative for "best" tracking)
-          const score = -metric;
-          if (!best || score > best) {
-            Storage.setBest("semantle", score);
-            root.querySelector("#sm-best").textContent = `${ladder.length - 1} steps`;
-            App.toast(`New best: ${ladder.length - 1} steps`, "success");
+          if (!best || guesses.length < best) {
+            Storage.setBest("semantle", guesses.length);
+            App.toast("New best! " + guesses.length + " guesses", "success");
           }
         } else {
-          statusEl.textContent = `Good! "${raw}" added. Continue toward ${puzzle.end}.`;
+          statusEl.textContent = `"${raw}" — ${sim}% (${simLabel(sim)}). ${sim >= 70 ? "Getting warmer!" : sim >= 30 ? "Keep going…" : "Cold."}`;
           statusEl.className = "status info";
         }
-        inputEl.focus();
+        renderPast();
+        renderStats();
       }
-
-      function resetStatus() {
-        statusEl.textContent = `Transform ${puzzle.start} into ${puzzle.end} — one letter at a time`;
-        statusEl.className = "status info";
-      }
-
-      function back() {
-        if (over) return;
-        if (ladder.length <= 1) {
-          AudioFX.error();
-          return;
-        }
-        ladder.pop();
-        AudioFX.click();
-        renderLadder();
-        resetStatus();
-      }
-
-      inputEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          submit();
-        } else if (e.key === "Backspace" && inputEl.value === "") {
-          e.preventDefault();
-          back();
-        }
-      });
-      root.querySelector("#sm-submit").addEventListener("click", submit);
-      root.querySelector("#sm-back").addEventListener("click", back);
 
       function doHint() {
-        if (over) {
-          App.toast("Game is over — start a new one", "info");
+        if (over || !puzzle) {
+          App.toast("Start a new game first", "info");
           return;
         }
         if (hintsUsed >= MAX_HINTS) {
-          App.toast(`No hints left (max ${MAX_HINTS} per game)`, "warning");
+          App.toast("No hints left this round", "info");
           return;
         }
-        const current = ladder[ladder.length - 1];
-        // Find next correct word in the solution ladder
-        const idxInSol = puzzle.solution.indexOf(current);
-        let nextWord = null;
-        if (idxInSol >= 0 && idxInSol + 1 < puzzle.solution.length) {
-          nextWord = puzzle.solution[idxInSol + 1];
-        } else {
-          // current not in solution — find the solution word closest to current that we can step toward
-          // Pick the solution word that differs by one letter from current and is on the path
-          for (let i = 0; i < puzzle.solution.length; i++) {
-            if (differByOne(current, puzzle.solution[i]) && !ladder.includes(puzzle.solution[i])) {
-              nextWord = puzzle.solution[i];
-              break;
-            }
-          }
+        // reveal one letter of the target (position order shuffled once)
+        if (!doHint.order) {
+          doHint.order = puzzle.target.split("")
+            .map((c, i) => i)
+            .sort(() => Math.random() - 0.5);
         }
-        if (!nextWord) {
-          App.toast("No direct hint available — try a different word first", "info");
-          return;
-        }
+        const idx = doHint.order[hintsUsed];
         hintsUsed++;
-        ladder.push(nextWord);
         AudioFX.reveal();
-        renderLadder();
-        if (nextWord === puzzle.end) {
-          over = true;
-          statusEl.textContent = `🎉 Reached ${puzzle.end} (with a hint)! Ladder complete.`;
-          statusEl.className = "status win";
-          AudioFX.win();
-        } else {
-          statusEl.textContent = `Hint: revealed next word "${nextWord}" on the solution path`;
-          statusEl.className = "status info";
-        }
+        App.toast(`Hint: letter ${idx + 1} is "${puzzle.target[idx].toUpperCase()}" (${MAX_HINTS - hintsUsed} left)`, "info");
       }
 
       function doSolve() {
-        if (over) {
-          App.toast("Game is over — start a new one", "info");
-          return;
-        }
-        revealed = true;
+        if (over || !puzzle) return;
         over = true;
-        AudioFX.lose();
-        const fullLadder = puzzle.solution.join(" → ");
-        statusEl.textContent = `Solution revealed`;
+        revealed = true;
+        statusEl.textContent = `Solution revealed: the word was "${puzzle.target}".`;
         statusEl.className = "status lose";
-        ladder = puzzle.solution.slice();
-        renderLadder();
-        App.showModal("Word Ladder solution",
-          `The shortest path from <b>${puzzle.start}</b> to <b>${puzzle.end}</b>:<br><br>
-          <span style="font-family:var(--font-mono);font-weight:700;letter-spacing:0.1em;">${fullLadder}</span>`);
+        App.recordResult(false, 0);
+        renderPast();
+        renderStats();
       }
 
       function newGame() {
         puzzle = PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
-        ladder = [puzzle.start];
+        assoc = new Map(puzzle.assoc);
+        guesses = [];
         over = false;
         revealed = false;
         hintsUsed = 0;
-        attempts = 0;
-        root.querySelector("#sm-start").textContent = puzzle.start;
-        root.querySelector("#sm-end").textContent = puzzle.end;
-        const best = Storage.getBest("semantle");
-        root.querySelector("#sm-best").textContent = best ? `${Math.abs(best / 100) | 0} steps` : "—";
-        resetStatus();
-        renderLadder();
+        doHint.order = null;
+        statusEl.textContent = "Guess any word — its similarity to the secret word appears below";
+        statusEl.className = "status info";
+        inputEl.value = "";
         inputEl.focus();
+        renderPast();
+        renderStats();
       }
 
-      live = {hint: doHint, solve: doSolve};
-      newGame();
+      root.querySelector("#sm-submit").addEventListener("click", submitGuess);
+      inputEl.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitGuess();
+        }
+      });
+      const newBtn = document.createElement("button");
+      newBtn.className = "btn";
+      newBtn.textContent = "New puzzle";
+      newBtn.style.marginTop = "10px";
+      newBtn.addEventListener("click", () => {
+        AudioFX.click();
+        newGame();
+      });
+      pastEl.parentNode.insertBefore(newBtn, pastEl.nextSibling);
 
+      live = {hint: doHint, solve: doSolve};
+
+      newGame();
       return function cleanup() {
         alive = false;
         live = null;
@@ -324,15 +309,11 @@
       if (live && live.solve) live.solve();
     },
     help: function () {
-      App.showModal("How to play Word Ladder",
-        `Transform the <b>START</b> word into the <b>END</b> word, one letter at a time.
-        <br><br>Each step must:
-        <br>• change exactly <b>one letter</b> from the previous word
-        <br>• be a real <b>4-letter English word</b> from the game's dictionary
-        <br>• not be a word already in your ladder (no loops)
-        <br><br>Type a word and press <b>Enter</b> (or click <b>Submit</b>). The <b>⌫ Back</b> button removes your last step.
-        <br><br>You win when the last word in your ladder equals the END word. Your score combines steps taken and total attempts — fewer is better.
-        <br><br>Stuck? Use the <b>Hint</b> button (max 3 — reveals the next word on the optimal solution path) or <b>Solve</b> (reveals the full shortest ladder and ends the game as a loss).`);
+      App.showModal("How to play Semantle",
+        `Guess the <b>secret word</b>. Every guess gets a <b>similarity score from 0% to 100%</b> — 100% means you found it.
+        <br><br>Your guesses are listed sorted by similarity, so you can home in on the target. Think of words that appear in similar contexts as the secret word.
+        <br><br>This is an offline edition: similarity comes from a curated association list per puzzle. Words outside the list score as "cold" (below 12%).
+        <br><br>Unlimited guesses. <b>Hint</b> reveals a letter of the secret word (max ${MAX_HINTS}); <b>Solve</b> gives up and reveals it. Best score = fewest guesses.`);
     },
   });
 })();

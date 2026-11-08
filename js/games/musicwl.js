@@ -1,7 +1,7 @@
 /* musicwl — Music Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["PIANO", "DRUM", "HARP", "ORGAN", "CELLO", "FLUTE", "TEMPO", "CHORD", "SCALE", "CLEFF", "LYRIC", "OCTAVE", "PITCH", "VOCAL", "SONATA", "WALTZ", "ANTHEM", "BALLAD", "RHYTHM", "TREBLE"];
+  const WORDS = ["SONGS", "TRACK", "TEMPO", "CHORD", "LYRIC", "VOCAL", "PIANO", "VIOLA", "CELLO", "FLUTE", "DRUMS", "HARPS", "ORGAN", "BEATS", "NOTES", "SCALE", "OPERA", "CHOIR", "DUETS", "REMIX"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

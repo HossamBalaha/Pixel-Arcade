@@ -50,8 +50,8 @@
 
   GameRegistry.register({
     id: "contexto",
-    name: "Word Chain",
-    icon: "🔗",
+    name: "Contexto",
+    icon: "🧠",
     category: "word",
     description: "Guess the secret word — distance tells you how close each guess is",
     tags: ["word", "logic", "variant"],

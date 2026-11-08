@@ -1,7 +1,7 @@
 /* citieswl — City Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["PARIS", "ROME", "TOKYO", "BERLIN", "CAIRO", "SEOUL", "LIMA", "OSLO", "DUBAI", "PERTH", "NICE", "LYON", "BONN", "KOBE", "MILAN", "VENICE", "NAPOLI", "RHODES", "ALICE", "QUEBEC"];
+  const WORDS = ["PARIS", "TOKYO", "CAIRO", "SEOUL", "DUBAI", "PERTH", "MILAN", "MIAMI", "OSAKA", "KYOTO", "SPLIT", "TULSA", "GENOA", "TURIN", "DELHI", "LHASA", "WUHAN", "LAGOS", "ACCRA", "TUNIS"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

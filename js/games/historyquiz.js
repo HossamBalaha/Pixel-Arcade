@@ -46,7 +46,11 @@
     {q: "Which ancient civilization developed democracy?", opts: ["Rome", "Egypt", "Greece", "China"], a: 2},
     {q: "Who wrote the Communist Manifesto with Karl Marx?", opts: ["Lenin", "Stalin", "Engels", "Trotsky"], a: 2},
     {q: "The Magna Carta was signed in which year?", opts: ["1066", "1215", "1492", "1620"], a: 1},
-    {q: "Which empire was Constantinople the capital of?", opts: ["Roman", "Byzantine", "Ottoman", "Greek"], a: 1},
+    {
+      q: "Constantinople was the capital of which medieval empire?",
+      opts: ["Roman", "Byzantine", "Ottoman", "Greek"],
+      a: 1
+    },
     {q: "Nelson Mandela was president of which country?", opts: ["Kenya", "Nigeria", "South Africa", "Egypt"], a: 2},
     {q: "The Industrial Revolution began in which country?", opts: ["France", "Britain", "Germany", "USA"], a: 1},
     {
@@ -118,7 +122,7 @@
       a: 1
     },
     {
-      q: "Which country was divided into East and West during the Cold War?",
+      q: "Which country's capital was famously divided by a wall during the Cold War?",
       opts: ["Korea", "Vietnam", "Germany", "Yemen"],
       a: 2
     },
@@ -129,7 +133,7 @@
     },
     {q: "In which year did the United States declare independence?", opts: ["1776", "1789", "1812", "1865"], a: 0},
     {
-      q: "Who was the leader of the civil rights movement 'I Have a Dream' speech?",
+      q: "Who delivered the famous 'I Have a Dream' speech?",
       opts: ["Malcolm X", "Martin Luther King Jr.", "Rosa Parks", "Frederick Douglass"],
       a: 1
     },
@@ -154,11 +158,7 @@
       opts: ["Athens", "Sparta", "Thebes", "Corinth"],
       a: 1
     },
-    {
-      q: "Who was the founder of the Roman Empire (first emperor)?",
-      opts: ["Julius Caesar", "Augustus", "Nero", "Tiberius"],
-      a: 1
-    },
+    {q: "In which year did the Western Roman Empire fall?", opts: ["395 AD", "476 AD", "800 AD", "1453 AD"], a: 1},
     {
       q: "Which country was unified by Otto von Bismarck in 1871?",
       opts: ["Italy", "Germany", "France", "Austria"],

@@ -1,7 +1,7 @@
 /* elementswl — Element Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["EARTH", "WATER", "FIRE", "WIND", "METAL", "STONE", "CRYSTAL", "FROST", "LAVA", "SMOKE", "SHADOW", "LIGHT", "STORM", "THUNDER", "FROST", "EMBER", "MAGMA", "QUARTZ", "OBSIDIAN", "GRANITE"];
+  const WORDS = ["EARTH", "WATER", "METAL", "STONE", "FROST", "SMOKE", "LIGHT", "STORM", "EMBER", "MAGMA", "CLOUD", "FLAME", "BLAZE", "STEAM", "RIVER", "OCEAN", "BEACH", "CLIFF", "RIDGE", "SLOPE"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

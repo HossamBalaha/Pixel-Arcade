@@ -1,7 +1,7 @@
 /* oceanwl — Ocean Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["WHALE", "SHARK", "CORAL", "REEF", "WRECK", "KRILL", "SQUID", "URCHIN", "SHRIMP", "OYSTER", "KELP", "TIDE", "TRENCH", "LAGOON", "COVE", "BEACH", "BAY", "MARSH", "DELTA", "ESTUARY"];
+  const WORDS = ["WHALE", "SHARK", "CORAL", "SHELL", "WAVES", "TIDES", "BRINE", "SWELL", "ALGAE", "SQUID", "OCEAN", "CRABS", "MANTA", "ORCAS", "SEALS", "OTTER", "PEARL", "WRECK", "DRIFT", "PRAWN"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

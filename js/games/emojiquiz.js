@@ -9,26 +9,20 @@
     {cat: "Movies", q: "🦖🏝️", opts: ["King Kong", "Jurassic Park", "Godzilla", "Tremors"], a: 1},
     {cat: "Movies", q: "🚢💔", opts: ["Titanic", "Poseidon", "Speed", "Cast Away"], a: 0},
     {cat: "Movies", q: "👽📞", opts: ["Alien", "E.T.", "Arrival", "Signs"], a: 1},
-    {cat: "Songs", q: "🌧️ mannen ☔", opts: ["Purple Rain", "Singing in the Rain", "Raindrops", "Umbrella"], a: 0},
+    {cat: "Songs", q: "💜🌧️", opts: ["Purple Rain", "Singing in the Rain", "Raindrops", "Umbrella"], a: 0},
     {cat: "Songs", q: "🎤🪩🕺", opts: ["YMCA", "Dancing Queen", "Boogie Nights", "Stayin' Alive"], a: 1},
     {cat: "Songs", q: "🪐🎷", opts: ["Fly Me to the Moon", "Space Oddity", "Rocket Man", "Starman"], a: 0},
-    {cat: "Songs", q: "🔥🐉", opts: ["Roar", "Firework", "Baby One More Time", "Dark Horse"], a: 1},
+    {cat: "Songs", q: "🦁📣", opts: ["Roar", "Firework", "Baby One More Time", "Dark Horse"], a: 0},
     {
       cat: "Phrases",
       q: "🐱👜",
-      opts: ["Cat in the Hat", "Cat got your tongue", "Cat in a bag", "Cats out of the bag"],
+      opts: ["Cat in the Hat", "Cat got your tongue", "Cat in a bag", "Cat's out of the bag"],
       a: 3
     },
+    {cat: "Phrases", q: "👁️🍎", opts: ["Apple of my eye", "Bad apple", "Apple a day", "Tree of life"], a: 0},
     {
       cat: "Phrases",
-      q: "🌧️🐈🶜",
-      opts: ["Raining cats and dogs", "It's pouring", "Under the weather", "Cats and dogs"],
-      a: 0
-    },
-    {cat: "Phrases", q: "🍎🌳", opts: ["Apple of my eye", "Bad apple", "Apple a day", "Tree of life"], a: 0},
-    {
-      cat: "Phrases",
-      q: "🪨🪨🪨",
+      q: "🪨🧍🪨",
       opts: ["Between a rock and a hard place", "Solid as a rock", "Rock and roll", "Rock the boat"],
       a: 0
     },
@@ -44,31 +38,31 @@
     {cat: "Movies", q: "🕷️👨", opts: ["Spider-Man", "Ant-Man", "Batman", "Iron Man"], a: 0},
     {cat: "Movies", q: "🤠🚀", opts: ["Toy Story", "Wall-E", "Up", "Monsters, Inc."], a: 0},
     {cat: "Movies", q: "👹🧅", opts: ["Shrek", "Trolls", "Coco", "Onward"], a: 0},
-    {cat: "Movies", q: "🐠🐟🌊", opts: ["Finding Nemo", "The Little Mermaid", "Aquaman", "Moana"], a: 0},
+    {cat: "Movies", q: "🧜‍♀️🦀🎼", opts: ["Finding Nemo", "The Little Mermaid", "Aquaman", "Moana"], a: 1},
     {
       cat: "Movies",
       q: "🧙‍♂️💍🌋",
       opts: ["The Lord of the Rings", "Harry Potter", "The Hobbit", "Game of Thrones"],
       a: 0
     },
-    {cat: "Movies", q: "🕷️🕸️", opts: ["Spider-Man", "The Fly", "Arachnophobia", "Eight Legged Freaks"], a: 0},
-    {cat: "Movies", q: "🚀🦁", opts: ["The Lion King", "Astro Boy", "Space Cats", "Treasure Planet"], a: 0},
+    {cat: "Movies", q: "🕷️😨", opts: ["Spider-Man", "The Fly", "Arachnophobia", "Eight Legged Freaks"], a: 2},
+    {cat: "Movies", q: "🏴‍☠️🪐", opts: ["The Lion King", "Astro Boy", "Space Cats", "Treasure Planet"], a: 3},
     {
       cat: "Movies",
       q: "🐢🍕",
       opts: ["Teenage Mutant Ninja Turtles", "Pizza Planet", "Ratatouille", "Kung Fu Panda"],
       a: 0
     },
-    {cat: "Movies", q: "🏰🧚‍♀️", opts: ["Tangled", "Sleeping Beauty", "Beauty and the Beast", "Cinderella"], a: 1},
+    {cat: "Movies", q: "😴👸🏰", opts: ["Tangled", "Sleeping Beauty", "Beauty and the Beast", "Cinderella"], a: 1},
     {cat: "Movies", q: "👨‍👩‍👧‍👦🦸‍♂️", opts: ["The Incredibles", "Despicable Me", "Big Hero 6", "Megamind"], a: 0},
     {cat: "Movies", q: "🐜🦸", opts: ["Ant-Man", "Spider-Man", "Iron Man", "Black Panther"], a: 0},
     {cat: "Movies", q: "🎭💑", opts: ["Romeo + Juliet", "Titanic", "La La Land", "The Notebook"], a: 0},
-    {cat: "Movies", q: "👑👑👑", opts: ["Three Kings", "Three Queens", "Game of Thrones", "The Crown"], a: 2},
-    {cat: "Movies", q: "🧊🚢", opts: ["Titanic", "The Perfect Storm", "Speed", "Poseidon"], a: 0},
+    {cat: "Movies", q: "🐉👑⚔️", opts: ["Three Kings", "Three Queens", "Game of Thrones", "The Crown"], a: 2},
+    {cat: "Movies", q: "⛈️🌊🎣", opts: ["Titanic", "The Perfect Storm", "Speed", "Poseidon"], a: 1},
     {cat: "Movies", q: "🐰🥕", opts: ["Peter Rabbit", "Zootopia", "Hop", "Who Framed Roger Rabbit"], a: 0},
-    {cat: "Movies", q: "🧟‍♂️🔫", opts: ["Resident Evil", "World War Z", "Dawn of the Dead", "Shaun of the Dead"], a: 3},
+    {cat: "Movies", q: "🧟‍♂️😂🍺", opts: ["Resident Evil", "World War Z", "Dawn of the Dead", "Shaun of the Dead"], a: 3},
     {cat: "Songs", q: "🌧️☂️", opts: ["Umbrella", "Singing in the Rain", "Purple Rain", "Raindrops"], a: 0},
-    {cat: "Songs", q: "🎶✋", opts: ["Don't Stop Believin'", "Stop!", "Hold On", "Stayin' Alive"], a: 0},
+    {cat: "Songs", q: "🚂🌃🎤", opts: ["Don't Stop Believin'", "Stop!", "Hold On", "Stayin' Alive"], a: 0},
     {
       cat: "Songs",
       q: "🎶🌊",
@@ -77,13 +71,13 @@
     },
     {
       cat: "Songs",
-      q: "🦁👑🎵",
+      q: "🌅🦁🎵",
       opts: ["Hakuna Matata", "Circle of Life", "Can You Feel the Love Tonight", "Just Can't Wait to Be King"],
       a: 1
     },
-    {cat: "Songs", q: "💃🕺", opts: ["Dancing Queen", "Stayin' Alive", "YMCA", "I Will Survive"], a: 0},
-    {cat: "Songs", q: "🏍️🌬️", opts: ["Born to be Wild", "Highway to Hell", "Roadhouse Blues", "Wild Thing"], a: 0},
-    {cat: "Songs", q: "🪐🚀", opts: ["Rocket Man", "Space Oddity", "Fly Me to the Moon", "Starman"], a: 0},
+    {cat: "Songs", q: "🫀🕺🎶", opts: ["Dancing Queen", "Stayin' Alive", "YMCA", "I Will Survive"], a: 1},
+    {cat: "Songs", q: "🏍️🌬️", opts: ["Born to Be Wild", "Highway to Hell", "Roadhouse Blues", "Wild Thing"], a: 0},
+    {cat: "Songs", q: "🚀👨🎶", opts: ["Rocket Man", "Space Oddity", "Fly Me to the Moon", "Starman"], a: 0},
     {
       cat: "Phrases",
       q: "🐄🌙",
@@ -98,13 +92,13 @@
     },
     {
       cat: "Phrases",
-      q: "🪶🦜",
+      q: "🐦🐦🐦👥",
       opts: ["Birds of a feather flock together", "Kill two birds with one stone", "Free as a bird", "Early bird catches the worm"],
       a: 0
     },
     {
       cat: "Phrases",
-      q: "🔥🔥",
+      q: "🖐️🔥",
       opts: ["Playing with fire", "Out of the frying pan", "Add fuel to the fire", "Where there's smoke, there's fire"],
       a: 0
     },
@@ -116,13 +110,13 @@
     },
     {
       cat: "Phrases",
-      q: "🚪🚶",
+      q: "🦶🚪",
       opts: ["Show someone the door", "Foot in the door", "Knock on wood", "Door to door"],
-      a: 0
+      a: 1
     },
     {
       cat: "Phrases",
-      q: "🐍👁️",
+      q: "🐍🌿",
       opts: ["Snake in the grass", "As the crow flies", "As blind as a bat", "As slippery as an eel"],
       a: 0
     },
@@ -140,7 +134,7 @@
     },
     {
       cat: "Phrases",
-      q: "🐓⚔️",
+      q: "🥚🐔🔢",
       opts: ["Cock of the walk", "Cockfight", "As proud as a peacock", "Don't count your chickens before they hatch"],
       a: 3
     },

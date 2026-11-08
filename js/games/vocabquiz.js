@@ -19,7 +19,7 @@
     {word: "Wary", opts: ["Careless", "Cautious", "Excited", "Asleep"], a: 1},
     {word: "Zealous", opts: ["Indifferent", "Fervent", "Tired", "Bored"], a: 1},
     {word: "Brevity", opts: ["Length", "Shortness", "Width", "Depth"], a: 1},
-    {word: " Candid", opts: ["Honest", "Hidden", "Sneaky", "Polite only"], a: 0},
+    {word: "Candid", opts: ["Honest", "Hidden", "Sneaky", "Polite only"], a: 0},
     {word: "Diligent", opts: ["Hard-working", "Lazy", "Mean", "Quiet"], a: 0},
     {word: "Frugal", opts: ["Wasteful", "Thrifty", "Loud", "Quick"], a: 1},
     {word: "Gregarious", opts: ["Shy", "Sociable", "Angry", "Distant"], a: 1},

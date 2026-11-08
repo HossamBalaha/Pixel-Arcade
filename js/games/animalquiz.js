@@ -7,42 +7,54 @@
       a: 1
     },
     {fact: "My heart can be the size of a small car.", opts: ["Elephant", "Blue whale", "Giraffe", "Hippo"], a: 1},
-    {fact: "I have three hearts and blue blood.", opts: ["Starfish", "Octopus", "Squid", "Jellyfish"], a: 1},
+    {fact: "I have three hearts and blue blood.", opts: ["Starfish", "Octopus", "Sea urchin", "Jellyfish"], a: 1},
     {fact: "I sleep up to 22 hours a day and eat eucalyptus.", opts: ["Sloth", "Koala", "Panda", "Possum"], a: 1},
-    {fact: "My tongue is as long as my body and sticky.", opts: ["Anteater", "Chameleon", "Pangolin", "Frog"], a: 0},
-    {fact: "I can regenerate lost limbs — even my heart.", opts: ["Lizard", "Starfish", "Newt", "Axolotl"], a: 3},
+    {
+      fact: "I'm a toothless mammal of the Americas — I slurp ants and termites with my long, sticky tongue.",
+      opts: ["Anteater", "Chameleon", "Pangolin", "Frog"],
+      a: 0
+    },
+    {
+      fact: "I'm a Mexican salamander that can regenerate lost limbs — even my heart.",
+      opts: ["Lizard", "Starfish", "Newt", "Axolotl"],
+      a: 3
+    },
     {fact: "I can run up to 70 mph — fastest land animal.", opts: ["Lion", "Cheetah", "Pronghorn", "Ostrich"], a: 1},
     {fact: "I never sleep — I just rest half my brain at a time.", opts: ["Shark", "Dolphin", "Whale", "Eel"], a: 1},
     {
-      fact: "I carry my babies in a pouch and hop to get around.",
+      fact: "I'm the largest animal that hops, and my baby rides in my pouch.",
       opts: ["Wallaby", "Kangaroo", "Koala", "Wombat"],
       a: 1
     },
     {fact: "My group is called a 'murder'.", opts: ["Wolves", "Crows", "Magpies", "Ravens"], a: 1},
     {
-      fact: "I produce light through bioluminescence in the deep sea.",
+      fact: "I dangle a glowing lure from my head to attract prey in the deep sea.",
       opts: ["Jellyfish", "Anglerfish", "Lanternfish", "Hatchetfish"],
-      a: 2
+      a: 1
     },
     {
-      fact: "I can lift up to 50 times my own body weight.",
+      fact: "I can lift around 50 times my own body weight — and I live in a colony ruled by a queen.",
       opts: ["Elephant", "Ant", "Rhinoceros beetle", "Gorilla"],
       a: 1
     },
-    {fact: "My stripes are unique — no two of us look alike.", opts: ["Tiger", "Zebra", "Leopard", "Okapi"], a: 1},
     {
-      fact: "I have no brain, no heart, but I can sting.",
+      fact: "My black-and-white stripes cover my whole body — no two of us share the same pattern.",
+      opts: ["Tiger", "Zebra", "Leopard", "Okapi"],
+      a: 1
+    },
+    {
+      fact: "I have no brain, no heart, and no bones — I just drift with the currents, but I can sting.",
       opts: ["Jellyfish", "Sponge", "Starfish", "Sea anemone"],
       a: 0
     },
     {
-      fact: "My tusks are actually long teeth that grow through my upper lip.",
+      fact: "My single spiral tusk is actually a tooth that grew through my upper lip.",
       opts: ["Elephant", "Walrus", "Narwhal", "Hippo"],
       a: 2
     },
     {fact: "I'm the largest land animal and have a trunk.", opts: ["Rhino", "Hippo", "Elephant", "Giraffe"], a: 2},
     {
-      fact: "I can change color to blend into my surroundings.",
+      fact: "I'm a lizard famous for changing my skin color.",
       opts: ["Flounder", "Chameleon", "Cuttlefish", "Octopus"],
       a: 1
     },
@@ -92,7 +104,7 @@
       a: 1
     },
     {
-      fact: "I have a long snout and eat ants and termites.",
+      fact: "I use my long, tubular snout and bushy tail to feast on ants and termites.",
       opts: ["Aardvark", "Anteater", "Pangolin", "Armadillo"],
       a: 1
     },
@@ -131,12 +143,12 @@
       a: 1
     },
     {
-      fact: "I live in cold regions and have black and white feathers.",
+      fact: "I'm a flightless bird of the Southern Hemisphere with black and white feathers.",
       opts: ["Puffin", "Penguin", "Polar bear", "Seal"],
       a: 1
     },
     {
-      fact: "I'm a small bird that migrates vast distances — over 4,000 km.",
+      fact: "I make the longest migration of any animal — flying from the Arctic to Antarctica and back each year.",
       opts: ["Arctic tern", "Swallow", "Sparrow", "Robin"],
       a: 0
     },

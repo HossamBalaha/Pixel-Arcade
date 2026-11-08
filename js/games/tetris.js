@@ -13,7 +13,7 @@
   let live = null;
   GameRegistry.register({
     id: "tetris",
-    name: "Block Drop",
+    name: "Tetris",
     icon: "🧱",
     category: "arcade",
     description: "Simplified Tetris — drop pieces, clear rows",

@@ -1,7 +1,7 @@
 /* toolswl — Tool Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["HAMMER", "DRILL", "SAW", "WRENCH", "PLIERS", "CHISEL", "FILE", "CLAMP", "RULER", "LEVEL", "SCREW", "BOLT", "NAIL", "HINGE", "PLANE", "LATHE", "ANVIL", "TONGS", "VISE", "FILE"];
+  const WORDS = ["DRILL", "LATHE", "BRUSH", "BROOM", "RAKES", "SPADE", "PICKS", "WEDGE", "LEVEL", "PLUMB", "TORCH", "CLAMP", "VISES", "ANVIL", "FORGE", "SCREW", "NAILS", "BOLTS", "RIVET", "GAUGE"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";

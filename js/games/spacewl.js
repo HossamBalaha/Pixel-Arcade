@@ -1,7 +1,7 @@
 /* spacewl — Space Wordle (auto-generated themed Wordle) */
 (function () {
   "use strict";
-  const WORDS = ["MARS", "VENUS", "MOON", "PLUTO", "ORBIT", "COMET", "GALAXY", "QUASAR", "COSMOS", "PLANET", "NEBULA", "METEOR", "SATURN", "URANUS", "JUPITER", "PULSAR", "CRATER", "LUNAR", "SOLAR", "LUNAR"];
+  const WORDS = ["VENUS", "EARTH", "PLUTO", "COMET", "ORBIT", "LUNAR", "SOLAR", "STARS", "ROVER", "PROBE", "ALIEN", "SPACE", "TITAN", "MOONS", "QUARK", "NOVAS", "NADIR", "ATOMS", "GAMMA", "ORION"];
   const LEN = 5;
   const MAX = 6;
   let liveTarget = "";
