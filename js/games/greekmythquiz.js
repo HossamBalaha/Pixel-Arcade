@@ -1,7 +1,17 @@
 /* greekmythquiz — Greek Mythology Quiz (auto-generated themed quiz) */
 (function () {
   "use strict";
-  const QUESTIONS = [["Who is the king of the Greek gods?", ["Poseidon", "Hades", "Zeus", "Apollo"], 2], ["What did Prometheus steal for humanity?", ["Gold", "Wine", "Iron", "Fire"], 3], ["Who is the goddess of wisdom?", ["Aphrodite", "Athena", "Artemis", "Hera"], 1], ["What is the name of the famous river of the underworld?", ["Nile", "Styx", "Tiber", "Thames"], 1], ["Who defeated the Minotaur in the Labyrinth?", ["Heracles", "Perseus", "Theseus", "Jason"], 2], ["What did Pandora famously open?", ["A door", "A scroll", "A bottle", "A box"], 3], ["Who is the god of the sea?", ["Zeus", "Hades", "Apollo", "Poseidon"], 3], ["Which hero killed Medusa?", ["Heracles", "Perseus", "Bellerophon", "Theseus"], 1], ["Where is the home of the Greek gods?", ["Mount Etna", "Mount Parnassus", "Mount Olympus", "Mount Vesuvius"], 2], ["Who is the messenger of the gods?", ["Hermes", "Ares", "Hephaestus", "Dionysus"], 0]];
+  const QUESTIONS = [["Who is the king of the Greek gods?", ["Poseidon", "Hades", "Zeus", "Apollo"], 2], ["What did Prometheus steal for humanity?", ["Gold", "Wine", "Iron", "Fire"], 3], ["Who is the goddess of wisdom?", ["Aphrodite", "Athena", "Artemis", "Hera"], 1], ["What is the name of the famous river of the underworld?", ["Nile", "Styx", "Tiber", "Thames"], 1], ["Who defeated the Minotaur in the Labyrinth?", ["Heracles", "Perseus", "Theseus", "Jason"], 2], ["What did Pandora famously open?", ["A door", "A scroll", "A bottle", "A box"], 3], ["Who is the god of the sea?", ["Zeus", "Hades", "Apollo", "Poseidon"], 3], ["Which hero killed Medusa?", ["Heracles", "Perseus", "Bellerophon", "Theseus"], 1], ["Where is the home of the Greek gods?", ["Mount Etna", "Mount Parnassus", "Mount Olympus", "Mount Vesuvius"], 2], ["Who is the messenger of the gods?", ["Hermes", "Ares", "Hephaestus", "Dionysus"], 0],
+    ["Who is the chief god in Norse mythology?", ["Odin", "Thor", "Loki", "Freyr"], 0],
+    ["What is the name of Thor's hammer?", ["Gungnir", "Draupnir", "Mjolnir", "Hofund"], 2],
+    ["What is the name of the great hall where warriors slain in battle feast with Odin?", ["Asgard", "Midgard", "Helheim", "Valhalla"], 3],
+    ["What is the world tree of Norse mythology called?", ["Bifrost", "Ragnarok", "Yggdrasil", "Ginnungagap"], 2],
+    ["Who is the trickster god?", ["Thor", "Odin", "Tyr", "Loki"], 3],
+    ["What is the Norse end-of-the-world event called?", ["Valhalla", "Ragnarok", "Fimbulwinter", "Midgard"], 1],
+    ["Who guards the Bifrost bridge?", ["Heimdall", "Thor", "Odin", "Baldur"], 0],
+    ["What is the name of Odin's eight-legged horse?", ["Fenrir", "Sleipnir", "Jormungandr", "Hugin"], 1],
+    ["Who is the god of thunder?", ["Odin", "Loki", "Thor", "Tyr"], 2],
+    ["Which giant wolf, a son of Loki, is destined to kill Odin at Ragnarok?", ["Sleipnir", "Jormungandr", "Skoll", "Fenrir"], 3]];
 
   function shuffle(a) {
     const x = a.slice();
@@ -14,7 +24,7 @@
 
   GameRegistry.register({
     id: "greekmythquiz", name: "Greek Mythology Quiz", icon: "⚡", category: "quiz",
-    description: "Greek Mythology Quiz \u2014 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
+    description: "Greek Mythology Quiz — 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
     age: ["teens", "adults"], difficulty: "medium", duration: "quick", players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;

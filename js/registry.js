@@ -30,6 +30,7 @@
 
   const games = [];
   const byId = {};
+  const pendingAugment = {}; // id -> extra metadata, applied when the game registers
 
   function asArray(v) {
     return Array.isArray(v) ? v : [v];
@@ -38,12 +39,18 @@
   const Registry = {
     register(meta) {
       if (!meta || !meta.id) throw new Error("Game must have an id");
-      if (byId[meta.id]) {
-        console.warn("Game already registered, overwriting:", meta.id);
+      const lazyPrev = byId[meta.id] || null;
+      if (lazyPrev) {
         // Remove the previous entry from the games array so we don't double up
-        const prev = byId[meta.id];
-        const idx = games.indexOf(prev);
+        const idx = games.indexOf(lazyPrev);
         if (idx >= 0) games.splice(idx, 1);
+      }
+      // Inherit richer metadata (age/difficulty/duration/players) from the
+      // catalog's lazy declaration so the game file itself can stay lean.
+      if (lazyPrev) {
+        for (const k of ["age", "difficulty", "duration", "players", "description", "tags", "icon", "category"]) {
+          if (meta[k] === undefined && lazyPrev[k] !== undefined) meta[k] = lazyPrev[k];
+        }
       }
       const full = Object.assign({
         category: "logic",
@@ -57,16 +64,66 @@
       }, meta);
       // Normalise age to an array (e.g. ['all'] or ['kids','teens'])
       full.age = asArray(full.age);
+      const pend = pendingAugment[full.id];
+      if (pend) {
+        for (const k in pend) {
+          if (k === "age") full.age = asArray(pend.age);
+          else full[k] = pend[k];
+        }
+        delete pendingAugment[full.id];
+      }
       games.push(full);
       byId[full.id] = full;
+    },
+    // Declare metadata-only entries. The app renders the grid from these
+    // and lazy-loads each game's real script (js/games/<id>.js) on open.
+    declare(list) {
+      list.forEach(meta => {
+        if (!meta || !meta.id) return;
+        if (byId[meta.id]) return; // already registered for real
+        const full = Object.assign({
+          category: "logic",
+          icon: "🎮",
+          description: "",
+          tags: [],
+          age: "all",
+          difficulty: "medium",
+          duration: "medium",
+          players: "single",
+        }, meta);
+        full.age = asArray(full.age);
+        full.lazy = true;
+        games.push(full);
+        byId[full.id] = full;
+      });
+    },
+    // Is a game's script loaded yet? (declared but not registered)
+    isLazy(id) {
+      const g = byId[id];
+      return !!(g && g.lazy);
+    },
+    // Load a game's script on demand. Resolves when register() ran.
+    load(id) {
+      const g = byId[id];
+      if (!g || !g.lazy) return Promise.resolve();
+      if (g._loading) return g._loading;
+      g._loading = new Promise((resolve, reject) => {
+        const el = document.createElement("script");
+        el.src = "js/games/" + id + ".js";
+        el.onload = () => resolve();
+        el.onerror = () => reject(new Error("Failed to load " + id));
+        document.head.appendChild(el);
+      });
+      return g._loading;
     },
     // Augment an already-registered game with extra metadata (used by
     // game-metadata.js to add age/difficulty/duration/players to legacy games
     // without editing each file).
     augment(id, extra) {
-      const g = byId[id];
+      let g = byId[id];
       if (!g) {
-        console.warn("augment: unknown game", id);
+        // Lazy games aren't registered yet — queue the augmentation.
+        pendingAugment[id] = Object.assign(pendingAugment[id] || {}, extra);
         return;
       }
       for (const k in extra) {

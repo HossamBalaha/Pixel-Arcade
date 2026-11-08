@@ -14,7 +14,7 @@
 
   GameRegistry.register({
     id: "sportstriviaquiz", name: "Sports Trivia Quiz", icon: "🏆", category: "quiz",
-    description: "Sports Trivia Quiz \u2014 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
+    description: "Sports Trivia Quiz — 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
     age: ["teens", "adults"], difficulty: "medium", duration: "quick", players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;

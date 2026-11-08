@@ -1,141 +1,329 @@
-/* pachisilite — Pachisi Lite (auto-generated strategy, 5x5 get 4-in-a-row) */
+/* pachisilite — Pachisi Lite (real race rules, simplified).
+   2 tokens per side, 24-cell shared loop + 6-cell home column.
+   Cowrie dice (mouths up), capture sends back to start, arrow cells are safe. */
 (function () {
   "use strict";
-  const N = 5, W = 4;
-  const IS_MISERE = false;
+  const LOOP = 24, HOMELEN = 6, TOKENS = 2;
+  const SAFE = new Set([0, 8, 16]); // arrow (safe) cells on the loop
+
   GameRegistry.register({
-    id: "pachisilite", name: "Pachisi Lite", icon: "🎲", category: "strategy",
-    description: "Ancient Indian cross game \u2014 4 in a row on 5x5.", tags: ["strategy", "ancient"],
-    age: ["teens", "adults"], difficulty: "medium", duration: "medium", players: "either",
+    id: "pachisilite",
+    name: "Pachisi Lite",
+    icon: "🎲",
+    category: "strategy",
+    description: "The royal Indian race game — cowries, captures and a dash to home",
+    tags: ["strategy", "classic", "dice"],
+    age: ["kids", "teens", "adults"],
+    difficulty: "easy",
+    duration: "medium",
+    players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;
-      let alive = true, board = [], turn = "X", over = false, lock = false;
+      let alive = true, over = false, aiTimer = null;
+      // token: {pos: -1 start | 0..23 loop | 24..29 home column | 30 home}
+      let tokens = {1: [-1, -1], 2: [-1, -1]};
+      let turn = 1, roll = 0, extra = false;
+      let moved = {1: 0, 2: 0}; // tokens brought home
 
-      function start() {
-        board = Array.from({length: N}, () => Array(N).fill(""));
-        turn = "X";
-        over = false;
-        lock = false;
-        render();
-      }
-
-      function checkWin(r, c, p) {
-        const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
-        for (const [dr, dc] of dirs) {
-          let count = 1;
-          for (let k = 1; k < W; k++) {
-            const nr = r + dr * k, nc = c + dc * k;
-            if (nr < 0 || nr >= N || nc < 0 || nc >= N || board[nr][nc] !== p) break;
-            count++;
-          }
-          for (let k = 1; k < W; k++) {
-            const nr = r - dr * k, nc = c - dc * k;
-            if (nr < 0 || nr >= N || nc < 0 || nc >= N || board[nr][nc] !== p) break;
-            count++;
-          }
-          if (count >= W) return true;
+      function rollCowries() {
+        // 5 cowries: mouths up counted as pips; all mouths down = 12 & roll again
+        const up = Array.from({length: 5}, () => Math.random() < 0.45);
+        const n = up.filter(Boolean).length;
+        renderCowries(up);
+        if (n === 0) {
+          extra = true;
+          return 12;
         }
-        return false;
+        extra = false;
+        return n * 2; // 2,4,6,8,10 — pachisi-style even counts
       }
 
-      function isFull() {
-        return board.every(r => r.every(c => c));
+      function renderCowries(up) {
+        const el = root.querySelector("#pa-cowries");
+        if (el) el.textContent = up.map(u => (u ? "🟤" : "⚪")).join(" ");
       }
 
-      function move(r, c) {
-        if (over || lock || board[r][c]) return;
-        board[r][c] = turn;
-        AudioFX.place();
-        if (checkWin(r, c, turn)) {
-          over = true;
-          const winner = IS_MISERE ? (turn === "X" ? "O" : "X") : turn;
-          App.recordResult(winner === "X", 1);
+      function posOf(p, i) { // absolute cell index for display
+        if (i === -1) return null;
+        if (i < LOOP) return (p === 1 ? i : (i + LOOP / 2) % LOOP); // players enter offset by 12
+        return null; // home column rendered separately
+      }
+
+      function canMove(p, t, r) {
+        const i = tokens[p][t];
+        if (i === 30) return false;
+        if (i === -1) return r === 6 ? true : false; // need a 6 to enter (pachisi grace)
+        const ni = i + r;
+        if (ni > 30) return false; // overshoot home
+        return true;
+      }
+
+      function anyMove(p, r) {
+        return [0, 1].some(t => canMove(p, t, r));
+      }
+
+      function moveToken(p, t, r) {
+        const i = tokens[p][t];
+        if (i === -1) {
+          tokens[p][t] = 0;
+          AudioFX.pop();
+        } else {
+          const ni = i + r;
+          tokens[p][t] = ni;
+          AudioFX.pop();
+          if (ni === 30) {
+            moved[p]++;
+            AudioFX.win();
+            App.toast((p === 1 ? "You" : "AI") + " got a token home!", "success");
+          } else if (ni < LOOP) {
+            // capture: enemy on same non-safe loop cell (absolute)
+            const abs = posOf(p, ni);
+            for (const et of [0, 1]) {
+              const ei = tokens[p === 1 ? 2 : 1][et];
+              if (ei >= 0 && ei < LOOP && posOf(p === 1 ? 2 : 1, ei) === abs) {
+                tokens[p === 1 ? 2 : 1][et] = -1;
+                AudioFX.error();
+                App.toast((p === 1 ? "You" : "AI") + " captured a token!", p === 1 ? "success" : "warning");
+                extra = true; // capture grants another roll
+              }
+            }
+          }
+        }
+      }
+
+      function winner() {
+        if (moved[1] >= TOKENS) return 1;
+        if (moved[2] >= TOKENS) return 2;
+        return 0;
+      }
+
+      function doRoll() {
+        if (over) return;
+        roll = rollCowries();
+        const el = root.querySelector("#pa-roll-val");
+        if (el) el.textContent = roll;
+        AudioFX.click();
+        if (!anyMove(turn, roll)) {
+          setStatus((turn === 1 ? "You" : "AI") + " rolled " + roll + " — no legal move, turn passes.");
+          nextTurn();
+          render();
+          return;
+        }
+        setStatus(turn === 1 ? "You rolled " + roll + " — click a token to move." : "AI rolled " + roll + ".");
+        render();
+        if (turn === 2) {
+          aiTimer = setTimeout(() => {
+            if (alive && !over) aiPlay();
+          }, 650);
+        }
+      }
+
+      function nextTurn() {
+        if (extra) {
+          extra = false;
+          setStatus((turn === 1 ? "You" : "AI") + " get another roll!");
+        } else {
+          turn = turn === 1 ? 2 : 1;
+        }
+        roll = 0;
+        const el = root.querySelector("#pa-roll-val");
+        if (el) el.textContent = "—";
+      }
+
+      function humanTokenClick(t) {
+        if (over || turn !== 1 || !roll) {
+          if (!over) App.toast("Roll the cowries first", "info");
+          return;
+        }
+        if (!canMove(1, t, roll)) {
+          App.toast("That token can't move " + roll, "warning");
+          return;
+        }
+        moveToken(1, t, roll);
+        const w = winner();
+        if (w) {
+          finish(w);
+          return;
+        }
+        nextTurn();
+        render();
+        if (turn === 2) {
+          setStatus("AI's turn — rolling…");
+          aiTimer = setTimeout(() => {
+            if (alive && !over) doRoll();
+          }, 700);
+        } else {
+          setStatus("You get another roll!");
+        }
+      }
+
+      function aiPlay() {
+        const opts = [0, 1].filter(t => canMove(2, t, roll));
+        if (!opts.length) {
+          nextTurn();
+          render();
+          return;
+        }
+        // prefer: finish > enter > capture > farthest
+        let best = opts[0], bestScore = -1e9;
+        for (const t of opts) {
+          const i = tokens[2][t], ni = i === -1 ? 0 : i + roll;
+          let sc = Math.random() * 0.1;
+          if (ni === 30) sc += 50;
+          else if (i === -1) sc += 5;
+          else if (ni < LOOP) {
+            const abs = posOf(2, ni);
+            for (const et of [0, 1]) {
+              const ei = tokens[1][et];
+              if (ei >= 0 && ei < LOOP && posOf(1, ei) === abs && !SAFE.has(ei)) sc += 20;
+            }
+            if (SAFE.has(ni)) sc += 3;
+          }
+          sc += (i === -1 ? 0 : i) * 0.05;
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = t;
+          }
+        }
+        moveToken(2, best, roll);
+        const w = winner();
+        if (w) {
+          finish(w);
+          return;
+        }
+        nextTurn();
+        render();
+        if (turn === 2) {
+          setStatus("AI gets another roll…");
+          aiTimer = setTimeout(() => {
+            if (alive && !over) doRoll();
+          }, 700);
+        } else {
+          setStatus("Your turn — roll the cowries!");
+        }
+      }
+
+      function finish(w) {
+        over = true;
+        const st = root.querySelector("#pa-status");
+        st.textContent = w === 1 ? "🎉 All your tokens are home — you win!" : "The AI got all tokens home first.";
+        st.className = w === 1 ? "status win" : "status lose";
+        if (w === 1) {
           AudioFX.win();
-          App.toast(winner + " wins!", "success");
-          render();
-          return;
+          App.recordResult(true, moved[1] + moved[2]);
+        } else {
+          AudioFX.lose();
+          App.recordResult(false, moved[1] + moved[2]);
         }
-        if (isFull()) {
-          over = true;
-          App.toast("Draw!", "info");
-          render();
-          return;
-        }
-        turn = turn === "X" ? "O" : "X";
         render();
-        if (turn === "O" && !over) {
-          lock = true;
-          setTimeout(() => {
-            if (!alive) return;
-            lock = false;
-            aiMove();
-          }, 350);
+      }
+
+      function setStatus(t) {
+        const st = root.querySelector("#pa-status");
+        if (st) {
+          st.textContent = t;
+          st.className = "status info";
         }
       }
 
-      function aiMove() {
-        if (!alive || over) return;
-        const empty = [];
-        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!board[r][c]) empty.push([r, c]);
-        if (!empty.length) return;
-        const winNow = empty.find(([r, c]) => {
-          board[r][c] = "O";
-          const w = checkWin(r, c, "O");
-          board[r][c] = "";
-          return w;
-        });
-        if (winNow) {
-          move(winNow[0], winNow[1]);
-          return;
-        }
-        const blockNow = empty.find(([r, c]) => {
-          board[r][c] = "X";
-          const w = checkWin(r, c, "X");
-          board[r][c] = "";
-          return w;
-        });
-        if (blockNow) {
-          move(blockNow[0], blockNow[1]);
-          return;
-        }
-        const [r, c] = empty[Math.floor(Math.random() * empty.length)];
-        move(r, c);
-      }
-
-      function render() {
-        const stage = root.querySelector("#pachisilite-stage");
-        if (!stage) return;
-        let cells = "";
-        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-          cells += '<button class="sb-cell" data-r="' + r + '" data-c="' + c + '">' + (board[r][c] || "") + '</button>';
-        }
-        stage.innerHTML = cells;
-        stage.querySelectorAll(".sb-cell").forEach(b => b.addEventListener("click", () => move(+b.dataset.r, +b.dataset.c)));
-        const info = root.querySelector("#pachisilite-info");
-        if (info) info.textContent = over ? "Game over" : "Turn: " + turn;
-      }
-
+      // ---- render ----
       root.innerHTML = `
         <style>
-          .sb-grid { display:grid; grid-template-columns: repeat(5, 56px); gap:4px; justify-content:center; padding:14px; }
-          .sb-cell { width:56px; height:56px; font-size:1.4rem; font-weight:700;
-            border:1px solid var(--border,#d1d5db); border-radius:8px; background:var(--bg-elev,#fff); color:var(--text,#111);
-            display:flex; align-items:center; justify-content:center; cursor:pointer; }
-          .sb-cell:hover { background:var(--bg-soft,#f1f5f9); }
+          .pa-board { display: grid; grid-template-columns: repeat(8, 46px); gap: 4px; justify-content: center; margin: 10px 0; }
+          .pa-cell { width: 46px; height: 46px; border-radius: 8px; background: var(--bg-elev); border: 1px solid var(--border);
+            display: grid; place-items: center; font-size: 1.05rem; position: relative; }
+          .pa-cell.safe { border-color: #22c55e; box-shadow: inset 0 0 0 2px #22c55e55; }
+          .pa-cell.p1 { background: #1d4ed8; }
+          .pa-cell.p2 { background: #b91c1c; }
+          .pa-home { display: grid; grid-template-columns: repeat(6, 34px); gap: 4px; justify-content: center; margin-bottom: 8px; }
+          .pa-hcell { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-elev); border: 1px solid var(--border); display: grid; place-items: center; }
+          .pa-tok { cursor: pointer; }
         </style>
-        <p style="text-align:center; padding:6px 4px; color:var(--text-muted,#64748b); font-size:0.85rem;">Get 4 in a row — you (X) vs AI (O)${IS_MISERE ? ". Misere: 3-in-a-row LOSES!" : ""}.</p>
-        <div id="pachisilite-info" style="text-align:center; padding:6px; color:var(--text-muted,#64748b);">Turn: X</div>
-        <div id="pachisilite-stage" class="sb-grid"></div>
-        <div style="text-align:center; margin-top:14px;"><button class="btn primary" id="pachisilite-new">New game</button></div>
+        <div class="scoreboard">
+          <div class="score-cell"><div class="label">You home</div><div class="val" id="pa-h1">0/${TOKENS}</div></div>
+          <div class="score-cell"><div class="label">Roll</div><div class="val" id="pa-roll-val">—</div></div>
+          <div class="score-cell"><div class="label">AI home</div><div class="val" id="pa-h2">0/${TOKENS}</div></div>
+        </div>
+        <div class="status info" id="pa-status">Your turn — roll the cowries!</div>
+        <div class="pa-home" id="pa-home"></div>
+        <div class="pa-board" id="pa-board"></div>
+        <div class="row" style="justify-content:center; gap:10px;">
+          <span id="pa-cowries" style="font-size:1.2rem; letter-spacing:2px;">⚪⚪⚪⚪⚪</span>
+          <button class="btn primary" id="pa-roll">🎲 Roll cowries</button>
+        </div>
+        <p class="hint" style="text-align:center;">6 to enter · exact roll to land home · ⭑ cells are safe</p>
       `;
-      root.querySelector("#pachisilite-new").addEventListener("click", start);
-      start();
+      const boardEl = root.querySelector("#pa-board");
+      const homeEl = root.querySelector("#pa-home");
+
+      function render() {
+        if (!boardEl) return;
+        // home columns
+        let hh = "";
+        for (let p of [1, 2]) {
+          hh += `<div style="display:flex; gap:4px;">`;
+          for (let k = 0; k < HOMELEN; k++) {
+            const cellIdx = LOOP + k;
+            let content = "";
+            for (const tp of [1, 2]) for (let t = 0; t < TOKENS; t++)
+              if (tokens[tp][t] === cellIdx) content += tp === 1 ? "🔵" : "🔴";
+            hh += `<div class="pa-hcell" style="${p === 1 ? "border-color:#3b82f6;" : "border-color:#ef4444;"}">${content}</div>`;
+          }
+          hh += `</div>`;
+        }
+        homeEl.innerHTML = hh;
+        // loop: 24 cells in an 8×3 snake grid
+        const snake = [];
+        for (let c = 0; c < 8; c++) snake.push(c);
+        for (let c = 7; c >= 0; c--) snake.push(15 - c + 0); // 8..15 right→left: 15,14,...,8
+        for (let c = 0; c < 8; c++) snake.push(16 + c);
+        let h = "";
+        for (const cell of snake) {
+          let cls = "pa-cell" + (SAFE.has(cell) ? " safe" : "");
+          let content = SAFE.has(cell) ? "⭑" : "";
+          const tok = [];
+          for (const p of [1, 2]) for (let t = 0; t < TOKENS; t++) {
+            const i = tokens[p][t];
+            if (i >= 0 && i < LOOP && posOf(p, i) === cell) tok.push({p, t});
+          }
+          if (tok.length) {
+            cls += " p" + tok[0].p;
+            content = tok.map(x => x.p === 1 ? "🔵" : "🔴").join("");
+            if (tok.some(x => x.p === 1)) content = `<span class="pa-tok" data-t="${tok.find(x => x.p === 1).t}">🔵</span>`;
+          }
+          h += `<div class="${cls}">${content}</div>`;
+        }
+        boardEl.innerHTML = h;
+        const h1 = root.querySelector("#pa-h1"), h2 = root.querySelector("#pa-h2");
+        if (h1) h1.textContent = moved[1] + "/" + TOKENS;
+        if (h2) h2.textContent = moved[2] + "/" + TOKENS;
+      }
+
+      boardEl.addEventListener("click", e => {
+        const t = e.target.closest(".pa-tok");
+        if (t) humanTokenClick(+t.dataset.t);
+      });
+      root.querySelector("#pa-roll").addEventListener("click", () => {
+        if (over) return;
+        if (turn !== 1) {
+          App.toast("Wait for the AI", "info");
+          return;
+        }
+        doRoll();
+      });
+
+      render();
       return function cleanup() {
         alive = false;
+        clearTimeout(aiTimer);
       };
     },
     help: function () {
-      App.showModal("How to play Pachisi Lite", "Get 4 of your marks in a row on the 5x5 grid. You play X, the AI plays O." + (IS_MISERE ? " Misere rule: getting 4-in-a-row makes you LOSE!" : ""));
+      App.showModal("How to play Pachisi Lite",
+        "An ancient Indian race game (a Ludo/Parcheesi ancestor). You are blue, the AI is red — 2 tokens each." +
+        "<br>Throw the five <b>cowries</b>: the roll is twice the mouths up; all down = 12 and you roll again." +
+        "<br>A token needs a <b>6 to enter</b> the loop. Land exactly on an enemy token to <b>capture</b> it (back to start) and take an extra throw." +
+        "<br>⭑ cells are <b>safe</b>. Go once around the loop and up your coloured column — an <b>exact roll</b> lands home. First to home both tokens wins.");
     },
   });
 })();

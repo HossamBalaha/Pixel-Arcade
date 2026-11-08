@@ -14,7 +14,7 @@
 
   GameRegistry.register({
     id: "musictriviaquiz", name: "Music Trivia Quiz", icon: "🎶", category: "quiz",
-    description: "Music Trivia Quiz \u2014 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
+    description: "Music Trivia Quiz — 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
     age: ["teens", "adults"], difficulty: "medium", duration: "quick", players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;

@@ -1,8 +1,8 @@
 {
   "id": "/index.html",
-  "name": "Pixel Arcade — 300 Classic Games",
+  "name": "Pixel Arcade — 217 Classic Games",
   "short_name": "Pixel Arcade",
-  "description": "300 classic browser games in one place — word puzzles, logic, arcade, strategy, and more. Playable offline. Built with vanilla HTML, CSS, and JS.",
+  "description": "217 classic browser games in one place — word puzzles, logic, arcade, strategy, and more. Playable offline. Built with vanilla HTML, CSS, and JS.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

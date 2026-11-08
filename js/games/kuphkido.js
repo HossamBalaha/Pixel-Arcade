@@ -5,7 +5,7 @@
   const IS_MISERE = true;
   GameRegistry.register({
     id: "kuphkido", name: "Tic-Tac-Toe Tie", icon: "🪢", category: "strategy",
-    description: "Mis\u00e8re TTT \u2014 first to 3-in-a-row LOSES.", tags: ["strategy", "ancient"],
+    description: "Mis\u00e8re TTT — first to 3-in-a-row LOSES.", tags: ["strategy", "ancient"],
     age: ["teens", "adults"], difficulty: "medium", duration: "medium", players: "either",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;

@@ -14,7 +14,7 @@
 
   GameRegistry.register({
     id: "languagesquiz", name: "World Languages Quiz", icon: "🗣️", category: "quiz",
-    description: "World Languages Quiz \u2014 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
+    description: "World Languages Quiz — 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
     age: ["teens", "adults"], difficulty: "medium", duration: "quick", players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;

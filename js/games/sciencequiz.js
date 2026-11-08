@@ -104,7 +104,107 @@
       a: 2
     },
     {q: "Which planet is the hottest in our solar system?", opts: ["Mercury", "Venus", "Mars", "Jupiter"], a: 1},
-  ];
+
+    ,
+    {"q": "What is the SI unit of force?", "opts": ["Watt", "Joule", "Newton", "Pascal"], "a": 2},
+    {
+      "q": "Who proposed the theory of general relativity?",
+      "opts": ["Isaac Newton", "Niels Bohr", "Albert Einstein", "Max Planck"],
+      "a": 2
+    },
+    {
+      "q": "What is the approximate speed of light in a vacuum?",
+      "opts": ["300 km/s", "3,000 km/s", "300,000 km/s", "3 million km/s"],
+      "a": 2
+    },
+    {
+      "q": "Which law states that every action has an equal and opposite reaction?",
+      "opts": ["Newton's first law", "Newton's second law", "Law of gravitation", "Newton's third law"],
+      "a": 3
+    },
+    {
+      "q": "What type of energy does a moving object have?",
+      "opts": ["Chemical energy", "Kinetic energy", "Potential energy", "Thermal energy"],
+      "a": 1
+    },
+    {"q": "What is the unit of electrical resistance?", "opts": ["Ohm", "Ampere", "Volt", "Coulomb"], "a": 0},
+    {"q": "Which particle has a negative charge?", "opts": ["Positron", "Neutron", "Electron", "Proton"], "a": 2},
+    {
+      "q": "What happens to a sound wave as its frequency increases?",
+      "opts": ["It slows down", "Its pitch gets higher", "Its wavelength increases", "It gets louder"],
+      "a": 1
+    },
+    {
+      "q": "What is the boiling point of water at sea level in Celsius?",
+      "opts": ["90°", "50°", "100°", "120°"],
+      "a": 2
+    },
+    {
+      "q": "Magnets have two kinds of poles. What are they called?",
+      "opts": ["East and west", "North and south", "Positive and negative", "Up and down"],
+      "a": 1
+    },
+    {"q": "What is the chemical formula for water?", "opts": ["CO2", "NaCl", "H2O", "O2"], "a": 2},
+    {"q": "What pH value is considered neutral?", "opts": ["0", "10", "14", "7"], "a": 3},
+    {"q": "Which element has the atomic number 1?", "opts": ["Carbon", "Hydrogen", "Oxygen", "Helium"], "a": 1},
+    {
+      "q": "What kind of bond involves the sharing of electron pairs between atoms?",
+      "opts": ["Ionic", "Covalent", "Hydrogen", "Metallic"],
+      "a": 1
+    },
+    {
+      "q": "Which gas do plants absorb from the atmosphere for photosynthesis?",
+      "opts": ["Oxygen", "Methane", "Nitrogen", "Carbon dioxide"],
+      "a": 3
+    },
+    {
+      "q": "What is the lightest element in the periodic table?",
+      "opts": ["Helium", "Hydrogen", "Lithium", "Beryllium"],
+      "a": 1
+    },
+    {"q": "Which substance is known as common salt?", "opts": ["KCl", "NaHCO3", "NaCl", "CaCO3"], "a": 2},
+    {
+      "q": "What type of reaction releases heat?",
+      "opts": ["Exothermic", "Endothermic", "Neutralization", "Catalytic"],
+      "a": 0
+    },
+    {
+      "q": "What organelle is known as the powerhouse of the cell?",
+      "opts": ["Ribosome", "Mitochondrion", "Golgi apparatus", "Nucleus"],
+      "a": 1
+    },
+    {
+      "q": "What molecule carries genetic information in living things?",
+      "opts": ["RNA only", "ATP", "Protein", "DNA"],
+      "a": 3
+    },
+    {
+      "q": "What is the process by which plants make food using sunlight?",
+      "opts": ["Transpiration", "Photosynthesis", "Fermentation", "Respiration"],
+      "a": 1
+    },
+    {
+      "q": "Which blood cells help fight infection?",
+      "opts": ["White blood cells", "Plasma", "Red blood cells", "Platelets"],
+      "a": 0
+    },
+    {"q": "What is the largest organ of the human body?", "opts": ["Skin", "Lungs", "Liver", "Brain"], "a": 0},
+    {
+      "q": "Which gas do humans need to breathe in to survive?",
+      "opts": ["Helium", "Nitrogen", "Carbon dioxide", "Oxygen"],
+      "a": 3
+    },
+    {"q": "What is the basic unit of life?", "opts": ["Cell", "Molecule", "Organ", "Tissue"], "a": 0},
+    {
+      "q": "Which scientist proposed the theory of evolution by natural selection?",
+      "opts": ["Louis Pasteur", "Charles Darwin", "James Watson", "Gregor Mendel"],
+      "a": 1
+    },
+    {
+      "q": "What is the name of the process by which cells divide to make new body cells?",
+      "opts": ["Mitosis", "Fission only", "Fusion", "Meiosis"],
+      "a": 0
+    }];
   const PER_ROUND = 10;
   let live = null;
   GameRegistry.register({

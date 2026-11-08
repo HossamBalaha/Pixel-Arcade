@@ -1,141 +1,169 @@
-/* sprouts — Sprouts (auto-generated strategy, 5x5 get 4-in-a-row) */
+/* sprouts — Conway's Sprouts (real rules, two players hot-seat).
+   Connect two spots with a curve; a fresh spot appears on it. Each spot
+   supports at most 3 links. The player who makes the last move wins. */
 (function () {
   "use strict";
-  const N = 5, W = 4;
-  const IS_MISERE = false;
+  const N_SPOTS = 4;
+
   GameRegistry.register({
-    id: "sprouts", name: "Sprouts", icon: "🌱", category: "strategy",
-    description: "Conway pencil game \u2014 4 in a row on 5x5.", tags: ["strategy", "ancient"],
-    age: ["teens", "adults"], difficulty: "medium", duration: "medium", players: "either",
+    id: "sprouts",
+    name: "Sprouts",
+    icon: "🌱",
+    category: "strategy",
+    description: "Conway's pencil game — connect spots, grow new ones, make the last move",
+    tags: ["strategy", "classic", "2p"],
+    age: ["teens", "adults"],
+    difficulty: "medium",
+    duration: "quick",
+    players: "2p",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;
-      let alive = true, board = [], turn = "X", over = false, lock = false;
+      let alive = true, over = false, moveNo = 0;
+      let spots = []; // {x, y, links}
+      let curves = []; // {path: [pts], a, b, mid: spotIdx}
+      let pickA = -1, turn = 1;
 
-      function start() {
-        board = Array.from({length: N}, () => Array(N).fill(""));
-        turn = "X";
+      function newGame() {
+        spots = [];
+        curves = [];
+        pickA = -1;
+        turn = 1;
         over = false;
-        lock = false;
+        moveNo = 0;
+        for (let i = 0; i < N_SPOTS; i++) {
+          spots.push({
+            x: 100 + 160 * (i % 2) + (Math.random() * 40 - 20),
+            y: 90 + 130 * Math.floor(i / 2) + (Math.random() * 40 - 20),
+            links: 0
+          });
+        }
+        setStatus("Player 1: click a spot to start a curve.");
         render();
       }
 
-      function checkWin(r, c, p) {
-        const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
-        for (const [dr, dc] of dirs) {
-          let count = 1;
-          for (let k = 1; k < W; k++) {
-            const nr = r + dr * k, nc = c + dc * k;
-            if (nr < 0 || nr >= N || nc < 0 || nc >= N || board[nr][nc] !== p) break;
-            count++;
-          }
-          for (let k = 1; k < W; k++) {
-            const nr = r - dr * k, nc = c - dc * k;
-            if (nr < 0 || nr >= N || nc < 0 || nc >= N || board[nr][nc] !== p) break;
-            count++;
-          }
-          if (count >= W) return true;
+      function setStatus(t, cls) {
+        const st = root.querySelector("#sp-status");
+        if (st) {
+          st.textContent = t;
+          st.className = "status " + (cls || "info");
         }
-        return false;
       }
 
-      function isFull() {
-        return board.every(r => r.every(c => c));
+      function alive_(s) {
+        return s.links < 3;
       }
 
-      function move(r, c) {
-        if (over || lock || board[r][c]) return;
-        board[r][c] = turn;
-        AudioFX.place();
-        if (checkWin(r, c, turn)) {
+      function anyMove() {
+        return spots.some(alive_);
+      }
+
+      function clickSpot(i) {
+        if (over) return;
+        const s = spots[i];
+        if (!alive_(s)) {
+          App.toast("That spot is full (3 links)", "warning");
+          return;
+        }
+        if (pickA < 0) {
+          pickA = i;
+          AudioFX.click();
+          setStatus(`Player ${turn}: now click the second spot (or the same one for a loop).`);
+          render();
+          return;
+        }
+        const a = pickA;
+        pickA = -1;
+        if (!alive_(spots[a])) {
+          setStatus(`Player ${turn}: pick a starting spot.`);
+          render();
+          return;
+        }
+        // draw curve a→i, new spot on it
+        const mx = (spots[a].x + spots[i].x) / 2 + (Math.random() * 50 - 25);
+        const my = (spots[a].y + spots[i].y) / 2 + (Math.random() * 50 - 25);
+        const mid = spots.length;
+        spots.push({x: mx, y: my, links: 0});
+        curves.push({a, b: i, mid, bend: Math.random() * 0.6 + 0.2});
+        spots[a].links++;
+        spots[i].links++;
+        spots[mid].links = 2;
+        moveNo++;
+        AudioFX.pop();
+        if (!anyMove()) {
           over = true;
-          const winner = IS_MISERE ? (turn === "X" ? "O" : "X") : turn;
-          App.recordResult(winner === "X", 1);
+          setStatus(`🎉 Player ${turn} made the last move and wins! (${moveNo} moves)`, "win");
           AudioFX.win();
-          App.toast(winner + " wins!", "success");
+          App.recordResult(turn === 1, moveNo);
           render();
           return;
         }
-        if (isFull()) {
-          over = true;
-          App.toast("Draw!", "info");
-          render();
-          return;
-        }
-        turn = turn === "X" ? "O" : "X";
+        turn = turn === 1 ? 2 : 1;
+        setStatus(`Player ${turn}: click a spot to start a curve.`);
         render();
-        if (turn === "O" && !over) {
-          lock = true;
-          setTimeout(() => {
-            if (!alive) return;
-            lock = false;
-            aiMove();
-          }, 350);
-        }
-      }
-
-      function aiMove() {
-        if (!alive || over) return;
-        const empty = [];
-        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!board[r][c]) empty.push([r, c]);
-        if (!empty.length) return;
-        const winNow = empty.find(([r, c]) => {
-          board[r][c] = "O";
-          const w = checkWin(r, c, "O");
-          board[r][c] = "";
-          return w;
-        });
-        if (winNow) {
-          move(winNow[0], winNow[1]);
-          return;
-        }
-        const blockNow = empty.find(([r, c]) => {
-          board[r][c] = "X";
-          const w = checkWin(r, c, "X");
-          board[r][c] = "";
-          return w;
-        });
-        if (blockNow) {
-          move(blockNow[0], blockNow[1]);
-          return;
-        }
-        const [r, c] = empty[Math.floor(Math.random() * empty.length)];
-        move(r, c);
-      }
-
-      function render() {
-        const stage = root.querySelector("#sprouts-stage");
-        if (!stage) return;
-        let cells = "";
-        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-          cells += '<button class="sb-cell" data-r="' + r + '" data-c="' + c + '">' + (board[r][c] || "") + '</button>';
-        }
-        stage.innerHTML = cells;
-        stage.querySelectorAll(".sb-cell").forEach(b => b.addEventListener("click", () => move(+b.dataset.r, +b.dataset.c)));
-        const info = root.querySelector("#sprouts-info");
-        if (info) info.textContent = over ? "Game over" : "Turn: " + turn;
       }
 
       root.innerHTML = `
         <style>
-          .sb-grid { display:grid; grid-template-columns: repeat(5, 56px); gap:4px; justify-content:center; padding:14px; }
-          .sb-cell { width:56px; height:56px; font-size:1.4rem; font-weight:700;
-            border:1px solid var(--border,#d1d5db); border-radius:8px; background:var(--bg-elev,#fff); color:var(--text,#111);
-            display:flex; align-items:center; justify-content:center; cursor:pointer; }
-          .sb-cell:hover { background:var(--bg-soft,#f1f5f9); }
+          .sp-svg { display: block; margin: 0 auto; background: var(--bg-elev); border-radius: 12px; }
+          .sp-spot { fill: #4ade80; cursor: pointer; }
+          .sp-spot.full { fill: #94a3b8; }
+          .sp-spot.pick { fill: #22d3ee; }
+          .sp-curve { fill: none; stroke: #cbd5e1; stroke-width: 3; stroke-linecap: round; }
         </style>
-        <p style="text-align:center; padding:6px 4px; color:var(--text-muted,#64748b); font-size:0.85rem;">Get 4 in a row — you (X) vs AI (O)${IS_MISERE ? ". Misere: 3-in-a-row LOSES!" : ""}.</p>
-        <div id="sprouts-info" style="text-align:center; padding:6px; color:var(--text-muted,#64748b);">Turn: X</div>
-        <div id="sprouts-stage" class="sb-grid"></div>
-        <div style="text-align:center; margin-top:14px;"><button class="btn primary" id="sprouts-new">New game</button></div>
+        <div class="scoreboard">
+          <div class="score-cell"><div class="label">Move</div><div class="val" id="sp-mv">0</div></div>
+          <div class="score-cell"><div class="label">Turn</div><div class="val" id="sp-tn">P1</div></div>
+          <div class="score-cell"><div class="label">Spots</div><div class="val" id="sp-ct">4</div></div>
+        </div>
+        <div class="status info" id="sp-status"></div>
+        <svg class="sp-svg" id="sp-svg" viewBox="0 0 480 360" width="480" style="max-width:100%;"></svg>
+        <div class="row" style="justify-content:center;"><button class="btn" id="sp-new">↺ New game</button></div>
       `;
-      root.querySelector("#sprouts-new").addEventListener("click", start);
-      start();
+      const svg = root.querySelector("#sp-svg");
+
+      function curvePath(c) {
+        const A = spots[c.a], B = spots[c.b], M = spots[c.mid];
+        return `M ${A.x} ${A.y} Q ${(A.x + M.x) / 2 + c.bend * (M.y - A.y)} ${(A.y + M.y) / 2 - c.bend * (M.x - A.x)} ${M.x} ${M.y} ` +
+          `Q ${(M.x + B.x) / 2 + c.bend * (B.y - M.y)} ${(M.y + B.y) / 2 - c.bend * (B.x - M.x)} ${B.x} ${B.y}`;
+      }
+
+      function render() {
+        if (!svg) return;
+        let html = "";
+        for (const c of curves) html += `<path class="sp-curve" d="${curvePath(c)}"/>`;
+        spots.forEach((s, i) => {
+          const cls = i === pickA ? "sp-spot pick" : (s.links >= 3 ? "sp-spot full" : "sp-spot");
+          html += `<circle class="${cls}" data-i="${i}" cx="${s.x}" cy="${s.y}" r="13"/>` +
+            `<text x="${s.x}" y="${s.y + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#0f172a" pointer-events="none">${3 - s.links}</text>`;
+        });
+        svg.innerHTML = html;
+        const mv = root.querySelector("#sp-mv"), tn = root.querySelector("#sp-tn"), ct = root.querySelector("#sp-ct");
+        if (mv) mv.textContent = moveNo;
+        if (tn) tn.textContent = "P" + turn;
+        if (ct) ct.textContent = spots.length;
+      }
+
+      svg.addEventListener("click", e => {
+        const t = e.target.closest("[data-i]");
+        if (t) clickSpot(+t.dataset.i);
+      });
+      root.querySelector("#sp-new").addEventListener("click", () => {
+        AudioFX.click();
+        newGame();
+      });
+
+      newGame();
       return function cleanup() {
         alive = false;
       };
     },
     help: function () {
-      App.showModal("How to play Sprouts", "Get 4 of your marks in a row on the 5x5 grid. You play X, the AI plays O." + (IS_MISERE ? " Misere rule: getting 4-in-a-row makes you LOSE!" : ""));
+      App.showModal("How to play Sprouts",
+        "A pencil-and-paper game by Conway & Paterson. Two players take turns." +
+        "<br>On your turn, <b>connect two spots</b> with a curve (a spot may connect to itself as a loop), then a <b>new spot</b> appears on your curve." +
+        "<br>Each spot can have at most <b>3 links</b> — the number shows how many are left." +
+        "<br>The player who draws the <b>last legal curve wins</b>. Try to leave your opponent without moves!" +
+        "<br><i>Casual variant: curves may cross each other (the classic paper rule forbids it).</i>");
     },
   });
 })();

@@ -172,7 +172,38 @@
       opts: ["Nehru", "Mahatma Gandhi", "Patel", "Bose"],
       a: 1
     },
-  ];
+
+    ,
+    {"q": "In what year did World War II end?", "opts": ["1945", "1918", "1939", "1950"], "a": 0},
+    {
+      "q": "Who was the first person to walk on the Moon?",
+      "opts": ["Buzz Aldrin", "Yuri Gagarin", "Michael Collins", "Neil Armstrong"],
+      "a": 3
+    },
+    {"q": "In which year did the Berlin Wall fall?", "opts": ["1991", "1985", "1989", "1979"], "a": 2},
+    {
+      "q": "Who was Britain's Prime Minister for most of World War II?",
+      "opts": ["Neville Chamberlain", "Winston Churchill", "Clement Attlee", "Anthony Eden"],
+      "a": 1
+    },
+    {
+      "q": "Where were the first modern Olympic Games held in 1896?",
+      "opts": ["Paris", "Athens", "London", "Stockholm"],
+      "a": 1
+    },
+    {"q": "In what year did the Soviet Union dissolve?", "opts": ["1991", "1989", "1985", "1993"], "a": 0},
+    {
+      "q": "Who was the foremost leader of India's independence movement?",
+      "opts": ["Nehru", "Patel", "Mahatma Gandhi", "Bose"],
+      "a": 2
+    },
+    {"q": "In what year did the Titanic sink?", "opts": ["1905", "1912", "1923", "1898"], "a": 1},
+    {
+      "q": "Which two Japanese cities were hit by atomic bombs in WWII?",
+      "opts": ["Tokyo and Kyoto", "Osaka and Yokohama", "Berlin and Munich", "Hiroshima and Nagasaki"],
+      "a": 3
+    },
+    {"q": "In what year did World War I begin?", "opts": ["1910", "1914", "1918", "1920"], "a": 1}];
   const PER = 10;
   let live = null;
   GameRegistry.register({

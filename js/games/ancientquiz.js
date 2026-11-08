@@ -1,7 +1,30 @@
 /* ancientquiz — Ancient History Quiz (auto-generated themed quiz) */
 (function () {
   "use strict";
-  const QUESTIONS = [["Which river was central to ancient Egyptian civilization?", ["Tigris", "Nile", "Amazon", "Indus"], 1], ["Who was the first emperor of unified China?", ["Gaozu", "Wu of Han", "Qin Shi Huang", "Kublai Khan"], 2], ["What does 'Pax Romana' refer to?", ["A Roman feast", "A Roman god", "A long period of peace in the Roman Empire", "A Roman law code"], 2], ["Which civilization built Machu Picchu?", ["Aztec", "Inca", "Maya", "Olmec"], 1], ["Where was the ancient city of Carthage located?", ["Modern Egypt", "Modern Greece", "Modern Libya", "Modern Tunisia"], 3], ["Who wrote 'The Republic'?", ["Aristotle", "Socrates", "Plato", "Pythagoras"], 2], ["What was the main writing system of ancient Mesopotamia?", ["Hieroglyphs", "Cuneiform", "Phoenician", "Linear B"], 1], ["Which Roman emperor legalized Christianity?", ["Nero", "Constantine", "Trajan", "Hadrian"], 1], ["The Rosetta Stone was the key to deciphering which ancient script?", ["Egyptian hieroglyphs", "Cuneiform", "Linear B", "Runes"], 0], ["Who was the king of Macedon who conquered the Persian Empire?", ["Philip II", "Darius III", "Xerxes I", "Alexander the Great"], 3]];
+  const QUESTIONS = [["Which river was central to ancient Egyptian civilization?", ["Tigris", "Nile", "Amazon", "Indus"], 1], ["Who was the first emperor of unified China?", ["Gaozu", "Wu of Han", "Qin Shi Huang", "Kublai Khan"], 2], ["What does 'Pax Romana' refer to?", ["A Roman feast", "A Roman god", "A long period of peace in the Roman Empire", "A Roman law code"], 2], ["Which civilization built Machu Picchu?", ["Aztec", "Inca", "Maya", "Olmec"], 1], ["Where was the ancient city of Carthage located?", ["Modern Egypt", "Modern Greece", "Modern Libya", "Modern Tunisia"], 3], ["Who wrote 'The Republic'?", ["Aristotle", "Socrates", "Plato", "Pythagoras"], 2], ["What was the main writing system of ancient Mesopotamia?", ["Hieroglyphs", "Cuneiform", "Phoenician", "Linear B"], 1], ["Which Roman emperor legalized Christianity?", ["Nero", "Constantine", "Trajan", "Hadrian"], 1], ["The Rosetta Stone was the key to deciphering which ancient script?", ["Egyptian hieroglyphs", "Cuneiform", "Linear B", "Runes"], 0], ["Who was the king of Macedon who conquered the Persian Empire?", ["Philip II", "Darius III", "Xerxes I", "Alexander the Great"], 3]
+
+
+    ,
+    ["Who was the sun god in ancient Egypt?", ["Osiris", "Anubis", "Ra", "Horus"], 2],
+    ["What is the writing system of ancient Egypt called?", ["Cuneiform", "Hieroglyphs", "Runes", "Latin"], 1],
+    ["Who was the god of the afterlife?", ["Ra", "Anubis", "Osiris", "Horus"], 2],
+    ["Whose nearly intact tomb was discovered in 1922?", ["Khufu", "Ramses II", "Tutankhamun", "Cleopatra"], 2],
+    ["The Great Sphinx of Giza has the body of which animal?", ["A camel", "A falcon", "A crocodile", "A lion"], 3],
+    ["Which river runs through Egypt?", ["Tigris", "Euphrates", "Nile", "Indus"], 2],
+    ["What is the ancient Egyptian writing material made from reeds called?", ["Papyrus", "Parchment", "Vellum", "Slate"], 0],
+    ["Who was the jackal-headed god of mummification?", ["Osiris", "Horus", "Set", "Anubis"], 3],
+    ["What shape are Egypt's most famous royal tombs?", ["Cubes", "Pyramids", "Cylinders", "Domes"], 1],
+    ["Who was the last active pharaoh of ancient Egypt?", ["Nefertiti", "Hatshepsut", "Ramses VI", "Cleopatra VII"], 3],
+    ["Who was the first Roman emperor?", ["Julius Caesar", "Augustus", "Nero", "Trajan"], 1],
+    ["What language did the Romans speak?", ["Greek", "Etruscan", "Latin", "Oscan"], 2],
+    ["In which famous arena did gladiators fight in ancient Rome?", ["Pantheon", "Colosseum", "Roman Forum", "Vatican"], 1],
+    ["Which Roman formation had soldiers lock their shields into a protective 'tortoise' shell?", ["Phalanx", "Wedge", "Skirmish line", "Testudo"], 3],
+    ["What does 'Veni, vidi, vici' mean?", ["I came, I saw, I conquered", "I came, I saw, I ate", "We came, we saw, we won", "I came, I counted, I left"], 0],
+    ["To which city did Constantine move the imperial capital in 330 AD?", ["Ravenna", "Alexandria", "Constantinople", "Antioch"], 2],
+    ["Which Carthaginian general crossed the Alps with war elephants to attack Rome?", ["Julius Caesar", "Scipio", "Hannibal", "Pompey"], 2],
+    ["What was a Roman mile called?", ["Mille passus", "Stade", "League", "Plethron"], 0],
+    ["Which Roman emperor is famously said to have 'fiddled while Rome burned'?", ["Caligula", "Claudius", "Commodus", "Nero"], 3],
+    ["Who led the conspiracy to assassinate Julius Caesar?", ["Augustus", "Brutus", "Mark Antony", "Cleopatra"], 1]];
 
   function shuffle(a) {
     const x = a.slice();
@@ -14,7 +37,7 @@
 
   GameRegistry.register({
     id: "ancientquiz", name: "Ancient History Quiz", icon: "📜", category: "quiz",
-    description: "Ancient History Quiz \u2014 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
+    description: "Ancient History Quiz — 10 multiple-choice questions, 15s each.", tags: ["quiz", "themed"],
     age: ["teens", "adults"], difficulty: "medium", duration: "quick", players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;

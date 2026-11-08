@@ -891,6 +891,7 @@ main {
     flex-direction: column;
     gap: 14px;
     padding-top: 8px;
+    padding-bottom: 28px; /* keep recommendation cards clear of the footer */
     border-top: 1px dashed var(--border);
 }
 

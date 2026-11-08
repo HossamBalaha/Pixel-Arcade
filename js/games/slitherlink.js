@@ -1,14 +1,7 @@
 /* Slitherlink — draw a single closed loop. Each clue says how many of its 4 edges are part of the loop. */
 (function () {
   // 4×4 grid of clues (-1 = no clue). Loop runs on edges between dots.
-  const PUZZLES = [
-    {
-      clues: [[2, 3, 2, -1], [3, -1, 3, 2], [2, 3, -1, 3], [-1, 2, 3, 2]],
-    },
-    {
-      clues: [[3, 0, -1, 2], [-1, -1, 3, -1], [2, 3, -1, 3], [2, -1, 2, -1]],
-    },
-  ];
+  const PUZZLES = [{"clues": [[-1, 1, -1, 1], [1, 0, -1, 1], [-1, 0, 1, 1], [2, 1, 2, -1]]}, {"clues": [[0, 1, 1, 1], [1, 2, -1, 2], [1, 1, 0, -1], [-1, 2, -1, 2]]}];
   const N = 4; // N×N clues; (N+1)×(N+1) dots; edges in 2 directions.
 
   let live = null;

@@ -346,7 +346,13 @@
     // ---------- Routing ----------
     route() {
       const hash = location.hash.replace(/^#\/?/, "");
+      // Deep link support: ?game=id opens that game directly (shareable URL).
       if (!hash) {
+        const qs = new URLSearchParams(location.search).get("game");
+        if (qs && GameRegistry.get(qs)) {
+          App.openGame(qs);
+          return;
+        }
         App.closeGame();
         return;
       }
@@ -358,6 +364,18 @@
     openGame(id) {
       const game = GameRegistry.get(id);
       if (!game) return;
+      // Lazy games: fetch + run the real script, then re-open the registered game.
+      if (game.lazy && GameRegistry.load) {
+        const btn = $("#game-view");
+        GameRegistry.load(id).then(() => {
+          App.openGame(id);
+        }).catch(err => {
+          console.error("Failed to load game", id, err);
+          const stage = $("#game-stage");
+          if (stage) stage.innerHTML = '<div class="status lose" style="padding:20px;text-align:center;">Could not load ' + id + '</div>';
+        });
+        return;
+      }
       // Remember which card was focused so we can restore focus on close
       App._lastFocusedCard = id;
       // Cleanup previous
@@ -572,7 +590,10 @@
     // Copy a shareable result string to the clipboard. Games can call
     // App.shareScore(text) when they have a meaningful result to share.
     shareScore(text) {
-      const full = `Pixel Arcade — ${App.currentGame ? App.currentGame.name : "game"}\n${text}\n${location.href}`;
+      // Shareable deep link: ?game=id survives hash-less navigation and is indexable.
+      let link = location.href.split("#")[0].split("?")[0];
+      if (App.currentGame) link += "?game=" + encodeURIComponent(App.currentGame.id);
+      const full = `Pixel Arcade — ${App.currentGame ? App.currentGame.name : "game"}\n${text}\n${link}`;
       const fallback = () => {
         const ta = document.createElement("textarea");
         ta.value = full;
@@ -1183,6 +1204,20 @@
         App.updateGameFavBtn();
         App.renderGrid();
       });
+      // Random game button — jump to a surprise
+      const randBtn = $("#random-btn");
+      if (randBtn) randBtn.addEventListener("click", () => {
+        AudioFX.pop();
+        const all = GameRegistry.all();
+        if (!all.length) return;
+        let pick = all[Math.floor(Math.random() * all.length)];
+        if (App.currentGame && all.length > 1) {
+          // avoid picking the game we're in
+          let guard = 0;
+          while (pick.id === App.currentGame.id && guard++ < 10) pick = all[Math.floor(Math.random() * all.length)];
+        }
+        App.openGame(pick.id);
+      });
       // Share button — copy a generic result line to clipboard
       $("#game-share-btn").addEventListener("click", () => {
         AudioFX.click();
@@ -1579,7 +1614,12 @@
 
     // Hook for future lazy-loading of game scripts on hover. For now the
     // scripts are all loaded upfront via <script> tags, so this is a no-op.
-    _preloadHint(id) { /* future: dynamic import() */
+    _preloadHint(id) {
+      // Warm the cache for a declared (not yet loaded) game on hover.
+      if (window.GameRegistry && GameRegistry.isLazy && GameRegistry.isLazy(id)) {
+        GameRegistry.load(id).catch(() => {
+        });
+      }
     },
 
     // PWA install prompt — capture beforeinstallprompt, show our banner.

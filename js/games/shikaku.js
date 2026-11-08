@@ -1,22 +1,74 @@
-/* Shikaku — divide the grid into rectangles. Each rectangle contains exactly one number = its area. */
+/* Shikaku — divide the grid into rectangles. Each rectangle contains exactly
+   one number, which equals its area.
+   Generator: random recursive rectangle partition of the grid (every cell
+   covered exactly once by construction), then place the area clue at a random
+   cell of each rectangle. */
 (function () {
-  // 5×5 grid: 0 = empty, number = clue cell with required area
-  const PUZZLES = [
-    {
-      size: 5,
-      clues: [[0, 0, 4], [0, 4, 1], [2, 2, 5], [4, 0, 5], [4, 4, 1], [3, 4, 1], [1, 0, 1], [4, 2, 3]],
-      // Solution as rectangles: each rectangle = {r1,c1,r2,c2,area}
-      sol: [
-        {r1: 0, c1: 1, r2: 0, c2: 4, area: 4},
-        {r1: 1, c1: 0, r2: 1, c2: 0, area: 1},
-        {r1: 0, c1: 0, r2: 0, c2: 0, area: 1},
-        {r1: 2, c1: 0, r2: 4, c2: 1, area: 5},
-        {r1: 1, c1: 1, r2: 2, c2: 4, area: 5},
-        {r1: 3, c1: 2, r2: 4, c2: 4, area: 6},
-      ],
-    },
-  ];
-  const N = 5;
+  "use strict";
+
+  const N = 7;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+    return a;
+  }
+
+  function partition() {
+    const rects = [];
+
+    function split(r1, c1, r2, c2) {
+      const h = r2 - r1 + 1, w = c2 - c1 + 1;
+      if (h * w <= 6 && Math.random() < 0.5) {
+        rects.push([r1, c1, r2, c2]);
+        return;
+      }
+      if (h * w <= 2) {
+        rects.push([r1, c1, r2, c2]);
+        return;
+      }
+      if (h >= w || (w > 1 && Math.random() < 0.5 && h > 1)) {
+        // split rows (needs h >= 2)
+        if (h < 2) {
+          rects.push([r1, c1, r2, c2]);
+          return;
+        }
+        const m = r1 + 1 + Math.floor(Math.random() * (h - 1));
+        split(r1, c1, m - 1, c2);
+        split(m, c1, r2, c2);
+      } else {
+        if (w < 2) {
+          rects.push([r1, c1, r2, c2]);
+          return;
+        }
+        const m = c1 + 1 + Math.floor(Math.random() * (w - 1));
+        split(r1, c1, r2, m - 1);
+        split(r1, m, r2, c2);
+      }
+    }
+
+    split(0, 0, N - 1, N - 1);
+    return rects;
+  }
+
+  function generate() {
+    const rects = partition();
+    const clues = [];
+    const grid = Array.from({length: N}, () => Array(N).fill(0));
+    for (const [r1, c1, r2, c2] of rects) {
+      const area = (r2 - r1 + 1) * (c2 - c1 + 1);
+      const cells = [];
+      for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) cells.push([r, c]);
+      const [cr, cc] = cells[Math.floor(Math.random() * cells.length)];
+      clues.push([cr, cc, area]);
+      grid[cr][cc] = area;
+    }
+    return {clues, grid, rects};
+  }
 
   let live = null;
   GameRegistry.register({
@@ -27,274 +79,184 @@
     description: "Divide the grid into rectangles — each holds one number = area",
     tags: ["logic", "thinking", "puzzle"],
     age: ["teens", "adults"],
-    difficulty: "hard",
-    duration: "medium",
+    difficulty: "medium",
+    duration: "quick",
     players: "single",
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
-      let puzzle = null, rects = [], over = false;
-      let dragStart = null;
+      let puzzle = null, rects = [], over = false, dragStart = null;
 
       root.innerHTML = `
         <div class="scoreboard">
-          <div class="score-cell"><div class="label">Rectangles</div><div class="val" id="sk-rects">0</div></div>
-          <div class="score-cell"><div class="label">Cells covered</div><div class="val" id="sk-covered">0 / ${N * N}</div></div>
-          <div class="score-cell"><div class="label">Best</div><div class="val" id="sk-best">—</div></div>
+          <div class="score-cell"><div class="label">Rectangles</div><div class="val" id="sk2-rects">0</div></div>
+          <div class="score-cell"><div class="label">Clues</div><div class="val" id="sk2-clues">0</div></div>
+          <div class="score-cell"><div class="label">Best</div><div class="val" id="sk2-best">—</div></div>
         </div>
-        <div class="status info" id="sk-status">Click and drag across cells to draw a rectangle covering exactly one clue cell.</div>
-        <div class="center" style="margin:14px 0;"><div class="sk-grid" id="sk-grid"></div></div>
+        <div class="status info" id="sk2-status">Drag from one cell to another to draw a rectangle covering whole clues.</div>
+        <div class="center" style="margin:14px 0;"><div class="sk2-grid" id="sk2-grid"></div></div>
         <div class="row" style="justify-content:center;gap:8px;">
-          <button class="btn" id="sk-undo">Undo</button>
-          <button class="btn" id="sk-clear">Clear</button>
-          <button class="btn primary" id="sk-check">Check</button>
+          <button class="btn" id="sk2-clear">Clear</button>
+          <button class="btn primary" id="sk2-check">Check</button>
         </div>
-        <p class="hint">Drag mouse from one cell to another to draw a rectangle. Each rectangle must contain <b>exactly one clue cell</b>, and its area must equal that clue's number.</p>
+        <p class="hint">Cover the whole grid with rectangles. Each rectangle must contain <b>exactly one</b> clue number and have an area equal to it.</p>
       `;
-      const statusEl = root.querySelector("#sk-status");
-      const gridEl = root.querySelector("#sk-grid");
-      if (!document.getElementById("sk-style")) {
+      const statusEl = root.querySelector("#sk2-status");
+      const gridEl = root.querySelector("#sk2-grid");
+      if (!document.getElementById("sk2-style")) {
         const s = document.createElement("style");
-        s.id = "sk-style";
+        s.id = "sk2-style";
         s.textContent = `
-          .sk-grid { display: inline-grid; grid-template-columns: repeat(${N}, 48px); gap: 2px; background: var(--border); padding: 4px; border-radius: var(--radius); touch-action: none; }
-          .sk-cell { width: 48px; height: 48px; background: var(--bg-elev); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--text); user-select: none; position: relative; }
-          .sk-cell.clue { background: var(--bg-soft); }
-          .sk-cell.dragging { outline: 3px solid var(--accent); }
+          .sk2-grid { display: inline-grid; grid-template-columns: repeat(${N}, 50px); gap: 0; background: var(--border); border: 2px solid var(--border); }
+          .sk2-cell { width: 50px; height: 50px; background: var(--bg-elev); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 700; font-size: 1.15rem; cursor: pointer; user-select: none; position: relative; }
+          .sk2-cell.has-rect { background: var(--accent-soft, #e0e7ff); }
         `;
         document.head.appendChild(s);
       }
 
-      const COLORS = ["rgba(99,102,241,0.25)", "rgba(236,72,153,0.25)", "rgba(22,163,74,0.25)", "rgba(245,158,11,0.25)", "rgba(14,165,233,0.25)", "rgba(139,92,246,0.25)", "rgba(220,38,38,0.25)", "rgba(20,184,166,0.25)"];
-
-      function getClue(r, c) {
-        const k = puzzle.clues.find(([cr, cc]) => cr === r && cc === c);
-        return k ? k[2] : null;
-      }
-
       function rectAt(r, c) {
-        return rects.find(R => r >= R.r1 && r <= R.r2 && c >= R.c1 && c <= R.c2);
+        return rects.findIndex(([r1, c1, r2, c2]) => r >= r1 && r <= r2 && c >= c1 && c <= c2);
       }
 
       function render() {
         gridEl.innerHTML = "";
-        for (let r = 0; r < N; r++) {
-          for (let c = 0; c < N; c++) {
-            const cell = document.createElement("div");
-            cell.className = "sk-cell";
-            cell.dataset.r = r;
-            cell.dataset.c = c;
-            const clue = getClue(r, c);
-            if (clue !== null) {
-              cell.classList.add("clue");
-              cell.textContent = clue;
-            }
-            const R = rectAt(r, c);
-            if (R) cell.style.background = COLORS[rects.indexOf(R) % COLORS.length];
-            cell.addEventListener("mousedown", (e) => {
-              e.preventDefault();
-              dragStart = [r, c];
-              updateDrag([r, c]);
-            });
-            cell.addEventListener("mouseenter", (e) => {
-              if (dragStart) updateDrag([r, c]);
-            });
-            cell.addEventListener("touchstart", (e) => {
-              e.preventDefault();
-              const t = e.touches[0];
-              const el = document.elementFromPoint(t.clientX, t.clientY);
-              if (el && el.dataset.r !== undefined) {
-                dragStart = [+el.dataset.r, +el.dataset.c];
-                updateDrag(dragStart);
-              }
-            }, {passive: false});
-            cell.addEventListener("touchmove", (e) => {
-              e.preventDefault();
-              if (!dragStart) return;
-              const t = e.touches[0];
-              const el = document.elementFromPoint(t.clientX, t.clientY);
-              if (el && el.dataset.r !== undefined) updateDrag([+el.dataset.r, +el.dataset.c]);
-            }, {passive: false});
-            gridEl.appendChild(cell);
-          }
+        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+          const cell = document.createElement("div");
+          cell.className = "sk2-cell" + (rectAt(r, c) >= 0 ? " has-rect" : "");
+          if (puzzle.grid[r][c]) cell.textContent = puzzle.grid[r][c];
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+          gridEl.appendChild(cell);
         }
-        const covered = new Set();
-        rects.forEach(R => {
-          for (let r = R.r1; r <= R.r2; r++) for (let c = R.c1; c <= R.c2; c++) covered.add(`${r},${c}`);
-        });
-        root.querySelector("#sk-rects").textContent = rects.length;
-        root.querySelector("#sk-covered").textContent = `${covered.size} / ${N * N}`;
+        root.querySelector("#sk2-rects").textContent = rects.length;
+        root.querySelector("#sk2-clues").textContent = puzzle.clues.length;
       }
 
-      let currentDragRect = null;
-
-      function updateDrag(end) {
-        if (!dragStart) return;
-        const r1 = Math.min(dragStart[0], end[0]), r2 = Math.max(dragStart[0], end[0]);
-        const c1 = Math.min(dragStart[1], end[1]), c2 = Math.max(dragStart[1], end[1]);
-        currentDragRect = {r1, c1, r2, c2};
-        // Highlight cells in drag rect
-        Array.from(gridEl.children).forEach(cell => {
-          const r = +cell.dataset.r, c = +cell.dataset.c;
-          cell.classList.toggle("dragging", r >= r1 && r <= r2 && c >= c1 && c <= c2);
-        });
+      function addRect(r1, c1, r2, c2) {
+        // remove overlapping rects
+        rects = rects.filter(([a1, b1, a2, b2]) => !(r1 <= a2 && r2 >= a1 && c1 <= b2 && c2 >= b1));
+        rects.push([r1, c1, r2, c2]);
+        AudioFX.place();
+        render();
       }
 
-      function endDrag() {
-        if (!dragStart || !currentDragRect) {
+      gridEl.addEventListener("pointerdown", (e) => {
+        const cell = e.target.closest(".sk2-cell");
+        if (!cell || over) return;
+        dragStart = [+cell.dataset.r, +cell.dataset.c];
+      });
+      gridEl.addEventListener("pointerup", (e) => {
+        const cell = e.target.closest(".sk2-cell");
+        if (!cell || over || !dragStart) {
           dragStart = null;
           return;
         }
-        const R = currentDragRect;
-        // Validate: must contain exactly one clue, area must equal clue
-        let clueCount = 0, clueArea = null, clueR = -1, clueC = -1;
-        for (let r = R.r1; r <= R.r2; r++) for (let c = R.c1; c <= R.c2; c++) {
-          const cl = getClue(r, c);
-          if (cl !== null) {
-            clueCount++;
-            clueArea = cl;
-            clueR = r;
-            clueC = c;
-          }
-        }
-        const area = (R.r2 - R.r1 + 1) * (R.c2 - R.c1 + 1);
-        if (clueCount === 1 && area === clueArea) {
-          // Check no overlap with existing rects
-          let overlap = false;
-          for (let r = R.r1; r <= R.r2 && !overlap; r++) for (let c = R.c1; c <= R.c2 && !overlap; c++) {
-            if (rectAt(r, c)) overlap = true;
-          }
-          if (!overlap) {
-            rects.push(R);
-            AudioFX.pop();
-          } else {
-            AudioFX.error();
-            App.toast("Rectangle overlaps an existing one", "warning");
-          }
-        } else {
-          AudioFX.error();
-          if (clueCount === 0) App.toast("Rectangle must contain a clue cell", "warning");
-          else if (clueCount > 1) App.toast("Rectangle can contain only one clue", "warning");
-          else App.toast(`Area ${area} ≠ clue ${clueArea}`, "warning");
-        }
+        const r2 = +cell.dataset.r, c2 = +cell.dataset.c;
+        const [r1, c1] = dragStart;
         dragStart = null;
-        currentDragRect = null;
-        render();
-        checkAuto();
-      }
-
-      // Bind mouseup on document
-      function onMouseUp() {
-        if (dragStart) endDrag();
-      }
-
-      function checkAuto() {
-        // All cells covered + all rects valid (1 clue, area matches) + total area = N*N
-        const covered = new Set();
-        let valid = true;
-        rects.forEach(R => {
-          let clueCount = 0, clueArea = null;
-          for (let r = R.r1; r <= R.r2; r++) for (let c = R.c1; c <= R.c2; c++) {
-            covered.add(`${r},${c}`);
-            const cl = getClue(r, c);
-            if (cl !== null) {
-              clueCount++;
-              clueArea = cl;
-            }
-          }
-          const area = (R.r2 - R.r1 + 1) * (R.c2 - R.c1 + 1);
-          if (clueCount !== 1 || area !== clueArea) valid = false;
-        });
-        if (covered.size === N * N && valid) {
-          over = true;
-          AudioFX.win();
-          statusEl.textContent = "🎉 Solved!";
-          statusEl.className = "status win";
-          const best = Storage.getBest("shikaku");
-          if (!best || 100 > best) {
-            Storage.setBest("shikaku", 100);
-            root.querySelector("#sk-best").textContent = 100;
-          }
+        if (r1 === r2 && c1 === c2) return; // plain click — handled by click handler
+        addRect(Math.min(r1, r2), Math.min(c1, c2), Math.max(r1, r2), Math.max(c1, c2));
+      });
+      gridEl.addEventListener("click", (e) => {
+        // single click (no drag): remove the rect under the pointer
+        const cell = e.target.closest(".sk2-cell");
+        if (!cell || over) return;
+        const idx = rectAt(+cell.dataset.r, +cell.dataset.c);
+        if (idx >= 0) {
+          rects.splice(idx, 1);
+          AudioFX.click();
+          render();
         }
-      }
+      });
 
       function check() {
-        const covered = new Set();
-        let valid = true;
-        rects.forEach(R => {
-          let clueCount = 0, clueArea = null;
-          for (let r = R.r1; r <= R.r2; r++) for (let c = R.c1; c <= R.c2; c++) {
-            covered.add(`${r},${c}`);
-            const cl = getClue(r, c);
-            if (cl !== null) {
-              clueCount++;
-              clueArea = cl;
-            }
-          }
-          const area = (R.r2 - R.r1 + 1) * (R.c2 - R.c1 + 1);
-          if (clueCount !== 1 || area !== clueArea) valid = false;
-        });
-        if (covered.size !== N * N) {
-          AudioFX.error();
-          statusEl.textContent = `${N * N - covered.size} cells uncovered`;
-          statusEl.className = "status lose";
-          return;
+        if (over) return;
+        // every cell covered exactly once
+        const cover = Array.from({length: N}, () => Array(N).fill(0));
+        for (const [r1, c1, r2, c2] of rects) {
+          for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) cover[r][c]++;
         }
-        if (!valid) {
-          AudioFX.error();
-          statusEl.textContent = "Some rectangles are invalid";
-          statusEl.className = "status lose";
-          return;
+        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+          if (cover[r][c] !== 1) return fail(`Cell (${r + 1},${c + 1}) is covered ${cover[r][c]} time(s).`);
         }
-        checkAuto();
+        // each rect exactly one clue matching area
+        for (const [r1, c1, r2, c2] of rects) {
+          const area = (r2 - r1 + 1) * (c2 - c1 + 1);
+          const cluesInside = puzzle.clues.filter(([cr, cc]) => cr >= r1 && cr <= r2 && cc >= c1 && cc <= c2);
+          if (cluesInside.length === 0) return fail(`Rectangle at (${r1 + 1},${c1 + 1}) has no clue.`);
+          if (cluesInside.length > 1) return fail(`A rectangle contains ${cluesInside.length} clues — only 1 allowed.`);
+          if (cluesInside[0][2] !== area) return fail(`Rectangle at (${r1 + 1},${c1 + 1}) has area ${area}, clue says ${cluesInside[0][2]}.`);
+        }
+        over = true;
+        AudioFX.win();
+        statusEl.textContent = "🎉 Solved!";
+        statusEl.className = "status win";
+        const best = Storage.getBest("shikaku");
+        if (!best || 100 > best) {
+          Storage.setBest("shikaku", 100);
+          root.querySelector("#sk2-best").textContent = 100;
+        }
+
+        function fail(msg) {
+          AudioFX.error();
+          statusEl.textContent = msg;
+          statusEl.className = "status lose";
+        }
       }
 
-      root.querySelector("#sk-check").addEventListener("click", check);
-      root.querySelector("#sk-undo").addEventListener("click", () => {
-        if (over) return;
-        rects.pop();
-        AudioFX.click();
-        render();
-      });
-      root.querySelector("#sk-clear").addEventListener("click", () => {
-        if (over) return;
-        rects = [];
-        AudioFX.click();
-        render();
-      });
-      document.addEventListener("mouseup", onMouseUp);
-      document.addEventListener("touchend", onMouseUp);
-
       function newGame() {
-        puzzle = JSON.parse(JSON.stringify(PUZZLES[Math.floor(Math.random() * PUZZLES.length)]));
+        puzzle = generate();
         rects = [];
         over = false;
-        dragStart = null;
-        currentDragRect = null;
         const best = Storage.getBest("shikaku");
-        root.querySelector("#sk-best").textContent = best || "—";
-        statusEl.textContent = "Click and drag across cells to draw a rectangle covering exactly one clue cell.";
+        root.querySelector("#sk2-best").textContent = best || "—";
+        statusEl.textContent = "Drag from one cell to another to draw a rectangle covering whole clues.";
         statusEl.className = "status info";
         render();
       }
 
+      root.querySelector("#sk2-check").addEventListener("click", check);
+      root.querySelector("#sk2-clear").addEventListener("click", () => {
+        if (over) return;
+        rects = [];
+        AudioFX.click();
+        render();
+      });
+
+      newGame();
       live = {
+        hint: function () {
+          if (over || !puzzle) return;
+          const missing = puzzle.rects.filter(() => true).filter(([r1, c1, r2, c2]) => {
+            // exact match present?
+            return !rects.some(([a1, b1, a2, b2]) => a1 === r1 && b1 === c1 && a2 === r2 && b2 === c2);
+          });
+          if (!missing.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [r1, c1, r2, c2] = missing[Math.floor(Math.random() * missing.length)];
+          rects = rects.filter(([a1, b1, a2, b2]) => !(r1 <= a2 && r2 >= a1 && c1 <= b2 && c2 >= b1));
+          rects.push([r1, c1, r2, c2]);
+          AudioFX.reveal();
+          render();
+        },
         solve: function () {
           if (over) return;
-          rects = puzzle.sol.map(R => ({r1: R.r1, c1: R.c1, r2: R.r2, c2: R.c2}));
+          rects = puzzle.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2]);
           over = true;
           render();
           statusEl.textContent = "Solution revealed";
           statusEl.className = "status lose";
           AudioFX.lose();
-        }
+        },
       };
-      newGame();
       return function cleanup() {
         alive = false;
         live = null;
-        document.removeEventListener("mouseup", onMouseUp);
-        document.removeEventListener("touchend", onMouseUp);
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     solve: function () {
       if (live && live.solve) live.solve();
@@ -302,10 +264,10 @@
     help: function () {
       App.showModal("How to play Shikaku",
         `Divide the grid into rectangles.
-        <br><br>Each rectangle must:
-        <br>• Contain <b>exactly one numbered clue cell</b>.
-        <br>• Have an <b>area</b> (number of cells) <b>equal to that clue's number</b>.
-        <br><br>Drag mouse from one cell to another to draw a rectangle. The rectangle must not overlap any existing rectangle.`);
+        <br><br>• Each rectangle contains <b>exactly one</b> clue number.
+        <br>• The rectangle's <b>area</b> (width × height) must equal that number.
+        <br>• Every cell must be covered — no gaps, no overlaps.
+        <br><br>Drag between two cells to draw a rectangle; click a rectangle to remove it.`);
     },
   });
 })();

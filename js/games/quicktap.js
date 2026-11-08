@@ -5,7 +5,7 @@
   const TARGET_EMOJI = "\ud83c\udfaf";
   GameRegistry.register({
     id: "quicktap", name: "Quick Tap", icon: "👆", category: "arcade",
-    description: "Tap targets fast \u2014 30s.", tags: ["arcade", "mini"],
+    description: "Tap targets fast — 30s.", tags: ["arcade", "mini"],
     age: ["kids", "teens", "adults"], difficulty: "easy", duration: "quick", players: "single",
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;
