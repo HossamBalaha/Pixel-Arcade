@@ -754,7 +754,7 @@
   }, {
     "id": "dominoeschain",
     "name": "Domino Chain",
-    "icon": "🁣",
+    "icon": "⛓️",
     "category": "strategy",
     "description": "Classic draw dominoes — match the open ends of the chain, empty your hand first.",
     "tags": ["strategy", "classic", "dominoes", "ai"],
@@ -765,7 +765,7 @@
   }, {
     "id": "dominoessolitaire",
     "name": "Dominoes Solitaire",
-    "icon": "🁢",
+    "icon": "🎲",
     "category": "strategy",
     "description": "The classic domino puzzle — find the hidden tiling of all 28 dominoes in the 7×8 pip grid.",
     "tags": ["strategy", "puzzle", "dominoes", "solitaire"],
@@ -776,7 +776,7 @@
   }, {
     "id": "dominosa",
     "name": "Dominosa",
-    "icon": "🁫",
+    "icon": "🧩",
     "category": "logic",
     "description": "Tile the grid into dominoes — each domino value used exactly once",
     "tags": ["logic", "dominoes", "deduction"],
@@ -2481,7 +2481,7 @@
   }, {
     "id": "shikaku",
     "name": "Shikaku",
-    "icon": "▭",
+    "icon": "📐",
     "category": "logic",
     "description": "Divide the grid into rectangles — each holds one number = area",
     "tags": ["logic", "thinking", "puzzle"],
@@ -2602,7 +2602,7 @@
   }, {
     "id": "solitaire",
     "name": "Solitaire",
-    "icon": "🂠",
+    "icon": "♠️",
     "category": "strategy",
     "description": "Klondike patience — build foundations by suit",
     "tags": ["strategy", "cards", "classic"],

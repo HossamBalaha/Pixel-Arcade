@@ -70,16 +70,20 @@ No `npm install`, no compilation. Just edit, refresh, ship.
 })();
 ```
 
-2. Add a thumbnail at `assets/thumbnails/mygame.svg` (220×140, single emoji on a themed gradient). See
-   `scripts/gen-thumbnails.py` for the template.
+2. Register the game in `js/catalog.js` (the hub renders from this manifest and lazy-loads each game's script on
+   demand), then generate its thumbnail automatically:
 
-3. Add a `<script src="js/games/mygame.js" defer></script>` tag in `index.html` (anywhere in the games block before
-   `app.js`). The `defer` attribute is required — without it the script runs immediately and may execute before the
-   framework is loaded.
+   ```bash
+   node tools/generate-thumbnails.js --only=mygame   # no flags = regenerate ALL thumbnails
+   ```
 
-4. Test by visiting `http://localhost:8000/#/mygame`.
+   The generator writes `assets/thumbnails/mygame.svg` (220×140, icon on a category-coded gradient) and
+   overwrites whatever is there. To restyle thumbnails site-wide, edit the CONFIG at the top of
+   `tools/generate-thumbnails.js` and re-run it.
 
-5. If your game has a "best score" worth tracking, call `Storage.setBest("mygame", value)` when the game ends.
+3. Test by visiting `http://localhost:8000/#/mygame` (or `?game=mygame` for the shareable deep link).
+
+4. If your game has a "best score" worth tracking, call `Storage.setBest("mygame", value)` when the game ends.
 
 ## Coding style
 
@@ -100,8 +104,8 @@ No `npm install`, no compilation. Just edit, refresh, ship.
   (light/dark)
 - [ ] Game is keyboard-operable (where it makes sense)
 - [ ] Game is mobile-friendly (responsive, swipe where applicable)
-- [ ] Thumbnail added to `assets/thumbnails/<id>.svg`
-- [ ] `<script>` tag added to `index.html`
+- [ ] Game registered in `js/catalog.js` and thumbnail generated via `tools/generate-thumbnails.js`
+  (`node tools/generate-thumbnails.js --check` passes)
 - [ ] README updated if the game list changed
 
 ## Reporting bugs

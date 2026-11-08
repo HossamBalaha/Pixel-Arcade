@@ -550,11 +550,14 @@ Pixel-Arcade/
 │   ├── wikifetch.js        # Wikipedia + Open Trivia DB fetch with offline fallback
 │   ├── app.js              # Router, theme switcher, grid, modal, toasts
 │   ├── wordlist.js         # Comprehensive English word list (4/5/6-letter, NLTK-based)
-│   └── games/              # 217 self-contained game files
+│   └── games/              # 300 self-contained game files
 │       ├── tictactoe.js
 │       ├── wordle.js
 │       ├── ...
 │       └── slotmachine.js
+├── tools/
+│   └── generate-thumbnails.js  # Thumbnail generator — edit + re-run to
+│                                # overwrite every game thumbnail (source of truth)
 └── assets/
     ├── .gitkeep
     ├── icons/
@@ -568,7 +571,7 @@ Pixel-Arcade/
     │   ├── android-chrome-512x512.png
     │   └── mstile-150x150.png
     └── thumbnails/
-        ├── tictactoe.svg            # 217 game thumbnails (220×140 each)
+        ├── tictactoe.svg            # 300 game thumbnails (220×140 each)
         ├── wordle.svg
         └── ...
 ```
@@ -638,8 +641,16 @@ Pixel-Arcade/
 })();
 ```
 
-2. Generate a thumbnail at `assets/thumbnails/mygame.svg` (220×140, single emoji on a themed gradient). Use
-   `scripts/gen-thumbnails.py` as a template.
+2. Add the game to `js/catalog.js` (step 3 below), then generate its thumbnail automatically:
+
+   ```bash
+   node tools/generate-thumbnails.js --only=mygame   # or run with no flags to regenerate ALL
+   ```
+
+   The generator reads `js/catalog.js` and writes `assets/thumbnails/<id>.svg` (220×140, icon on a
+   category-coded gradient). Edit the CONFIG at the top of `tools/generate-thumbnails.js` — colors, icon
+   overrides, hand-drawn vector icons, layout — and re-run; existing thumbnails are overwritten to match.
+   `node tools/generate-thumbnails.js --check` verifies every game has a valid, font-safe thumbnail.
 
 3. Register the game in the catalog so it appears on the hub: add an entry to `js/catalog.js`'s `CATALOG` array
    (`{id, name, icon, category, description, tags, age, difficulty, duration, players}`). The hub renders from this
@@ -700,7 +711,7 @@ Switching themes at runtime: `document.documentElement.setAttribute("data-theme"
 ## 👤 About the author
 
 **Hossam Magdy Balaha** is the creator and sole maintainer of Pixel Arcade. The project started as a single-page hub for
-a handful of classic games and grew into a 217-game collection spanning every major casual-game genre.
+a handful of classic games and grew into a 300-game collection spanning every major casual-game genre.
 
 - Maintainer: Hossam Magdy Balaha
 - License: MIT (free for personal and commercial use, attribution appreciated)
@@ -721,7 +732,8 @@ If you use Pixel Arcade in research or teaching, please cite it using the metada
 | [CITATION.cff](./CITATION.cff)             | Citation metadata for academic use.                    |
 
 All artwork in `assets/icons/` and `assets/thumbnails/` is **original work** generated for this project — no copyrighted
-content. The source `logo.svg` is a hand-drawn arcade cabinet; thumbnails are emoji-on-gradient SVGs. Reuse freely under
+content. The source `logo.svg` is a hand-drawn arcade cabinet; every thumbnail is an SVG produced by
+`tools/generate-thumbnails.js` (emoji or hand-drawn vector icon on a category-coded gradient). Reuse freely under
 MIT.
 
 ---
