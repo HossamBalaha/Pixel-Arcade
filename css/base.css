@@ -45,6 +45,16 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    /* Compensate for the fixed topbar so nothing hides underneath it.
+       --topbar-h is kept in sync by a ResizeObserver in app.js (theme fonts
+       and a11y font scaling change the bar height). */
+    box-sizing: border-box;
+    padding-top: var(--topbar-h, 62px);
+}
+
+/* Anchor/skip-link targets must not land behind the fixed bar */
+html {
+    scroll-padding-top: calc(var(--topbar-h, 62px) + 8px);
 }
 
 /* Arcade/cartoon fonts need bigger base size — keep them relative too */
@@ -88,8 +98,14 @@ button {
 
 /* ---------- Top bar ---------- */
 .topbar {
-    position: sticky;
+    /* Fixed at the top of the viewport — stays visible no matter how far
+       the page scrolls. Height is published to --topbar-h (see app.js
+       ResizeObserver) and consumed as body padding so content is never
+       hidden underneath. */
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 50;
     display: flex;
     align-items: center;
@@ -698,26 +714,44 @@ main {
     position: absolute;
     top: 10px;
     right: 10px;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     display: grid;
     place-items: center;
     border-radius: 999px;
-    color: var(--text-muted);
+    /* Frosted chip so the heart stays readable on any thumbnail color */
+    background: rgba(10, 14, 24, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    color: #ffffff;
     font-size: 16px;
-    transition: color 0.15s, transform 0.1s;
+    line-height: 1;
+    transition: color 0.15s, transform 0.1s, background 0.15s, border-color 0.15s;
 }
 
 .card .fav:hover {
-    color: var(--accent-2);
+    color: #ff8fa3;
+    background: rgba(10, 14, 24, 0.78);
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+.card .fav:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 
 .card .fav.active {
-    color: var(--accent-2);
+    color: #e6173c;
+    background: #ffffff;
+    border-color: rgba(230, 23, 60, 0.65);
+    box-shadow: 0 2px 10px rgba(230, 23, 60, 0.35);
 }
 
 .card .fav.active:hover {
     transform: scale(1.15);
+    color: #ff2e55;
 }
 
 .card .best {

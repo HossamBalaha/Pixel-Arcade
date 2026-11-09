@@ -3544,6 +3544,10 @@
           <button class="menu-chip" data-theme-id="newspaper">Newspaper</button>
           <button class="menu-chip" data-theme-id="halloween">🎃 Halloween</button>
           <button class="menu-chip" data-theme-id="christmas">🎄 Christmas</button>
+          <button class="menu-chip" data-theme-id="ocean">🌊 Ocean Deep</button>
+          <button class="menu-chip" data-theme-id="arctic">❄️ Arctic Frost</button>
+          <button class="menu-chip" data-theme-id="candy">🍬 Candy Pop</button>
+          <button class="menu-chip" data-theme-id="coffee">☕ Coffee House</button>
         </div>
       </div>
     </div>
@@ -3556,7 +3560,7 @@
     <div class="hero-greeting" id="hero-greeting"></div>
     <h1>Pixel Arcade — Play 300 Classic Games</h1>
     <p>300 games — word puzzles, logic, arcade, strategy, quiz — all in your browser. No installs. No login. No backend.
-      20 themes. Advanced filters, stats, achievements, daily challenge &amp; more.</p>
+      24 themes. Advanced filters, stats, achievements, daily challenge &amp; more.</p>
   </section>
 
   <!-- PWA install prompt — shown by app.js when beforeinstallprompt fires.
@@ -3590,7 +3594,8 @@
     <button class="filter-chip" data-dim="category" data-filter="strategy">Strategy</button>
     <button class="filter-chip" data-dim="category" data-filter="quiz">Quiz</button>
     <div class="search-wrap">
-      <input class="search" id="search" placeholder="Search games…" type="search"/>
+      <input aria-label="Search games by name or keyword" class="search" id="search" placeholder="Search games…"
+             type="search"/>
       <button aria-label="Clear search" class="search-clear" id="search-clear" title="Clear search">×</button>
     </div>
     <select aria-label="Sort games" class="sort-select" id="sort-select">
@@ -3712,7 +3717,7 @@
 
 <!-- Modal backdrop -->
 <div class="modal-backdrop" id="modal-backdrop">
-  <div class="modal" id="modal">
+  <div aria-labelledby="modal-title" aria-modal="true" class="modal" id="modal" role="dialog">
     <button aria-label="Close" class="modal-close" id="modal-close" title="Close" type="button">×</button>
     <h3 id="modal-title">Title</h3>
     <p id="modal-body">Body</p>

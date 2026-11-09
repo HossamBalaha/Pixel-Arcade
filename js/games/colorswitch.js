@@ -17,7 +17,8 @@
       const W = 320, H = 480, BALL_R = 10;
       const COLORS = ["#ef4444", "#eab308", "#22c55e", "#06b6d4"];
       let ball = {y: H - 60, vy: 0, color: 0};
-      let obstacles = [], score = 0, rafId = null, over = false, spawnY = -100, gravity = 0.4, jump = -7;
+      let obstacles = [], score = 0, rafId = null, over = false, started = false, spawnY = -100, gravity = 0.4,
+        jump = -7;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -33,10 +34,20 @@
       const statusEl = root.querySelector("#cs-status");
       root.querySelector("#cs-best").textContent = Storage.getBest("colorswitch") ?? "—";
 
-      function spawnObstacle(y) {
+      function spawnObstacle(y, opts) {
         const colors = COLORS.slice().sort(() => Math.random() - 0.5);
-        // 4 quadrant obstacle with one gap per color
-        obstacles.push({y, colors, passed: false});
+        // Rings rotate — the player times their jump so the arc passing the
+        // ball matches the ball's color (the real Color Switch mechanic).
+        // The first ring is static and pre-matched for a fair start.
+        const first = opts && opts.first;
+        obstacles.push({
+          y,
+          colors,
+          passed: false,
+          rot: 0,
+          rotSpeed: first ? 0 : (Math.random() < 0.5 ? -1 : 1) * (0.018 + Math.random() * 0.02),
+          matched: first ? true : false,
+        });
       }
 
       function spawnStar(y) {
@@ -48,14 +59,16 @@
         obstacles = [];
         score = 0;
         over = false;
+        started = false;
         spawnY = -100;
         root.querySelector("#cs-score").textContent = 0;
         statusEl.textContent = "Tap / click / Space to jump. Match the color to pass!";
         statusEl.className = "status info";
-        // Pre-spawn obstacles going up
+        // Pre-spawn obstacles going up — first one static, matching the ball
+        // color, and far enough above the ball for a comfortable reaction.
         for (let i = 0; i < 5; i++) {
-          spawnY = H - 150 - i * 130;
-          if (i % 2 === 0) spawnObstacle(spawnY);
+          spawnY = H - 260 - i * 150;
+          if (i % 2 === 0) spawnObstacle(spawnY, {first: i === 0});
           else spawnStar(spawnY);
         }
         if (!rafId) loop();
@@ -63,16 +76,19 @@
 
       function loop() {
         if (!alive) return;
-        if (!over) {
+        if (!over && started) {
           ball.vy += gravity;
           ball.y += ball.vy;
           // Scroll obstacles down (visualizing the ball going up)
-          for (const o of obstacles) o.y += 2;
+          for (const o of obstacles) {
+            o.y += 2;
+            if (!o.isStar) o.rot = (o.rot + o.rotSpeed) % (Math.PI * 2);
+          }
           // Remove off-screen
           obstacles = obstacles.filter(o => o.y < H + 100);
           // Spawn new above
-          if (obstacles.length === 0 || obstacles[obstacles.length - 1].y > 100) {
-            const y = obstacles.length ? obstacles[obstacles.length - 1].y - 130 : -100;
+          if (obstacles.length === 0 || obstacles[obstacles.length - 1].y > 60) {
+            const y = obstacles.length ? obstacles[obstacles.length - 1].y - 150 : -100;
             if (Math.random() < 0.5) spawnObstacle(y);
             else spawnStar(y);
           }
@@ -85,25 +101,24 @@
                 AudioFX.flip();
               }
             } else {
-              if (!o.passed && Math.abs(o.y - ball.y) < 20) {
-                // Check which quadrant ball is in (left, top, right, bottom)
-                const cx = W / 2;
-                const dx = cx - W / 2;
-                // Simplified: ball x is at center W/2
-                // Quadrant based on angular position around obstacle center
+              if (!o.passed && Math.abs(o.y - ball.y) < 18) {
+                // The ball is always directly below the ring center (x = W/2),
+                // so the arc it passes through is the one currently at the
+                // bottom angle — which changes as the ring rotates.
                 const ox = W / 2, oy = o.y;
                 const bx = W / 2, by = ball.y;
                 const angle = Math.atan2(by - oy, bx - ox); // -PI..PI
-                let quad = Math.floor(((angle + Math.PI) / (Math.PI / 2))) % 4;
+                let quad = Math.floor(((angle + Math.PI - o.rot) / (Math.PI / 2))) % 4;
                 if (quad < 0) quad += 4;
-                if (o.colors[quad] !== ball.color) {
+                if (o.matched || o.colors[quad] === COLORS[ball.color]) {
+                  o.passed = true;
+                  score++;
+                  AudioFX.pop();
+                  root.querySelector("#cs-score").textContent = score;
+                } else {
                   gameOver();
                   return;
                 }
-                o.passed = true;
-                score++;
-                AudioFX.pop();
-                root.querySelector("#cs-score").textContent = score;
               }
             }
           }
@@ -134,12 +149,12 @@
             }
           } else {
             const cx = W / 2, cy = o.y, r = 50;
-            // 4 arc quadrants
+            // 4 arc quadrants, rotated by the ring's current angle
             for (let i = 0; i < 4; i++) {
               ctx.fillStyle = o.colors[i];
               ctx.beginPath();
               ctx.moveTo(cx, cy);
-              ctx.arc(cx, cy, r, -Math.PI + i * Math.PI / 2, -Math.PI + (i + 1) * Math.PI / 2);
+              ctx.arc(cx, cy, r, -Math.PI + i * Math.PI / 2 + o.rot, -Math.PI + (i + 1) * Math.PI / 2 + o.rot);
               ctx.closePath();
               ctx.fill();
             }
@@ -155,6 +170,13 @@
         ctx.beginPath();
         ctx.arc(W / 2, ball.y, BALL_R, 0, Math.PI * 2);
         ctx.fill();
+        if (!started && !over) {
+          ctx.fillStyle = "rgba(255,255,255,0.85)";
+          ctx.font = "bold 16px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("Tap / Space to start", W / 2, H / 2);
+        }
         if (over) {
           ctx.fillStyle = "rgba(0,0,0,0.6)";
           ctx.fillRect(0, 0, W, H);
@@ -183,6 +205,10 @@
 
       function jumpBall() {
         if (over) return;
+        if (!started) {
+          started = true;
+          statusEl.textContent = "Go! Match the color to pass!";
+        }
         ball.vy = jump;
         AudioFX.tick();
       }

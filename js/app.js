@@ -27,9 +27,18 @@
       const mode = Storage.getMode();
       document.documentElement.setAttribute("data-theme", theme);
       document.documentElement.setAttribute("data-mode", mode);
-      $$(".menu-chip").forEach(c => c.classList.toggle("active", c.dataset.themeId === theme));
+      $$(".menu-chip").forEach(c => {
+        const active = c.dataset.themeId === theme;
+        c.classList.toggle("active", active);
+        c.setAttribute("aria-pressed", active ? "true" : "false");
+      });
       $("#mode-sun").classList.toggle("hidden", mode === "dark");
       $("#mode-moon").classList.toggle("hidden", mode === "light");
+      const modeBtn = $("#mode-btn");
+      if (modeBtn) {
+        modeBtn.setAttribute("aria-pressed", mode === "dark" ? "true" : "false");
+        modeBtn.title = mode === "dark" ? "Switch to light mode" : "Switch to dark mode";
+      }
     },
     setTheme(t) {
       Storage.setTheme(t);
@@ -45,6 +54,11 @@
       const on = Storage.getSound();
       $("#sound-on").classList.toggle("hidden", !on);
       $("#sound-off").classList.toggle("hidden", on);
+      const btn = $("#sound-btn");
+      if (btn) {
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        btn.title = on ? "Mute sound" : "Unmute sound";
+      }
     },
     toggleSound() {
       const next = !Storage.getSound();
@@ -1157,10 +1171,23 @@
       $("#modal-backdrop").classList.add("open");
       // Scroll modal to top on open
       modal.scrollTop = 0;
+      // Focus management: remember what was focused, move focus into the
+      // dialog (first action button) so keyboard/AT users land inside it.
+      App._lastFocused = document.activeElement;
+      const firstBtn = modal.querySelector("#modal-actions .btn") || modal.querySelector("#modal-close");
+      if (firstBtn) firstBtn.focus();
     },
     closeModal() {
       $("#modal-backdrop").classList.remove("open");
       $("#modal").classList.remove("modal-wide");
+      // Return focus to whatever opened the modal (button, card, etc.)
+      if (App._lastFocused && document.contains(App._lastFocused)) {
+        try {
+          App._lastFocused.focus();
+        } catch (err) { /* detached node */
+        }
+      }
+      App._lastFocused = null;
     },
 
     // ---------- Init ----------
@@ -1168,9 +1195,33 @@
       // Theme/mode/sound
       App.applyTheme();
       App.applySound();
+      // Sync the favorites-only toggle initial state (class + aria-pressed)
+      const favOnlyBtn = $("#fav-only-btn");
+      if (favOnlyBtn) {
+        favOnlyBtn.classList.toggle("active", App.state.favOnly);
+        favOnlyBtn.setAttribute("aria-pressed", App.state.favOnly ? "true" : "false");
+      }
       // Auto-detect OS prefers-reduced-motion / prefers-contrast on first visit
       App._respectOsPreferences();
       $("#footer-count").textContent = GameRegistry.all().length;
+
+      // Fixed topbar height sync — publish the real bar height to --topbar-h
+      // so body padding always matches (theme fonts + a11y font scaling and
+      // window resizes all change it). Runs before first paint of content.
+      const topbar = document.querySelector(".topbar");
+      if (topbar) {
+        const syncTopbarH = () => {
+          document.documentElement.style.setProperty("--topbar-h", topbar.offsetHeight + "px");
+        };
+        syncTopbarH();
+        if ("ResizeObserver" in window) {
+          new ResizeObserver(syncTopbarH).observe(topbar);
+        } else {
+          window.addEventListener("resize", syncTopbarH);
+        }
+        // Re-measure once webfonts have loaded (metrics can shift)
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncTopbarH);
+      }
 
       // Buttons
       $("#brand").addEventListener("click", () => {
@@ -1415,7 +1466,10 @@
         App.state.search = "";
         App.state.sort = "default";
         App.state.favOnly = false;
-        $("#fav-only-btn").style.color = "";
+        const favBtn = $("#fav-only-btn");
+        favBtn.classList.remove("active");
+        favBtn.setAttribute("aria-pressed", "false");
+        favBtn.title = "Show favorites only";
         const searchEl = $("#search");
         if (searchEl) searchEl.value = "";
         const clearBtn = document.getElementById("search-clear");
@@ -1437,7 +1491,10 @@
       $("#fav-only-btn").addEventListener("click", () => {
         AudioFX.click();
         App.state.favOnly = !App.state.favOnly;
-        $("#fav-only-btn").style.color = App.state.favOnly ? "var(--accent-2)" : "";
+        const btn = $("#fav-only-btn");
+        btn.classList.toggle("active", App.state.favOnly);
+        btn.setAttribute("aria-pressed", App.state.favOnly ? "true" : "false");
+        btn.title = App.state.favOnly ? "Show all games" : "Show favorites only";
         App.renderGrid();
         App.toast(App.state.favOnly ? "Showing favorites only" : "Showing all games", "info");
       });
@@ -1458,6 +1515,25 @@
         if (e.key === "Escape") {
           if ($("#modal-backdrop").classList.contains("open")) App.closeModal();
           else if ($("#game-view").classList.contains("active")) App.closeGame();
+        }
+        // Tab focus trap while a modal is open (keeps keyboard focus
+        // inside the dialog — standard WAI-ARIA modal behavior)
+        if (e.key === "Tab" && $("#modal-backdrop").classList.contains("open")) {
+          const modal = $("#modal");
+          const focusables = Array.from(modal.querySelectorAll(
+            "button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex='-1'])"
+          )).filter(el => el.offsetParent !== null);
+          if (focusables.length) {
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
         }
         // ? opens keyboard shortcut help
         if (e.key === "?" && !$("#game-view").classList.contains("active") && !$("#modal-backdrop").classList.contains("open")) {

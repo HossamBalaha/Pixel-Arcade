@@ -100,8 +100,8 @@ No `npm install`, no compilation. Just edit, refresh, ship.
 
 - [ ] Game mounts cleanly (no console errors)
 - [ ] Game cleans up properly (no dangling intervals, listeners, or rAF loops)
-- [ ] Game works in all 4 themes (Modern Minimal, Retro Arcade, Playful Cartoon, Dark Neon Casino) × both modes
-  (light/dark)
+- [ ] Game works in the main themes (Modern Minimal, Retro Arcade, Playful Cartoon, Dark Neon Casino) × both modes
+  (light/dark) — and looks sane in a couple of the accent themes (Ocean, Candy, …)
 - [ ] Game is keyboard-operable (where it makes sense)
 - [ ] Game is mobile-friendly (responsive, swipe where applicable)
 - [ ] Game registered in `js/catalog.js` and thumbnail generated via `tools/generate-thumbnails.js`

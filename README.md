@@ -443,7 +443,7 @@ chips to browse by category, or the search box to find a game by name. Share any
 - **Advanced multi-dimensional filters** — filter by Type (Word/Logic/Arcade/Strategy/Quiz), Age (Kids 6+/Teens
   13+/Adults 18+), Difficulty (Easy/Medium/Hard), Length (Quick <2 min/Medium 2–10/Long >10 min), and Players
   (1-Player/2-Player). Reset button clears all filters at once. Live count shows how many games match.
-- **20 visual themes** switchable in-app (retro, modern, aesthetic, seasonal):
+- **24 visual themes** switchable in-app (retro, modern, aesthetic, seasonal):
     - **Modern Minimal** — clean, indigo accent (Inter)
     - **Retro Arcade** — dark with neon glow + pixel fonts (Press Start 2P / VT323)
     - **Playful Cartoon** — bright gradients, big rounded shapes (Baloo 2 / Nunito)
@@ -464,10 +464,21 @@ chips to browse by category, or the search box to find a game by name. Share any
     - **Newspaper** — black &amp; white print look
     - **🎃 Halloween** — orange/purple glow with Creepster font
     - **🎄 Christmas** — red/green with Mountains of Christmas font
+    - **🌊 Ocean Deep** — deep-sea blues with cyan/teal accents
+    - **❄️ Arctic Frost** — icy blues with soft glows
+    - **🍬 Candy Pop** — pink/violet pastels with rounded shapes (Baloo 2 / Nunito)
+    - **☕ Coffee House** — warm browns with serif type (Georgia)
+- **Fixed top navigation** — the nav bar stays pinned to the top of the viewport while you scroll (its height is
+  auto-synced to `--topbar-h`, so themes and font scaling never break the layout).
 - **Accessibility panel** — font size (A−/A+), high contrast, reduce motion, dyslexia-friendly font, large focus rings,
   color-blind simulation (protanopia/deuteranopia/tritanopia), and OS-settings auto-detect (`prefers-reduced-motion` /
   `prefers-contrast`). Settings persist via `localStorage`. Includes a screen-reader `aria-live` region that announces
   game opens and wins.
+- **Dialog accessibility** — modals use `role="dialog"` + `aria-modal`, move focus into themselves on open, trap
+  <kbd>Tab</kbd> inside while open, and restore focus to the invoking element on close. Toggle buttons (sound, mode,
+  favorites filter, theme chips) expose `aria-pressed` state, and the search field has an `aria-label`.
+- **Favorite hearts** — a frosted chip behind each heart keeps it readable on any thumbnail, turning solid red when
+  active.
 - **Data export / import** — download all your data (favorites, scores, stats, achievements, recent, hidden, settings)
   as a JSON backup, and restore it on another device. Also a "Reset all" option to erase everything.
 - **PWA install prompt** — a banner appears (on supported browsers) inviting you to install the app for offline play.
@@ -540,7 +551,7 @@ Pixel-Arcade/
 ├── sitemap.xml             # root URL only (per-game URLs are hash-routed)
 ├── .gitignore              # OS / editor / node cruft
 ├── css/
-│   ├── themes.css          # 4 themes × light/dark via CSS variables
+│   ├── themes.css          # 24 themes × light/dark via CSS variables
 │   ├── base.css            # Layout, topbar, cards, buttons, modal, toasts
 │   └── games.css           # Shared game-board styles
 ├── js/
