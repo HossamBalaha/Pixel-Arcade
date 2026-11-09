@@ -118,7 +118,7 @@
   GameRegistry.register({
     id: "dominoessolitaire",
     name: "Dominoes Solitaire",
-    icon: "🁢",
+    icon: "🎲",
     category: "strategy",
     description: "The classic domino puzzle — find the hidden tiling of all 28 dominoes in the 7×8 pip grid.",
     tags: ["strategy", "puzzle", "dominoes", "solitaire"],

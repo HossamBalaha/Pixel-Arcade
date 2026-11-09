@@ -94,6 +94,33 @@
     move() {
       if (Audio.enabled()) tone(330, 0.05, "sine", 0.08);
     },
+    // Soft two-note chime when a game opens / palette appears.
+    open() {
+      if (!Audio.enabled()) return;
+      const ac = ensure();
+      if (!ac) return;
+      const t = ac.currentTime;
+      tone(392, 0.08, "sine", 0.10, t);
+      tone(587.33, 0.12, "sine", 0.10, t + 0.07);
+    },
+    // Gentle downward blip when a game closes / palette hides.
+    close() {
+      if (!Audio.enabled()) return;
+      const ac = ensure();
+      if (!ac) return;
+      const t = ac.currentTime;
+      tone(587.33, 0.07, "sine", 0.08, t);
+      tone(392, 0.10, "sine", 0.08, t + 0.06);
+    },
+    // Tiny sparkle for achievement unlocks / palette selection.
+    ding() {
+      if (!Audio.enabled()) return;
+      const ac = ensure();
+      if (!ac) return;
+      const t = ac.currentTime;
+      tone(880, 0.09, "triangle", 0.12, t);
+      tone(1318.51, 0.14, "triangle", 0.10, t + 0.06);
+    },
   };
 
   global.AudioFX = Audio;

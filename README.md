@@ -418,6 +418,53 @@ chips to browse by category, or the search box to find a game by name. Share any
 
 ## ✨ Features
 
+### 🆕 v8 — Discovery, personalization & quality round
+
+- **Ctrl+K command palette** — press <kbd>Ctrl</kbd>+<kbd>K</kbd> (or the ⌘K chip in the filter bar) anywhere to open a
+  fuzzy-searchable launcher over all 300 games **plus quick actions**: random game, stats, achievements, dark/light
+  toggle, theme picker, sound, accessibility, category landing pages, data export. Keyboard-navigable (<kbd>↑</kbd>
+  <kbd>↓</kbd> to move, <kbd>↵</kbd> to run, <kbd>Esc</kbd> to close) with full ARIA listbox semantics.
+- **Batched grid rendering** — the grid renders 60 cards at a time and streams in the rest as you scroll (via
+  `IntersectionObserver`), so first paint stays fast even with 300 games. Short lists (under one batch) render fully.
+- **A–Z jump bar** — sort by *Name (A–Z)* and a letter strip appears above the grid; click a letter to jump straight
+  to that section (renders any pending batches first). `#` covers names starting with digits/symbols.
+- **Tag filter chips** — a scrollable row of the catalog's top tags (with live counts) above the grid. Multi-select,
+  AND semantics, resets with the other filters.
+- **Play-time tracking** — time spent inside each game is tracked locally (banked every 15 s, on close and on unload;
+  hidden-tab time doesn't count). Shows on the stats dashboard (“Time played”), in card hover tooltips, in the share
+  text, and feeds the play-time achievements.
+- **Difficulty badges** — every card shows a color-coded *Easy / Medium / Hard* badge derived from its catalog
+  metadata (green / neutral / red).
+- **Continue playing rail** — the home rail now shows your 5 most recent games with the **last score** and a relative
+  timestamp (“Last: 34 · 2h ago”) — one click back into the action.
+- **Rich share text** — the 🔗 Share button copies an emoji summary built from your stats: game name, best score,
+  plays, time played, and day streak, plus the shareable deep link.
+- **Custom theme builder** — pick an accent color (8 presets or any hex), a light/dark base, and a font pairing
+  (Modern / Retro / Playful / Elegant / Mono) in the theme panel. Live preview, saved to `localStorage`, listed as a
+  25th “🎛️ Custom” theme. The light/dark base follows the global mode toggle.
+- **Thumbnail skeleton shimmer** — while a card's lazy thumbnail loads, a soft shimmer placeholder shows instead of a
+  pop-in jump. Failed thumbnails fall back to the quiet placeholder + icon.
+- **Hover zoom + preview** — cards gently zoom their thumbnail on hover and slide up a one-line description over the
+  image. Pure CSS, disabled under `prefers-reduced-motion` and the reduce-motion a11y setting.
+- **Subtle UI sound effects** — tiny hover ticks (desktop pointers only), a soft two-note chime on game open, a blip
+  on close, and a sparkle when an achievement unlocks — all through the existing Web Audio engine and all silenced by
+  the persistent 🔊 mute toggle in the topbar.
+- **Achievements expanded 26 → 57** — new families: win-streak combos (Hat-Trick / On Fire / Unstoppable / Rapid
+  Fire), category explorers (5 and 15 distinct games per category), catalog completion milestones (10/25/50/100/200
+  distinct games), play-time badges (30 min → 24 h), curator badges (Archivist / Tidier), time-of-day quirks (Lunch
+  Break / Weekend Warrior) and power-user badges (palette, share, theme switcher, theme builder). **Locked
+  achievements now show progress bars**, and the modal has All / Unlocked / In-progress filter tabs. All 26 original
+  IDs are preserved, so existing unlocks carry over.
+- **Category landing routes** — `index.html#/category/word` (in-app, shareable hash) and
+  `index.html?category=word` (crawler-visible, listed in `sitemap.xml`) open the grid pre-filtered with a proper
+  landing heading, description and title.
+- **SEO fine-tuning** — Open Graph image (`assets/og-image.png`, 1200×630), `og:type`/`og:site_name`, canonical URL,
+  and preloaded critical CSS.
+- **Faster, calmer grid** — batched rendering plus a fix for a latent double-mount: clicking a card used to mount the
+  game twice and double-count the play in the stats log.
+
+### Core features
+
 - **300 games across 5 categories** — word, logic, arcade, strategy, quiz. See the full list below.
 - **Recently played rail** — every game you open is remembered. A "Recently played" rail appears at the top of the home
   view (quick re-entry) and at the bottom of each game view (jump to another recently played game without going back to
@@ -430,10 +477,10 @@ chips to browse by category, or the search box to find a game by name. Share any
   picks from your most-played category (for-you). Capped at 8 cards, appears once you've played enough to make a
   suggestion.
 - **Stats dashboard** — click the 📊 icon in the topbar to see total plays, wins, win rate, current + longest day streak,
-  favorites count, recent count, achievements unlocked, and a per-category bar breakdown.
-- **Achievements** — 26 unlockable badges (First Win, Centurion, Word Wizard, On a Roll, Night Owl, Marathon Runner,
-  etc.). Click the 🏅 icon to see them all; unlocked ones are highlighted. A dot on the button appears when you have any
-  unlocked.
+  favorites count, recent count, achievements unlocked, total time played, and a per-category bar breakdown.
+- **Achievements** — 57 unlockable badges (First Win, Centurion, Word Wizard, On a Roll, Night Owl, Marathon Runner,
+  combo medals, category explorers, play-time milestones, and more). Click the 🏅 icon to see them all with progress
+  bars and filter tabs; unlocked ones are highlighted. A dot on the button appears when you have any unlocked.
 - **Share result** — every game has a 🔗 Share button in the header that copies a result line to the clipboard (includes
   the game name, your best score, and a link back to the game).
 - **Hide games** — right-click (or long-press on mobile) any game card to hide it from your grid. Hidden games are still
@@ -443,7 +490,8 @@ chips to browse by category, or the search box to find a game by name. Share any
 - **Advanced multi-dimensional filters** — filter by Type (Word/Logic/Arcade/Strategy/Quiz), Age (Kids 6+/Teens
   13+/Adults 18+), Difficulty (Easy/Medium/Hard), Length (Quick <2 min/Medium 2–10/Long >10 min), and Players
   (1-Player/2-Player). Reset button clears all filters at once. Live count shows how many games match.
-- **24 visual themes** switchable in-app (retro, modern, aesthetic, seasonal):
+- **24 visual themes + custom builder** switchable in-app (retro, modern, aesthetic, seasonal, plus a build-your-own
+  🎛️ Custom theme):
     - **Modern Minimal** — clean, indigo accent (Inter)
     - **Retro Arcade** — dark with neon glow + pixel fonts (Press Start 2P / VT323)
     - **Playful Cartoon** — bright gradients, big rounded shapes (Baloo 2 / Nunito)
@@ -468,6 +516,7 @@ chips to browse by category, or the search box to find a game by name. Share any
     - **❄️ Arctic Frost** — icy blues with soft glows
     - **🍬 Candy Pop** — pink/violet pastels with rounded shapes (Baloo 2 / Nunito)
     - **☕ Coffee House** — warm browns with serif type (Georgia)
+    - **🎛️ Custom** — build your own: accent color + light/dark base + font pairing, saved locally
 - **Fixed top navigation** — the nav bar stays pinned to the top of the viewport while you scroll (its height is
   auto-synced to `--topbar-h`, so themes and font scaling never break the layout).
 - **Accessibility panel** — font size (A−/A+), high contrast, reduce motion, dyslexia-friendly font, large focus rings,
@@ -510,8 +559,8 @@ chips to browse by category, or the search box to find a game by name. Share any
   runtime, with offline fallback to bundled lists. Cached 24h in IndexedDB so the same session doesn't re-fetch.
 - **Mobile-friendly** — responsive grid, D-pads, swipe gestures, long-press flags.
 - **Keyboard nav without browser interference** — every game supports the physical keyboard. The hub prevents Firefox
-  quick-find (`/`, `'`) and Chrome search (`Ctrl+K`) from firing while a game is active, so typing letters / arrows /
-  digits goes straight to the game.
+  quick-find (`/`, `'`) from firing while a game is active, so typing letters / arrows / digits goes straight to the
+  game. <kbd>Ctrl</kbd>+<kbd>K</kbd> still opens the command palette everywhere.
 - **PWA-ready** — installable on mobile, works offline via service worker.
 - **Zero dependencies** — vanilla ES5/ES6 JS. Only one CDN call for Google Fonts (graceful fallback to system fonts if
   offline).

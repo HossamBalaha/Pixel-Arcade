@@ -17,7 +17,7 @@
     <circle cx="16" cy="124" r="2" fill="#ffffff" opacity="0.35"/>
     <circle cx="204" cy="124" r="2" fill="#ffffff" opacity="0.35"/>
     <text x="110" y="76" text-anchor="middle" font-size="54"
-          font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">🧷
+          font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">📝
     </text>
     <rect width="220" height="140" rx="14" fill="url(#scrim)"/>
 

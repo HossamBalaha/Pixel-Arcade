@@ -8,6 +8,17 @@
       name="description"/>
   <meta content="#6366f1" name="theme-color"/>
   <meta content="Hossam Magdy Balaha" name="author"/>
+  <link href="https://hossambalaha.github.io/Pixel-Arcade/" rel="canonical"/>
+  <!-- Open Graph — social share cards (og:image is a static asset, GitHub Pages safe) -->
+  <meta content="website" property="og:type"/>
+  <meta content="Pixel Arcade" property="og:site_name"/>
+  <meta content="Pixel Arcade — Play 300 Classic Games" property="og:title"/>
+  <meta content="300 classic browser games with advanced filters. Playable offline. No installs, no login."
+        property="og:description"/>
+  <meta content="https://hossambalaha.github.io/Pixel-Arcade/assets/og-image.png" property="og:image"/>
+  <meta content="1200" property="og:image:width"/>
+  <meta content="630" property="og:image:height"/>
+  <meta content="Pixel Arcade — 300 free browser games" property="og:image:alt"/>
   <meta content="summary_large_image" name="twitter:card"/>
   <meta content="Pixel Arcade — Play 300 Classic Games" name="twitter:title"/>
   <meta content="300 classic browser games with advanced filters. Playable offline." name="twitter:description"/>
@@ -46,6 +57,10 @@
       onload="this.media='all'"
       rel="stylesheet"/>
 
+  <!-- Preload the critical stylesheets so first paint never waits on them,
+       then load them for real (the preload is consumed by the link below). -->
+  <link as="style" href="css/themes.css" rel="preload"/>
+  <link as="style" href="css/base.css" rel="preload"/>
   <link href="css/themes.css" rel="stylesheet"/>
   <link href="css/base.css" rel="stylesheet"/>
   <link href="css/games.css" rel="stylesheet"/>
@@ -3548,6 +3563,34 @@
           <button class="menu-chip" data-theme-id="arctic">❄️ Arctic Frost</button>
           <button class="menu-chip" data-theme-id="candy">🍬 Candy Pop</button>
           <button class="menu-chip" data-theme-id="coffee">☕ Coffee House</button>
+          <button class="menu-chip" data-theme-id="custom">🎛️ Custom</button>
+        </div>
+        <!-- Custom theme builder — accent + base + font pairing. Shown only
+             while the Custom theme is active. Live-previews; "Apply & save"
+             persists it (localStorage) and unlocks the Remix Artist badge. -->
+        <div class="custom-theme-builder" hidden id="custom-theme-builder">
+          <div class="ctb-row">
+            <span class="ctb-label">Accent</span>
+            <div class="ctb-swatches" id="ctb-swatches"></div>
+            <input aria-label="Custom accent color" class="ctb-color" id="ctb-accent" type="color" value="#6366f1"/>
+          </div>
+          <div class="ctb-row">
+            <span class="ctb-label">Base</span>
+            <div class="ctb-seg" id="ctb-base">
+              <button data-base="light" type="button">☀️ Light</button>
+              <button data-base="dark" type="button">🌙 Dark</button>
+            </div>
+          </div>
+          <div class="ctb-row">
+            <span class="ctb-label">Font</span>
+            <div class="ctb-seg ctb-fonts" id="ctb-font"></div>
+          </div>
+          <div class="ctb-actions">
+            <button class="btn btn-sm primary" id="ctb-save" type="button">Apply &amp; save</button>
+            <button class="btn btn-sm" id="ctb-random" title="Randomize accent, font and base" type="button">🎲
+              Randomize
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -3606,6 +3649,9 @@
       <option value="recent">Recently played</option>
       <option value="best">Best score</option>
     </select>
+    <button aria-label="Open command palette (Ctrl+K)" class="cmdk-open-btn" id="cmdk-open-btn"
+            title="Command palette — search games and actions (Ctrl+K)">⌘K
+    </button>
   </div>
 
   <div class="filters filters-extra">
@@ -3640,6 +3686,20 @@
     <span aria-live="polite" class="filter-count" id="filter-count"></span>
   </div>
 
+  <!-- Tag filter chips — top catalog tags, multi-select (AND). Populated by
+       app.js from the catalog's own tags. -->
+  <div aria-label="Filter by tag" class="tag-chips-row" id="tag-chips-row" style="display:none;"></div>
+
+  <!-- Category landing banner — shown on #/category/... routes and on
+       ?category=... deep links (see app.js routing). -->
+  <div class="category-banner" id="category-banner" style="display:none;">
+    <div class="cb-left">
+      <h2 class="cb-title" id="category-title">Games</h2>
+      <p class="cb-desc" id="category-desc"></p>
+    </div>
+    <button class="btn btn-sm" id="category-clear" title="Clear the category filter">✕ View all games</button>
+  </div>
+
   <!-- Recommended — merges trending (most-played this week) with
        personalized for-you picks, capped at 8 cards. Hidden when filters
        are active or when there is too little play history to suggest. -->
@@ -3648,12 +3708,12 @@
     <div class="rail-row" id="home-recommended-row"></div>
   </div>
 
-  <!-- Recently played — small horizontal rail at the top of the home view.
-       Populated by app.js from Storage.getRecent(). Hidden when empty.
-       The Clear button empties the recent list (Storage.clearRecent). -->
+  <!-- Continue playing — the 5 most recently played games with the last
+       score and time played. Populated by app.js from Storage.getRecent().
+       Hidden when empty. The Clear button empties the recent list. -->
   <div class="home-recent" id="home-recent" style="display:none;">
     <div class="rail-title">
-      <span>Recently played</span>
+      <span>Continue playing</span>
       <button aria-label="Clear recently played list" class="rail-clear-btn" id="home-recent-clear"
               title="Clear recently played list"
               type="button">Clear
@@ -3668,6 +3728,10 @@
     <div class="rail-title">New games</div>
     <div class="rail-row" id="home-new-row"></div>
   </div>
+
+  <!-- A–Z jump bar — shown when the grid is sorted by name (A–Z).
+       app.js builds the letters from the filtered list. -->
+  <div aria-label="Jump to letter" class="az-bar" id="az-bar" style="display:none;"></div>
 
   <div class="grid" id="game-grid"><!-- game cards injected by app.js --></div>
 </main>
@@ -3705,6 +3769,25 @@
 
 <!-- Toast area -->
 <div class="toast-area" id="toast-area"></div>
+
+<!-- Ctrl+K command palette — fuzzy search over games + quick actions -->
+<div aria-hidden="true" class="cmdk-backdrop" id="cmdk-backdrop">
+  <div aria-label="Command palette" aria-modal="true" class="cmdk" role="dialog">
+    <div class="cmdk-input-row">
+      <span aria-hidden="true" class="cmdk-magnifier">🔍</span>
+      <input aria-label="Search games and actions" autocomplete="off" class="cmdk-input" id="cmdk-input"
+             placeholder="Search 300 games, categories, actions…" spellcheck="false" type="text"/>
+      <span class="cmdk-kbd kbd">Esc</span>
+    </div>
+    <div aria-label="Results" class="cmdk-results" id="cmdk-results" role="listbox"></div>
+    <div class="cmdk-foot">
+      <span><span class="kbd">↑</span><span class="kbd">↓</span> navigate</span>
+      <span><span class="kbd">↵</span> open</span>
+      <span><span class="kbd">Esc</span> close</span>
+      <span class="cmdk-foot-hint">300 games · fuzzy search</span>
+    </div>
+  </div>
+</div>
 
 <!-- Back to top button — appears when scrolled down -->
 <button aria-label="Back to top" class="back-to-top" id="back-to-top" title="Back to top">

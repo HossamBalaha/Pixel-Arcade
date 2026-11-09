@@ -149,10 +149,12 @@
       return games.filter(g => g.category === cat);
     },
     // Multi-dimensional filter. Pass an object like:
-    // { category: 'word', age: 'kids', difficulty: 'easy', duration: 'quick', players: 'single' }
-    // Any dimension set to 'all' (or undefined) is ignored.
+    // { category: 'word', age: 'kids', difficulty: 'easy', duration: 'quick', players: 'single', tags: ['puzzle','classic'] }
+    // Any dimension set to 'all' (or undefined) is ignored. `tags` is an
+    // array of required tags (AND — the game must carry every listed tag).
     filter(opts) {
       opts = opts || {};
+      const requiredTags = (Array.isArray(opts.tags) && opts.tags.length) ? opts.tags.map(t => t.toLowerCase()) : null;
       return games.filter(g => {
         if (opts.category && opts.category !== "all" && g.category !== opts.category) return false;
         if (opts.age && opts.age !== "all") {
@@ -166,6 +168,12 @@
           if (g.players === "either") { /* matches both */
           } else if (g.players !== opts.players) return false;
         }
+        if (requiredTags) {
+          const gameTags = (g.tags || []).map(t => t.toLowerCase());
+          for (const rt of requiredTags) {
+            if (!gameTags.includes(rt)) return false;
+          }
+        }
         if (opts.search) {
           const s = opts.search.toLowerCase();
           if (!(
@@ -178,6 +186,20 @@
         return true;
       });
     },
+    // Tag census across the whole catalog: [{ tag, count }] sorted by
+    // frequency then alphabetically. Powers the tag filter chips row.
+    tagCounts(min) {
+      min = min || 1;
+      const counts = {};
+      games.forEach(g => (g.tags || []).forEach(t => {
+        counts[t] = (counts[t] || 0) + 1;
+      }));
+      return Object.keys(counts)
+        .map(t => ({tag: t, count: counts[t]}))
+        .filter(t => t.count >= min)
+        .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+    },
+
     // Legacy search kept for backward compatibility
     search(q) {
       const s = q.toLowerCase().trim();

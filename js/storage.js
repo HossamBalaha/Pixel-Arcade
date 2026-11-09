@@ -26,6 +26,9 @@
     WEEKLY: NS + "weekly",        // { gameId: [ ts, ts, ... ] (last 7 days) }
     INSTALL_DISMISS: NS + "install-dismissed",
     STATE_PREFIX: NS + "state:",  // per-game saved JSON state (save/resume)
+    PLAYTIME: NS + "playtime",    // { gameId: seconds } — cumulative play time
+    EVENTS: NS + "events",        // { shared: n, themeChanged: n, paletteUsed: n, ... } — one-off UI event counters
+    CUSTOM_THEME: NS + "custom-theme", // user-built theme { accent, base, font }
   };
   const RECENT_MAX = 20;
   const WEEKLY_DAYS = 7;
@@ -324,6 +327,49 @@
       set(KEYS.INSTALL_DISMISS, true);
     },
 
+    // ---------- Play-time tracking ----------
+    // Cumulative seconds spent inside each game. Flushed by app.js every
+    // ~15s while a game is open plus on close/visibility-change/unload so
+    // an abrupt tab close still records most of the session.
+    getPlaytime() {
+      return get(KEYS.PLAYTIME, {});
+    },
+    getPlaytimeFor(id) {
+      return Storage.getPlaytime()[id] || 0;
+    },
+    addPlaytime(id, seconds) {
+      if (!id || !seconds || seconds <= 0) return;
+      const pt = Storage.getPlaytime();
+      pt[id] = Math.round((pt[id] || 0) + seconds);
+      set(KEYS.PLAYTIME, pt);
+    },
+    getTotalPlaytime() {
+      const pt = Storage.getPlaytime();
+      let total = 0;
+      for (const id in pt) total += pt[id];
+      return total;
+    },
+
+    // ---------- One-off UI event counters (achievements) ----------
+    // bumpEvent("shared") → increments and returns the new count.
+    getEvents() {
+      return get(KEYS.EVENTS, {});
+    },
+    bumpEvent(name) {
+      const ev = Storage.getEvents();
+      ev[name] = (ev[name] || 0) + 1;
+      set(KEYS.EVENTS, ev);
+      return ev[name];
+    },
+
+    // ---------- Custom theme (theme builder) ----------
+    getCustomTheme() {
+      return get(KEYS.CUSTOM_THEME, null);
+    },
+    setCustomTheme(t) {
+      set(KEYS.CUSTOM_THEME, t);
+    },
+
     // ---------- Game state save / resume ----------
     // Games can stash arbitrary JSON state per id so a paused session can be
     // resumed on a later visit. State is intentionally NOT cleared on closeGame
@@ -395,6 +441,10 @@
         hidden: Storage.getHidden(),
         a11y: Storage.getA11y(),
         gameStates: gameStates,
+        // v7 additions — guarded on import so older backups still load.
+        playtime: Storage.getPlaytime(),
+        events: Storage.getEvents(),
+        customTheme: Storage.getCustomTheme(),
       };
     },
     importData(data) {
@@ -411,6 +461,9 @@
       if (Array.isArray(data.achievements)) set(KEYS.ACHV, data.achievements);
       if (Array.isArray(data.hidden)) set(KEYS.HIDDEN, data.hidden);
       if (data.a11y) set(KEYS.A11Y, data.a11y);
+      if (data.playtime && typeof data.playtime === "object") set(KEYS.PLAYTIME, data.playtime);
+      if (data.events && typeof data.events === "object") set(KEYS.EVENTS, data.events);
+      if (data.customTheme && typeof data.customTheme === "object") set(KEYS.CUSTOM_THEME, data.customTheme);
       if (data.gameStates && typeof data.gameStates === "object") {
         // Clear any existing snapshots first so stale ones don't linger.
         Storage.listGameStateIds().forEach(id => remove(stateKey(id)));
@@ -422,7 +475,8 @@
     // Wipe everything (used by "reset all data" button)
     wipeAll() {
       [KEYS.FAVS, KEYS.BESTS, KEYS.RECENT, KEYS.PLAYS, KEYS.STATS,
-        KEYS.STREAK, KEYS.ACHV, KEYS.HIDDEN, KEYS.WEEKLY, KEYS.INSTALL_DISMISS].forEach(remove);
+        KEYS.STREAK, KEYS.ACHV, KEYS.HIDDEN, KEYS.WEEKLY, KEYS.INSTALL_DISMISS,
+        KEYS.PLAYTIME, KEYS.EVENTS].forEach(remove);
       // Also drop any saved game states.
       Storage.listGameStateIds().forEach(id => remove(stateKey(id)));
     },

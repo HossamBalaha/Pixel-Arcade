@@ -3,7 +3,7 @@
   GameRegistry.register({
     id: "fillin",
     name: "Fill-In Crossword",
-    icon: "🧷",
+    icon: "📝",
     category: "word",
     description: "Fit the given words into the empty grid",
     tags: ["word", "crossword", "fitting"],

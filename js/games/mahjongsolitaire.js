@@ -2,7 +2,10 @@
    layout, generated in reverse so every deal is guaranteed solvable. */
 (function () {
   "use strict";
-  const FACES = ["🀄", "🎋", "🀅", "🀇", "🀈", "🀉", "🀊", "🀋", "🀌", "🀍", "🐉", "🐯", "🐔", "🌸", "🍑", "🀙", "🀚", "🀛"];
+  // Tile faces use only universally-supported emoji. Real Mahjong-block
+  // glyphs (U+1F005–U+1F00D etc.) render as tofu boxes on Windows, Linux
+  // and many Android fonts, so the set is emoji-based instead.
+  const FACES = ["🀄", "🎋", "🎍", "🏮", "🎆", "🥢", "🍡", "🎴", "🐼", "🧧", "🐉", "🐯", "🐔", "🌸", "🍑", "🐢", "🍀", "🥠"];
   const TW = 44, TH = 58, GAP = 2, LIFT = 16;
 
   // positions: layer 0 = 6×8 (48), layer 1 = 4×6 (24) centred on top → 72 tiles

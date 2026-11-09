@@ -134,7 +134,7 @@
           <div class="score-cell"><div class="label">You</div><div class="val" id="bj-yv">—</div></div>
         </div>
         <div class="status info" id="bj-status">Place your bet and deal!</div>
-        <div class="bj-cards" id="bj-dc">🂠 🂠</div>
+        <div class="bj-cards" id="bj-dc">♠ ♠</div>
         <div class="bj-cards" id="bj-yc"></div>
         <div class="bj-btns" id="bj-bets">
           <button class="btn" data-b="5">Bet 5</button>
@@ -158,7 +158,7 @@
         if (yc) yc.textContent = fmt(you) || "—";
         if (yv) yv.textContent = you.length ? val(you) : "—";
         if (dv) dv.textContent = dealer.length ? (phase === "done" ? val(dealer) : val([dealer[0]]) + "+") : "—";
-        if (dc) dc.textContent = phase === "done" ? fmt(dealer) : (dealer.length ? dealer[0].r + dealer[0].s + " 🂠" : "🂠 🂠");
+        if (dc) dc.textContent = phase === "done" ? fmt(dealer) : (dealer.length ? dealer[0].r + dealer[0].s + " ♠" : "♠ ♠");
         root.querySelector("#bj-bets").style.display = phase === "bet" ? "" : "none";
         root.querySelector("#bj-acts").style.display = phase === "play" ? "" : "none";
         // after settle, show deal button again

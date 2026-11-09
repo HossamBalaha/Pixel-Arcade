@@ -864,7 +864,7 @@
   }, {
     "id": "fanorona",
     "name": "Fanorona",
-    "icon": "🇲🇬",
+    "icon": "⚔️",
     "category": "strategy",
     "description": "Madagascar",
     "tags": ["strategy", "ancient", "ai", "board"],
@@ -908,7 +908,7 @@
   }, {
     "id": "fillin",
     "name": "Fill-In Crossword",
-    "icon": "🧷",
+    "icon": "📝",
     "category": "word",
     "description": "Fit the given words into the empty grid",
     "tags": ["word", "crossword", "fitting"],
@@ -1755,7 +1755,7 @@
   }, {
     "id": "mexicodice",
     "name": "Mexico Dice",
-    "icon": "🇲🇽",
+    "icon": "🎲",
     "category": "strategy",
     "description": "Dice climbing vs the bot: roll 2 dice up to 3 times, keeping what you like — highest total takes the round, but 2-1 (Mexico!) beats everything and costs two strikes. Three strikes and you",
     "tags": ["dice", "press-your-luck", "ai", "classic"],

@@ -134,7 +134,7 @@
           <div class="cp-col">
             ${left.map((w, i) => `<div class="cp-word ${matched.has(w) ? "done" : ""} ${selL === i ? "sel" : ""}" data-l="${i}">${w}</div>`).join("")}
           </div>
-          <div style="align-self:center;font-size:26px;">🟰</div>
+          <div style="align-self:center;font-size:26px;font-weight:800;color:var(--text-muted);">=</div>
           <div class="cp-col">
             ${right.map((w, i) => `<div class="cp-word ${matched.has(w) ? "done" : ""}" data-r="${i}">${w}</div>`).join("")}
           </div>

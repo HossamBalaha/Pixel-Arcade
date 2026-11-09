@@ -24,7 +24,7 @@
   GameRegistry.register({
     id: "solitaire",
     name: "Solitaire",
-    icon: "🂠",
+    icon: "♠️",
     category: "strategy",
     description: "Klondike patience — build foundations by suit",
     tags: ["strategy", "cards", "classic"],
@@ -60,7 +60,7 @@
           .sl-pile { width: 60px; min-height: 84px; border: 1px dashed var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 2px; }
           .sl-card { width: 60px; height: 80px; border-radius: var(--radius-sm); background: var(--bg-elev); border: 1px solid var(--border); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 700; cursor: pointer; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
           .sl-card.face-down { background: var(--accent); color: var(--accent); }
-          .sl-card.face-down::after { content: "🂠"; color: rgba(255,255,255,0.5); font-size: 1.6rem; }
+          .sl-card.face-down::after { content: "♠"; color: rgba(255,255,255,0.5); font-size: 1.6rem; }
           .sl-card.red { color: var(--danger); }
           .sl-card.black { color: var(--text); }
           .sl-empty { color: var(--text-muted); font-size: 1.5rem; }

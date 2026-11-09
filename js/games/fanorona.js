@@ -102,7 +102,7 @@
   GameRegistry.register({
     id: "fanorona",
     name: "Fanorona",
-    icon: "🇲🇬",
+    icon: "⚔️",
     category: "strategy",
     description: "Madagascar's national game — approach and withdrawal captures on the 5×9 line board.",
     tags: ["strategy", "ancient", "ai", "board"],

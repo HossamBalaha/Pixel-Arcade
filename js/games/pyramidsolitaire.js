@@ -211,7 +211,7 @@
         }
         // stock + waste
         rowEl.innerHTML = `
-          <div class="py2-card back" id="py2-stock">${stock.length}<br>🂠</div>
+          <div class="py2-card back" id="py2-stock">${stock.length}<br>♠</div>
           <div style="width:14px;display:inline-block;"></div>
           <div class="py2-card ${waste.length ? ((waste[waste.length - 1].s === "♥" || waste[waste.length - 1].s === "♦") ? "red" : "blk") : "blk"} ${sel && sel.type === "waste" ? "sel" : ""}" id="py2-waste">
             ${waste.length ? waste[waste.length - 1].r + "<br>" + waste[waste.length - 1].s : "—"}

@@ -19,7 +19,13 @@
       durFilter: "all",
       playersFilter: "all",
       sort: "default",
+      tags: [],           // required tag chips (AND semantics)
     },
+
+    // Batched grid rendering state (see renderGrid / _renderCardBatch).
+    _gridBatch: null,
+    // Hover sound only on devices that actually have hover (desktop pointers).
+    _hoverSoundOk: !!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches),
 
     // ---------- Theme + mode + sound ----------
     applyTheme() {
@@ -27,6 +33,12 @@
       const mode = Storage.getMode();
       document.documentElement.setAttribute("data-theme", theme);
       document.documentElement.setAttribute("data-mode", mode);
+      // Custom theme: write the user's accent + font choices as inline CSS
+      // variables (base light/dark neutrals live in themes.css). Cleared
+      // whenever a built-in theme is picked so nothing leaks across themes.
+      App._applyCustomThemeVars(theme === "custom");
+      // Sync the custom-theme builder panel (visible only for the custom theme).
+      App._syncThemeBuilder(theme === "custom");
       $$(".menu-chip").forEach(c => {
         const active = c.dataset.themeId === theme;
         c.classList.toggle("active", active);
@@ -41,11 +53,18 @@
       }
     },
     setTheme(t) {
+      const prev = Storage.getTheme();
       Storage.setTheme(t);
       App.applyTheme();
       // No grid re-render needed: themes are pure CSS variables and
       // cascade live. Rebuilding the grid here replayed every card's
       // fade-in animation, which felt like a page reload.
+      // Count a theme change for the "New Coat of Paint" achievement —
+      // only when the user actually picked a different theme.
+      if (prev !== t) {
+        Storage.bumpEvent("themeChanged");
+        App.evaluateAchievements();
+      }
     },
     toggleMode() {
       const next = Storage.getMode() === "dark" ? "light" : "dark";
@@ -196,8 +215,16 @@
     },
 
     // ---------- Grid rendering ----------
+    // Batched rendering: instead of building all 300 cards in one go (which
+    // blocks first paint for hundreds of ms on slow devices), we render the
+    // first BATCH cards synchronously and append further batches as the user
+    // scrolls toward a sentinel element. Sorting/filtering logic is unchanged
+    // — only the DOM append is chunked.
     renderGrid() {
       const grid = $("#game-grid");
+      // Tear down the previous batch state + sentinel observer.
+      if (App._gridBatch && App._gridBatch.observer) App._gridBatch.observer.disconnect();
+      App._gridBatch = null;
       // Use the registry's multi-dimensional filter
       let list = GameRegistry.filter({
         category: App.state.filter,
@@ -207,6 +234,7 @@
         players: App.state.playersFilter,
         search: App.state.search,
         favOnly: App.state.favOnly,
+        tags: App.state.tags,
       });
       // Exclude hidden games (unless showing favorites, where hidden games
       // should still be reachable so the user can un-favorite them).
@@ -234,6 +262,8 @@
         </div>`;
         const countEl = $("#filter-count");
         if (countEl) countEl.textContent = list.length;
+        App._renderAzBar(list);
+        App._renderTagChips();
         return;
       }
 
@@ -281,34 +311,113 @@
         // shuffles the grid.
       }
 
-      list.forEach((g, idx) => {
-        const best = Storage.getBest(g.id);
-        const isFav = Storage.isFavorite(g.id);
-        const plays = Storage.getStats().gamesPlayed[g.id] || 0;
-        const card = document.createElement("button");
-        card.className = "card";
-        card.dataset.id = g.id;
-        card.style.animationDelay = Math.min(idx * 0.02, 0.3) + "s"; // stagger fade-in
-        // Build a small badges row: star difficulty + duration + players
-        const diffStars = g.difficulty === "easy" ? "★☆☆" : g.difficulty === "hard" ? "★★★" : "★★☆";
-        const badges = [`<span class="badge badge-diff" title="${g.difficulty}">${diffStars}</span>`];
-        if (g.duration) badges.push(`<span class="badge badge-dur">${g.duration}</span>`);
-        if (g.players === "2p" || g.players === "either") badges.push('<span class="badge badge-2p">👥 2P</span>');
-        // Hover tooltip with play stats
-        const tooltipParts = [];
-        if (plays > 0) tooltipParts.push(`${plays} play${plays === 1 ? "" : "s"}`);
-        if (best !== null) tooltipParts.push(`best: ${best}`);
-        const tooltip = tooltipParts.length ? `<div class="card-tooltip">${tooltipParts.join(" · ")}</div>` : "";
-        // NEW badge: no games are currently flagged as "new" — the user opted
-        // to leave this empty for now and will populate it when adding future
-        // games. Set this to an array of game IDs to mark them as new.
-        const newGames = [];
-        const isNew = newGames.includes(g.id);
-        card.innerHTML = `
+      // A–Z jump bar (only meaningful when sorted by name) + tag chips.
+      App._renderAzBar(list);
+      App._renderTagChips();
+
+      // Kick off batched rendering: the first batch is synchronous so the
+      // grid fills immediately; the rest stream in on scroll.
+      App._gridBatch = {list: list, rendered: 0, sentinel: null, observer: null, done: false};
+      App._renderCardBatch();
+
+      // Update visible count if the element exists
+      const countEl = $("#filter-count");
+      if (countEl) countEl.textContent = list.length;
+    },
+
+    // Render the next batch of grid cards (or up to `untilIdx` when jumping).
+    _renderCardBatch(untilIdx) {
+      const state = App._gridBatch;
+      if (!state || state.done) return;
+      const BATCH = 60;
+      const grid = $("#game-grid");
+      const total = state.list.length;
+      const target = Math.min(untilIdx != null ? untilIdx : state.rendered + BATCH, total);
+      if (target <= state.rendered) return;
+      const frag = document.createDocumentFragment();
+      for (let i = state.rendered; i < target; i++) {
+        frag.appendChild(App._buildCard(state.list[i], i));
+      }
+      grid.appendChild(frag);
+      state.rendered = target;
+      if (state.rendered >= total) {
+        App._gridBatchDone();
+      } else {
+        App._ensureGridSentinel();
+      }
+    },
+
+    // Append (or move) the scroll sentinel that triggers the next batch.
+    _ensureGridSentinel() {
+      const state = App._gridBatch;
+      const grid = $("#game-grid");
+      if (!state || !grid) return;
+      if (!state.sentinel) {
+        state.sentinel = document.createElement("div");
+        state.sentinel.className = "grid-sentinel";
+        state.sentinel.setAttribute("aria-hidden", "true");
+      }
+      grid.appendChild(state.sentinel);
+      if (!state.observer && "IntersectionObserver" in window) {
+        state.observer = new IntersectionObserver((entries) => {
+          if (entries.some(e => e.isIntersecting)) {
+            // Render the next batch; if the sentinel is still in view
+            // (short viewport / huge cards) the observer fires again.
+            App._renderCardBatch();
+          }
+        }, {rootMargin: "600px 0px"});
+      }
+      if (state.observer) {
+        state.observer.disconnect();
+        state.observer.observe(state.sentinel);
+      }
+    },
+
+    _gridBatchDone() {
+      const state = App._gridBatch;
+      if (!state) return;
+      state.done = true;
+      if (state.observer) state.observer.disconnect();
+      if (state.sentinel && state.sentinel.parentNode) state.sentinel.remove();
+    },
+
+    // Build one game card (extracted from renderGrid for batching).
+    _buildCard(g, idx) {
+      const best = Storage.getBest(g.id);
+      const isFav = Storage.isFavorite(g.id);
+      const plays = Storage.getStats().gamesPlayed[g.id] || 0;
+      const playtime = Storage.getPlaytimeFor(g.id);
+      const card = document.createElement("button");
+      card.className = "card";
+      card.dataset.id = g.id;
+      card.style.animationDelay = Math.min(idx * 0.02, 0.3) + "s"; // stagger fade-in
+      // Difficulty badge (text, color-coded) + duration + players
+      const diffLabel = g.difficulty === "easy" ? "Easy" : g.difficulty === "hard" ? "Hard" : "Medium";
+      const diffClass = g.difficulty === "easy" ? "badge-easy" : g.difficulty === "hard" ? "badge-hard" : "badge-medium";
+      const badges = [`<span class="badge badge-diff ${diffClass}" title="Difficulty: ${diffLabel}">${diffLabel}</span>`];
+      if (g.duration) badges.push(`<span class="badge badge-dur">${g.duration}</span>`);
+      if (g.players === "2p" || g.players === "either") badges.push('<span class="badge badge-2p">👥 2P</span>');
+      // Hover tooltip with play stats (plays · best · time played)
+      const tooltipParts = [];
+      if (plays > 0) tooltipParts.push(`${plays} play${plays === 1 ? "" : "s"}`);
+      if (best !== null) tooltipParts.push(`best: ${best}`);
+      if (playtime >= 60) tooltipParts.push(App._formatDuration(playtime) + " played");
+      const tooltip = tooltipParts.length ? `<div class="card-tooltip">${tooltipParts.join(" · ")}</div>` : "";
+      // NEW badge: no games are currently flagged as "new" — the user opted
+      // to leave this empty for now and will populate it when adding future
+      // games. Set this to an array of game IDs to mark them as new.
+      const newGames = [];
+      const isNew = newGames.includes(g.id);
+      card.innerHTML = `
           ${isNew ? '<span class="new-badge">NEW</span>' : ""}
           <button class="fav ${isFav ? "active" : ""}" data-fav="${g.id}" title="${isFav ? "Remove from favorites" : "Add to favorites"}" aria-label="${isFav ? "Remove from favorites" : "Add to favorites"}" aria-pressed="${isFav}">${isFav ? "♥" : "♡"}</button>
           ${tooltip}
-          <img class="thumb" src="assets/thumbnails/${g.id}.svg" alt="${g.name} thumbnail" loading="lazy" onerror="this.style.display='none'"/>
+          <div class="thumb-wrap">
+            <img class="thumb" src="assets/thumbnails/${g.id}.svg" alt="${g.name} thumbnail" loading="lazy"
+              onload="this.closest('.thumb-wrap').classList.add('thumb-loaded')"
+              onerror="this.closest('.thumb-wrap').classList.add('thumb-error')"/>
+            <div class="thumb-preview">${g.description}</div>
+          </div>
           <div class="icon">${g.icon}</div>
           <div class="title">${g.name}</div>
           <div class="desc">${g.description}</div>
@@ -318,55 +427,149 @@
             ${best !== null ? `<span class="best">★ ${best}</span>` : ""}
           </div>
         `;
-        card.addEventListener("click", (e) => {
-          if (e.target.closest("[data-fav]")) return; // favorite click handled separately
-          AudioFX.click();
-          App.openGame(g.id);
-        });
-        // Right-click → hide game (context menu suppressed)
-        card.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          App.toggleHidden(g.id);
-        });
-        // Long-press (mobile) → hide game
-        let pressTimer = null;
-        card.addEventListener("touchstart", () => {
-          pressTimer = setTimeout(() => {
-            App.toggleHidden(g.id);
-            pressTimer = null;
-          }, 600);
-        }, {passive: true});
-        card.addEventListener("touchend", () => {
-          if (pressTimer) clearTimeout(pressTimer);
-        });
-        card.addEventListener("touchmove", () => {
-          if (pressTimer) clearTimeout(pressTimer);
-        });
-        // Preload the game script on hover (no-op for now since scripts are
-        // already loaded upfront, but the hook is here for a future lazy-load).
-        card.addEventListener("mouseenter", () => {
-          App._preloadHint(g.id);
-        });
-        const favBtn = card.querySelector("[data-fav]");
-        favBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          const added = Storage.toggleFavorite(g.id);
-          AudioFX.pop();
-          App.toast(added ? `Added "${g.name}" to favorites` : `Removed "${g.name}" from favorites`, "info");
-          // Update the heart in place. A full renderGrid() here used to
-          // rebuild every card — all fade-in animations replayed and the
-          // grid re-sorted, which looked exactly like a page reload.
-          App._syncFavUi(g.id, favBtn);
-          // In favorites-only view an un-favorited card no longer matches
-          // the filter — fade it out instead of re-rendering the grid.
-          if (!added && App.state.favOnly) App._removeCardFromGrid(g.id);
-        });
-        grid.appendChild(card);
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("[data-fav]")) return; // favorite click handled separately
+        AudioFX.click();
+        App.openGame(g.id);
       });
-      // Update visible count if the element exists
-      const countEl = $("#filter-count");
-      if (countEl) countEl.textContent = list.length;
+      // Right-click → hide game (context menu suppressed)
+      card.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        App.toggleHidden(g.id);
+      });
+      // Long-press (mobile) → hide game
+      let pressTimer = null;
+      card.addEventListener("touchstart", () => {
+        pressTimer = setTimeout(() => {
+          App.toggleHidden(g.id);
+          pressTimer = null;
+        }, 600);
+      }, {passive: true});
+      card.addEventListener("touchend", () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      });
+      card.addEventListener("touchmove", () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      });
+      // Hover: preload the game script (future lazy-load hook) + a very
+      // subtle tick on devices that actually have a hover pointer.
+      card.addEventListener("mouseenter", () => {
+        App._preloadHint(g.id);
+        if (App._hoverSoundOk && !Storage.getA11y().reduceMotion) AudioFX.hover();
+      });
+      const favBtn = card.querySelector("[data-fav]");
+      favBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const added = Storage.toggleFavorite(g.id);
+        AudioFX.pop();
+        App.toast(added ? `Added "${g.name}" to favorites` : `Removed "${g.name}" from favorites`, "info");
+        // Update the heart in place. A full renderGrid() here used to
+        // rebuild every card — all fade-in animations replayed and the
+        // grid re-sorted, which looked exactly like a page reload.
+        App._syncFavUi(g.id, favBtn);
+        // In favorites-only view an un-favorited card no longer matches
+        // the filter — fade it out instead of re-rendering the grid.
+        if (!added && App.state.favOnly) App._removeCardFromGrid(g.id);
+      });
+      return card;
+    },
+
+    // Format seconds as a compact human duration ("2h 05m" / "12m" / "45s").
+    _formatDuration(secs) {
+      secs = Math.max(0, Math.floor(secs || 0));
+      if (secs < 60) return secs + "s";
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      if (h > 0) return m ? `${h}h ${m}m` : `${h}h`;
+      return `${m}m`;
+    },
+
+    // ---------- A–Z jump bar (visible when sorted by name) ----------
+    _renderAzBar(list) {
+      const host = $("#az-bar");
+      if (!host) return;
+      if (App.state.sort !== "name" || list.length < 10) {
+        host.style.display = "none";
+        host.innerHTML = "";
+        return;
+      }
+      host.style.display = "";
+      host.innerHTML = "";
+      const buckets = {};
+      list.forEach(g => {
+        const c = (g.name[0] || "?").toUpperCase();
+        const key = /[A-Z]/.test(c) ? c : "#";
+        buckets[key] = (buckets[key] || 0) + 1;
+      });
+      ["#"].concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")).forEach(L => {
+        const n = buckets[L] || 0;
+        const b = document.createElement("button");
+        b.className = "az-letter" + (n ? "" : " empty");
+        b.textContent = L;
+        b.disabled = !n;
+        b.setAttribute("aria-label", n ? `Jump to ${n} game${n === 1 ? "" : "s"} starting with ${L}` : `No games starting with ${L}`);
+        if (n) b.title = `${n} game${n === 1 ? "" : "s"} starting with “${L}”`;
+        if (n) b.addEventListener("click", () => {
+          AudioFX.click();
+          App._jumpToLetter(L);
+        });
+        host.appendChild(b);
+      });
+    },
+
+    // Jump to the first game whose name starts with `L` ("#" = digits/symbols).
+    // Renders any pending batches up to the target first (the card may not be
+    // in the DOM yet under batched rendering).
+    _jumpToLetter(L) {
+      const state = App._gridBatch;
+      if (!state) return;
+      const idx = state.list.findIndex(g => {
+        const c = (g.name[0] || "?").toUpperCase();
+        return L === "#" ? !/[A-Z]/.test(c) : c === L;
+      });
+      if (idx === -1) return;
+      if (idx >= state.rendered) App._renderCardBatch(idx + 1);
+      const card = document.querySelector(`#game-grid .card[data-id="${state.list[idx].id}"]`);
+      if (!card) return;
+      const reduce = Storage.getA11y().reduceMotion;
+      card.scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
+      card.focus({preventScroll: true});
+    },
+
+    // ---------- Tag filter chips (derived from catalog tags) ----------
+    _renderTagChips() {
+      const host = $("#tag-chips-row");
+      if (!host) return;
+      host.innerHTML = "";
+      if (!GameRegistry.tagCounts) return;
+      const TOP = 14;
+      const MIN_COUNT = 4; // hide one-off tags
+      const list = GameRegistry.tagCounts(MIN_COUNT).slice(0, TOP);
+      if (list.length < 4) {
+        host.style.display = "none";
+        return;
+      }
+      host.style.display = "";
+      list.forEach(({tag, count}) => {
+        const on = App.state.tags.includes(tag);
+        const b = document.createElement("button");
+        b.className = "tag-chip" + (on ? " active" : "");
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+        b.title = on ? `Remove “${tag}” filter` : `Show only games tagged “${tag}”`;
+        b.innerHTML = `${tag} <span class="tag-count">${count}</span>`;
+        b.addEventListener("click", () => {
+          AudioFX.click();
+          const i = App.state.tags.indexOf(tag);
+          if (i === -1) App.state.tags.push(tag);
+          else App.state.tags.splice(i, 1);
+          App.renderGrid();
+          App.toast(App.state.tags.length
+            ? `Tag filter: ${App.state.tags.join(" + ")}`
+            : "Tag filter cleared", "info");
+        });
+        host.appendChild(b);
+      });
     },
 
     // Sync every on-screen favorite indicator for one game WITHOUT
@@ -423,17 +626,99 @@
       const hash = location.hash.replace(/^#\/?/, "");
       // Deep link support: ?game=id opens that game directly (shareable URL).
       if (!hash) {
-        const qs = new URLSearchParams(location.search).get("game");
-        if (qs && GameRegistry.get(qs)) {
-          App.openGame(qs);
+        const qs = new URLSearchParams(location.search);
+        const gameQ = qs.get("game");
+        if (gameQ && GameRegistry.get(gameQ)) {
+          App.openGame(gameQ);
           return;
         }
+        // Category landing routes: #/category/word (in-app) and the
+        // crawler-friendly ?category=word variant (used in sitemap.xml).
+        const catQ = qs.get("category");
+        if (catQ && App._applyCategoryRoute(catQ)) return;
+        App._clearCategoryRoute();
         App.closeGame();
         return;
       }
+      if (hash.indexOf("category/") === 0) {
+        // Self-originated hash change (see _gotoCategory) — already applied.
+        if (App._hashOpenId === hash) {
+          App._hashOpenId = null;
+          return;
+        }
+        App._applyCategoryRoute(hash.slice("category/".length));
+        return;
+      }
       const game = GameRegistry.get(hash);
-      if (game) App.openGame(hash);
-      else App.closeGame();
+      if (game) {
+        // Skip the re-open when the hashchange was triggered by openGame()
+        // itself (card click / openGame setting location.hash). Without this
+        // guard every card click mounted the game twice and double-counted
+        // the play in the stats log.
+        if (App._hashOpenId === hash) {
+          App._hashOpenId = null;
+          return;
+        }
+        App.openGame(hash);
+      } else App.closeGame();
+    },
+
+    // Apply a category landing route: closes any open game, filters the grid
+    // to that category, and shows a proper landing heading above the grid.
+    // Returns true when the category is valid.
+    _applyCategoryRoute(cat) {
+      const valid = ["word", "logic", "arcade", "strategy", "quiz"];
+      if (!valid.includes(cat)) return false;
+      if (App.currentGame) App.closeGame();
+      App.state.filter = cat;
+      // Sync the category chips with the route.
+      $$('.filter-chip[data-dim="category"]').forEach(x => {
+        const on = x.dataset.filter === cat;
+        x.classList.toggle("active", on);
+      });
+      App.renderGrid();
+      // Landing banner + document title (meta description follows too).
+      const banner = $("#category-banner");
+      if (banner) {
+        const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+        const count = GameRegistry.byCategory(cat).filter(g => !Storage.isHidden(g.id)).length;
+        $("#category-title").textContent = `${label} games`;
+        $("#category-desc").textContent =
+          `${count} free ${label.toLowerCase()} games — no installs, no login, playable right in your browser. Part of the 300-game Pixel Arcade collection.`;
+        banner.style.display = "";
+      }
+      const titleEl = document.head.querySelector("title");
+      if (titleEl) titleEl.textContent = `${cat.charAt(0).toUpperCase() + cat.slice(1)} Games — Pixel Arcade`;
+      window.scrollTo(0, 0);
+      App.announce(`Showing ${cat} games.`);
+      return true;
+    },
+
+    // Leave a category landing route: hide the banner, restore the title.
+    // No-op while the URL still points at a category route (e.g. closeGame
+    // ran while browsing #/category/word) unless `force` is set.
+    _clearCategoryRoute(force) {
+      if (!force && location.hash.indexOf("#/category/") === 0) return;
+      const banner = $("#category-banner");
+      if (banner && banner.style.display !== "none") {
+        banner.style.display = "none";
+        // Restore the default <title> / meta description.
+        App.updateMeta(null);
+      }
+    },
+
+    // "✕ View all games" on the category landing banner — leave the route.
+    _exitCategoryRoute() {
+      App.state.filter = "all";
+      $$('.filter-chip[data-dim="category"]').forEach(x => {
+        x.classList.toggle("active", x.dataset.filter === "all");
+      });
+      if (location.hash.indexOf("#/category/") === 0) {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+      App._clearCategoryRoute(true);
+      App.renderGrid();
+      App.announce("Showing all games.");
     },
 
     openGame(id) {
@@ -476,8 +761,13 @@
       newly.forEach(a => {
         App.toast(`🏅 Achievement unlocked: ${a.title}`, "success");
         App._fireConfetti();
+        AudioFX.ding();
       });
       App._checkMilestones();
+
+      // Start the play-time tracker for this session (flushed every 15s,
+      // on close, and on unload — see _setupPlaytimeTracking).
+      App._startPlayTimer(id);
 
       // Update header
       $("#game-icon").textContent = game.icon;
@@ -537,7 +827,15 @@
       // to a related or recently-played game without going back to the hub.
       App.renderGameRails();
 
-      if (location.hash !== "#/" + id) location.hash = "#/" + id;
+      // Soft two-note chime when entering a game.
+      AudioFX.open();
+
+      if (location.hash !== "#/" + id) {
+        // Mark this hash change as self-originated so the hashchange → route
+        // → openGame loop doesn't mount the game a second time.
+        App._hashOpenId = id;
+        location.hash = "#/" + id;
+      }
       window.scrollTo(0, 0);
     },
 
@@ -553,8 +851,60 @@
       newly.forEach(a => {
         App.toast(`🏅 Achievement unlocked: ${a.title}`, "success");
         App._fireConfetti();
+        AudioFX.ding();
       });
       if (won) App.announce(`You won ${App.currentGame.name}!`);
+    },
+
+    // ---------- Play-time tracking ----------
+    // While a game is open we accumulate wall-clock seconds and flush them
+    // to Storage every 15s (plus on close and on unload). Time while the
+    // tab is hidden is NOT counted — you're not playing what you can't see.
+    _startPlayTimer(id) {
+      App._stopPlayTimer();
+      App._playTimerId = id;
+      App._playTimerLast = Date.now();
+      App._playTimerHidden = document.hidden;
+      if (!App._playTimerInterval) {
+        App._playTimerInterval = setInterval(() => App._flushPlayTimer(), 15000);
+      }
+    },
+    _flushPlayTimer() {
+      if (!App._playTimerId || App._playTimerHidden) return;
+      const now = Date.now();
+      const secs = Math.floor((now - App._playTimerLast) / 1000);
+      if (secs > 0) Storage.addPlaytime(App._playTimerId, secs);
+      App._playTimerLast = now;
+    },
+    _stopPlayTimer() {
+      App._flushPlayTimer();
+      if (App._playTimerInterval) {
+        clearInterval(App._playTimerInterval);
+        App._playTimerInterval = null;
+      }
+      App._playTimerId = null;
+    },
+    // visibility + unload hooks — wired once in init().
+    _setupPlaytimeTracking() {
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          // Bank the time up to the moment the tab was hidden.
+          if (App._playTimerId && !App._playTimerHidden) {
+            const now = Date.now();
+            const secs = Math.floor((now - App._playTimerLast) / 1000);
+            if (secs > 0) Storage.addPlaytime(App._playTimerId, secs);
+          }
+          App._playTimerHidden = true;
+        } else {
+          // Resume from now — the hidden gap isn't play time.
+          if (App._playTimerId) {
+            App._playTimerLast = Date.now();
+            App._playTimerHidden = false;
+          }
+        }
+      });
+      window.addEventListener("beforeunload", () => App._flushPlayTimer());
+      window.addEventListener("pagehide", () => App._flushPlayTimer());
     },
 
     // Confetti animation — fires when an achievement is unlocked.
@@ -663,12 +1013,35 @@
     },
 
     // Copy a shareable result string to the clipboard. Games can call
-    // App.shareScore(text) when they have a meaningful result to share.
+    // App.shareScore(text) when they have a meaningful result to share;
+    // with no argument a rich emoji summary is built from local stats.
     shareScore(text) {
+      // Achievement hook: "Spread the Word"
+      Storage.bumpEvent("shared");
+      App.evaluateAchievements();
       // Shareable deep link: ?game=id survives hash-less navigation and is indexable.
       let link = location.href.split("#")[0].split("?")[0];
       if (App.currentGame) link += "?game=" + encodeURIComponent(App.currentGame.id);
-      const full = `Pixel Arcade — ${App.currentGame ? App.currentGame.name : "game"}\n${text}\n${link}`;
+      const g = App.currentGame;
+      const lines = [`🎮 Pixel Arcade${g ? " — " + g.name : ""}`];
+      if (text) {
+        lines.push(text);
+      } else if (g) {
+        // Rich emoji summary from local stats — best score, plays, time.
+        const best = Storage.getBest(g.id);
+        const plays = Storage.getStats().gamesPlayed[g.id] || 0;
+        const time = Storage.getPlaytimeFor(g.id);
+        const parts = [];
+        if (best !== null) parts.push(`🏆 Best: ${best}`);
+        if (plays > 0) parts.push(`🎮 ${plays} play${plays === 1 ? "" : "s"}`);
+        if (time >= 60) parts.push(`⏱️ ${App._formatDuration(time)} played`);
+        if (parts.length) lines.push(parts.join(" · "));
+        else lines.push("Try to beat my score!");
+      }
+      const streak = Storage.getStreak();
+      if (streak.current > 1) lines.push(`🔥 ${streak.current}-day streak`);
+      lines.push(link);
+      const full = lines.join("\n");
       const fallback = () => {
         const ta = document.createElement("textarea");
         ta.value = full;
@@ -740,7 +1113,9 @@
       host.style.display = (simRail || recRail) ? "" : "none";
     },
 
-    // Render the "Recently played" rail at the top of the home view.
+    // Render the "Continue playing" rail at the top of the home view: the 5
+    // most recently played games, each with the last score and how long ago
+    // it was played — one click back into the action.
     // Hidden when empty or when a search/filter is active.
     renderHomeRecent() {
       const host = $("#home-recent");
@@ -751,8 +1126,9 @@
       // just played.
       const filtering = App.state.filter !== "all" || App.state.ageFilter !== "all" ||
         App.state.diffFilter !== "all" || App.state.durFilter !== "all" ||
-        App.state.playersFilter !== "all" || App.state.search || App.state.favOnly;
-      const recent = GameRegistry.recent(10);
+        App.state.playersFilter !== "all" || App.state.search || App.state.favOnly ||
+        (App.state.tags && App.state.tags.length);
+      const recent = GameRegistry.recent(5);
       if (filtering || recent.length === 0) {
         host.style.display = "none";
         row.innerHTML = "";
@@ -761,12 +1137,18 @@
       host.style.display = "";
       row.innerHTML = "";
       recent.forEach(g => {
+        // Sub-line: last score (if any) + relative time of the last play.
+        const plays = Storage.getPlaysFor(g.id);
+        const last = plays.length ? plays[plays.length - 1] : null;
+        const subParts = [];
+        if (last && last.score !== null && last.score !== undefined) subParts.push(`Last: ${last.score}`);
+        if (last) subParts.push(App._timeAgo(last.ts));
         const card = document.createElement("button");
-        card.className = "rail-card";
+        card.className = "rail-card rail-continue";
         card.innerHTML = `
           <span class="rail-icon">${g.icon}</span>
           <span class="rail-name">${g.name}</span>
-          <span class="rail-cat">${g.category}</span>
+          <span class="rail-cat">${subParts.length ? subParts.join(" · ") : g.category}</span>
         `;
         card.addEventListener("click", () => {
           AudioFX.click();
@@ -774,6 +1156,19 @@
         });
         row.appendChild(card);
       });
+    },
+
+    // Compact relative time ("just now", "5m ago", "3h ago", "2d ago").
+    _timeAgo(ts) {
+      const secs = Math.floor((Date.now() - ts) / 1000);
+      if (secs < 60) return "just now";
+      const m = Math.floor(secs / 60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      const d = Math.floor(h / 24);
+      if (d < 7) return `${d}d ago`;
+      return new Date(ts).toLocaleDateString();
     },
 
     // Recommended for you — merges trending (most-played this week) with
@@ -939,6 +1334,7 @@
       const favs = Storage.getFavorites().length;
       const achv = window.Achievements ? Achievements.list().filter(a => a.unlocked).length : 0;
       const achvTotal = window.Achievements ? Achievements.all.length : 0;
+      const totalPlaytime = Storage.getTotalPlaytime ? Storage.getTotalPlaytime() : 0;
       const winRate = stats.totalPlays > 0 ? Math.round(stats.totalWins / stats.totalPlays * 100) : 0;
       // Game completion: unique games played out of total games registered.
       const totalGames = GameRegistry.all().length;
@@ -1042,6 +1438,7 @@
           <div class="stat-card"><div class="stat-val">${favs}</div><div class="stat-label">Favorites</div></div>
           <div class="stat-card"><div class="stat-val">${recent}</div><div class="stat-label">Recent</div></div>
           <div class="stat-card"><div class="stat-val">${achv}/${achvTotal}</div><div class="stat-label">Achievements</div></div>
+          <div class="stat-card"><div class="stat-val">${App._formatDuration(totalPlaytime)}</div><div class="stat-label">Time played</div></div>
         </div>
         <div class="stats-breakdown">
           <h4 style="margin-bottom:6px;">Plays by category</h4>
@@ -1056,7 +1453,8 @@
       App.showModal("Your stats", body, undefined, {wide: true});
     },
 
-    // Achievements modal — redesigned with progress ring + better card states.
+    // Achievements modal — progress ring, filter tabs, and per-achievement
+    // progress bars on locked countable goals.
     showAchievements() {
       if (!window.Achievements) {
         App.toast("Achievements not loaded", "info");
@@ -1064,6 +1462,7 @@
       }
       const list = Achievements.list();
       const unlocked = list.filter(a => a.unlocked).length;
+      const inProgress = list.filter(a => !a.unlocked && a.progress && a.progress.cur > 0).length;
       const total = list.length;
       const pct = total > 0 ? Math.round(unlocked / total * 100) : 0;
       // Progress ring (SVG circle with stroke-dashoffset)
@@ -1078,25 +1477,57 @@
           <div class="ring-label">${pct}%</div>
         </div>
       `;
-      const cards = list.map(a => `
-        <div class="achv-card ${a.unlocked ? "unlocked" : "locked"}">
+      const cards = list.map(a => {
+        // Progress bar for locked achievements that expose progress().
+        let progressHtml = "";
+        if (!a.unlocked && a.progress && a.progress.max > 0) {
+          const ppct = Math.min(100, Math.round(a.progress.cur / a.progress.max * 100));
+          const unit = a.progress.unit ? " " + a.progress.unit : "";
+          progressHtml = `
+            <div class="achv-progress">
+              <div class="achv-progress-track"><div class="achv-progress-fill" style="width:${ppct}%"></div></div>
+              <span class="achv-progress-val">${a.progress.cur}${unit} / ${a.progress.max}${unit}</span>
+            </div>`;
+        }
+        const state = a.unlocked ? "unlocked" : (a.progress && a.progress.cur > 0 ? "progress" : "locked");
+        return `
+        <div class="achv-card ${a.unlocked ? "unlocked" : "locked"}" data-state="${state}">
           <div class="achv-icon">${a.icon}</div>
           <div class="achv-title">${a.title}</div>
           <div class="achv-desc">${a.desc}</div>
+          ${progressHtml}
           <div class="achv-status">${a.unlocked ? "✓ Unlocked" : "Locked"}</div>
         </div>
-      `).join("");
+      `;
+      }).join("");
       const body = `
         <div class="achv-header">
           ${ring}
           <div class="achv-header-text">
             <h3>${unlocked} of ${total} unlocked</h3>
-            <p>Play more games to unlock badges. Some are earned by playing specific categories, hitting streaks, or playing at unusual hours.</p>
+            <p>Play more games to unlock badges. Some are earned by playing specific categories, hitting streaks, winning several games in a row, or racking up play time.</p>
           </div>
+        </div>
+        <div class="achv-filters" role="tablist" aria-label="Filter achievements">
+          <button class="achv-filter active" data-f="all" role="tab" aria-selected="true">All (${total})</button>
+          <button class="achv-filter" data-f="unlocked" role="tab" aria-selected="false">Unlocked (${unlocked})</button>
+          <button class="achv-filter" data-f="progress" role="tab" aria-selected="false">In progress (${inProgress})</button>
         </div>
         <div class="achv-grid">${cards}</div>
       `;
       App.showModal("Achievements", body, undefined, {wide: true});
+      // Wire the filter tabs (the modal body was just injected).
+      $$("#modal .achv-filter").forEach(btn => btn.addEventListener("click", () => {
+        AudioFX.click();
+        $$("#modal .achv-filter").forEach(b => {
+          b.classList.toggle("active", b === btn);
+          b.setAttribute("aria-selected", b === btn ? "true" : "false");
+        });
+        const f = btn.dataset.f;
+        $$("#modal .achv-card").forEach(card => {
+          card.style.display = (f === "all" || card.dataset.state === f) ? "" : "none";
+        });
+      }));
     },
 
     // Hide/unhide a game (long-press or right-click on the card).
@@ -1145,6 +1576,9 @@
     },
 
     closeGame() {
+      // Bank any outstanding play time for the game we're leaving.
+      const wasOpen = !!App.currentGame;
+      App._stopPlayTimer();
       if (App.currentCleanup) {
         try {
           App.currentCleanup();
@@ -1167,8 +1601,13 @@
         skip.href = "#game-grid";
         skip.textContent = "Skip to games";
       }
-      if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+      if (location.hash && location.hash.indexOf("#/category/") !== 0) {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+      App._clearCategoryRoute();
       App.renderGrid(); // refresh best scores / favs
+      // Gentle blip when returning to the hub (only if a game was open).
+      if (wasOpen) AudioFX.close();
       // Return focus to the card the user opened the game from (if still in DOM)
       if (App._lastFocusedCard) {
         const card = document.querySelector(`#game-grid .card[data-id="${App._lastFocusedCard}"]`);
@@ -1249,6 +1688,411 @@
         }
       }
       App._lastFocused = null;
+    },
+
+    // ---------- Ctrl+K command palette ----------
+    // Fuzzy-searchable launcher over all 300 games + quick actions
+    // (random game, stats, achievements, theme, mode, categories…).
+    _setupCommandPalette() {
+      const backdrop = $("#cmdk-backdrop");
+      if (!backdrop) return;
+      const input = $("#cmdk-input");
+      const results = $("#cmdk-results");
+      App._cmdkItems = [];
+      App._cmdkIndex = 0;
+
+      // Quick actions available in the palette.
+      const ACTIONS = [
+        {
+          icon: "🎲", label: "Random game", sub: "Jump to a surprise", run: () => {
+            const all = GameRegistry.all();
+            if (all.length) App.openGame(all[Math.floor(Math.random() * all.length)].id);
+          }
+        },
+        {icon: "📊", label: "View stats", sub: "Plays, wins, play time, streaks", run: () => App.showStats()},
+        {icon: "🏅", label: "View achievements", sub: "Badges and progress", run: () => App.showAchievements()},
+        {icon: "🌙", label: "Toggle dark / light mode", sub: "Appearance", run: () => App.toggleMode()},
+        {
+          icon: "🎨",
+          label: "Change theme",
+          sub: "24 built-in themes + custom builder",
+          run: () => $("#theme-btn").click()
+        },
+        {icon: "🔊", label: "Toggle sound", sub: "Mute or unmute", run: () => App.toggleSound()},
+        {
+          icon: "♿",
+          label: "Accessibility options",
+          sub: "Font size, contrast, motion",
+          run: () => $("#a11y-btn").click()
+        },
+        {
+          icon: "⌨️",
+          label: "Keyboard shortcuts",
+          sub: "Show the shortcut cheat-sheet",
+          run: () => App._showShortcutHelp()
+        },
+        {icon: "💾", label: "Export my data", sub: "Download a JSON backup", run: () => App.exportData()},
+        {icon: "🔤", label: "Word games", sub: "Category landing page", run: () => App._gotoCategory("word")},
+        {icon: "🧩", label: "Logic games", sub: "Category landing page", run: () => App._gotoCategory("logic")},
+        {icon: "🕹️", label: "Arcade games", sub: "Category landing page", run: () => App._gotoCategory("arcade")},
+        {icon: "♟️", label: "Strategy games", sub: "Category landing page", run: () => App._gotoCategory("strategy")},
+        {icon: "❓", label: "Quiz games", sub: "Category landing page", run: () => App._gotoCategory("quiz")},
+      ];
+
+      // Fuzzy score for `text` against query `q`. Higher = better; -1 = no match.
+      // Substring matches rank above subsequence matches.
+      App._fuzzyScore = (text, q) => {
+        text = (text || "").toLowerCase();
+        q = (q || "").toLowerCase().trim();
+        if (!q) return 1;
+        const direct = text.indexOf(q);
+        if (direct !== -1) return 1000 - Math.min(200, direct * 2);
+        let ti = 0, score = 0, ok = true;
+        for (const ch of q) {
+          const idx = text.indexOf(ch, ti);
+          if (idx === -1) {
+            ok = false;
+            break;
+          }
+          score += 10 - Math.min(9, idx - ti);
+          ti = idx + 1;
+        }
+        return ok ? score : -1;
+      };
+
+      const render = () => {
+        const q = input.value.trim();
+        const items = [];
+        // 1) Actions (fuzzy on label + sub)
+        ACTIONS.forEach(a => {
+          const s = Math.max(App._fuzzyScore(a.label, q), App._fuzzyScore(a.sub, q) - 10);
+          if (s >= 0) items.push({icon: a.icon, label: a.label, sub: a.sub, run: a.run, score: s, kind: "action"});
+        });
+        // 2) Games (fuzzy on name; small bonus for matching category/tags)
+        GameRegistry.all().forEach(g => {
+          const s = App._fuzzyScore(g.name, q);
+          if (s < 0) {
+            // also allow matching on category / tags when the name misses
+            const alt = Math.max(App._fuzzyScore(g.category, q) - 30,
+              Math.max.apply(null, (g.tags || []).map(t => App._fuzzyScore(t, q) - 40)));
+            if (alt < 0) return;
+            items.push({
+              icon: g.icon,
+              label: g.name,
+              sub: g.category + " · " + (g.description || ""),
+              run: () => App.openGame(g.id),
+              score: alt,
+              kind: "game"
+            });
+            return;
+          }
+          items.push({
+            icon: g.icon,
+            label: g.name,
+            sub: g.category + " · " + (g.description || ""),
+            run: () => App.openGame(g.id),
+            score: s,
+            kind: "game"
+          });
+        });
+        items.sort((a, b) => b.score - a.score);
+        const MAX_ITEMS = 14;
+        App._cmdkItems = items.slice(0, MAX_ITEMS);
+        App._cmdkIndex = 0;
+        results.innerHTML = "";
+        if (!App._cmdkItems.length) {
+          results.innerHTML = `<div class="cmdk-empty">No matches for “${input.value.replace(/[<>&]/g, "")}”</div>`;
+          return;
+        }
+        App._cmdkItems.forEach((it, i) => {
+          const el = document.createElement("button");
+          el.className = "cmdk-item" + (i === 0 ? " active" : "");
+          el.setAttribute("role", "option");
+          el.setAttribute("aria-selected", i === 0 ? "true" : "false");
+          el.innerHTML = `
+            <span class="cmdk-item-icon">${it.icon}</span>
+            <span class="cmdk-item-body">
+              <span class="cmdk-item-label">${it.label}</span>
+              <span class="cmdk-item-sub">${it.sub}</span>
+            </span>
+            <span class="cmdk-item-kind">${it.kind === "game" ? "↵ play" : "↵ run"}</span>
+          `;
+          el.addEventListener("click", () => App._cmdkRun(i));
+          el.addEventListener("mousemove", () => App._cmdkHighlight(i, false));
+          results.appendChild(el);
+        });
+        results.scrollTop = 0;
+      };
+
+      App._cmdkHighlight = (idx, scroll) => {
+        App._cmdkIndex = idx;
+        $$(".cmdk-item", results).forEach((el, i) => {
+          const on = i === idx;
+          el.classList.toggle("active", on);
+          el.setAttribute("aria-selected", on ? "true" : "false");
+          if (on && scroll) el.scrollIntoView({block: "nearest"});
+        });
+      };
+
+      App._cmdkRun = (idx) => {
+        const it = App._cmdkItems[idx];
+        App._closeCmdk();
+        if (it) {
+          AudioFX.ding();
+          it.run();
+        }
+      };
+
+      App._openCmdk = () => {
+        if (backdrop.classList.contains("open")) return;
+        // Achievement hook: "Power User" (use the palette once).
+        Storage.bumpEvent("paletteUsed");
+        App.evaluateAchievements();
+        App._cmdkLastFocus = document.activeElement;
+        backdrop.classList.add("open");
+        backdrop.setAttribute("aria-hidden", "false");
+        input.value = "";
+        render();
+        input.focus();
+        AudioFX.open();
+      };
+
+      App._closeCmdk = () => {
+        if (!backdrop.classList.contains("open")) return;
+        backdrop.classList.remove("open");
+        backdrop.setAttribute("aria-hidden", "true");
+        if (App._cmdkLastFocus && document.contains(App._cmdkLastFocus)) {
+          try {
+            App._cmdkLastFocus.focus();
+          } catch (e) { /* detached */
+          }
+        }
+        App._cmdkLastFocus = null;
+      };
+
+      App._toggleCommandPalette = () => {
+        if (backdrop.classList.contains("open")) App._closeCmdk();
+        else App._openCmdk();
+      };
+
+      input.addEventListener("input", render);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (App._cmdkItems.length) App._cmdkHighlight((App._cmdkIndex + 1) % App._cmdkItems.length, true);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (App._cmdkItems.length) App._cmdkHighlight((App._cmdkIndex - 1 + App._cmdkItems.length) % App._cmdkItems.length, true);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          App._cmdkRun(App._cmdkIndex);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          App._closeCmdk();
+        }
+      });
+      backdrop.addEventListener("mousedown", (e) => {
+        if (e.target === backdrop) App._closeCmdk();
+      });
+      const openBtn = $("#cmdk-open-btn");
+      if (openBtn) openBtn.addEventListener("click", () => {
+        AudioFX.click();
+        App._openCmdk();
+      });
+    },
+
+    // Navigate to a category landing route (from the palette / banners).
+    _gotoCategory(cat) {
+      App.closeGame();
+      App._applyCategoryRoute(cat);
+      // Make the route shareable via the URL hash. Mark it self-originated
+      // so the resulting hashchange doesn't apply the route a second time.
+      if (location.hash !== "#/category/" + cat) {
+        App._hashOpenId = "category/" + cat;
+        location.hash = "#/category/" + cat;
+      }
+    },
+
+    // ---------- Custom theme builder ----------
+    // The builder lives inside the theme panel. Accent + font are stored in
+    // localStorage and applied as inline CSS variables on <html>; the
+    // light/dark base simply follows the global mode toggle (themes.css
+    // carries neutral palettes for [data-theme="custom"]).
+    _ctFonts: {
+      modern: {label: "Modern", heading: "'Inter', system-ui, sans-serif", body: "'Inter', system-ui, sans-serif"},
+      retro: {label: "Retro", heading: "'Press Start 2P', 'Inter', monospace", body: "'VT323', 'Inter', monospace"},
+      playful: {label: "Playful", heading: "'Baloo 2', 'Inter', cursive", body: "'Nunito', 'Inter', sans-serif"},
+      elegant: {
+        label: "Elegant",
+        heading: "'Playfair Display', Georgia, serif",
+        body: "'Inter', system-ui, sans-serif"
+      },
+      mono: {
+        label: "Mono",
+        heading: "'JetBrains Mono', 'Inter', monospace",
+        body: "'JetBrains Mono', 'Inter', monospace"
+      },
+    },
+    _ctAccents: ["#6366f1", "#22c55e", "#ef4444", "#f59e0b", "#06b6d4", "#a855f7", "#ec4899", "#14b8a6"],
+
+    // Current builder state (session-scoped; persisted on "Apply & save").
+    _ctState: null,
+    _ctDefaults() {
+      return {accent: "#6366f1", font: "modern"};
+    },
+
+    _setupThemeBuilder() {
+      const builder = $("#custom-theme-builder");
+      if (!builder) return;
+      App._ctState = Storage.getCustomTheme() || App._ctDefaults();
+
+      const swatches = $("#ctb-swatches");
+      const colorInput = $("#ctb-accent");
+      const fontSeg = $("#ctb-font");
+      const baseSeg = $("#ctb-base");
+
+      // Accent swatches
+      if (swatches) {
+        App._ctAccents.forEach(hex => {
+          const b = document.createElement("button");
+          b.className = "ctb-swatch";
+          b.style.background = hex;
+          b.title = hex;
+          b.setAttribute("aria-label", "Accent " + hex);
+          b.addEventListener("click", () => {
+            App._ctState.accent = hex;
+            App._ctPreview();
+          });
+          swatches.appendChild(b);
+        });
+      }
+      // Custom color input
+      if (colorInput) colorInput.addEventListener("input", () => {
+        App._ctState.accent = colorInput.value;
+        App._ctPreview();
+      });
+      // Font segment
+      if (fontSeg) {
+        Object.keys(App._ctFonts).forEach(key => {
+          const b = document.createElement("button");
+          b.textContent = App._ctFonts[key].label;
+          b.dataset.font = key;
+          b.title = App._ctFonts[key].label + " font pairing";
+          b.addEventListener("click", () => {
+            App._ctState.font = key;
+            App._ctPreview();
+          });
+          fontSeg.appendChild(b);
+        });
+      }
+      // Base segment mirrors the global mode
+      if (baseSeg) baseSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+        Storage.setMode(b.dataset.base);
+        App.applyTheme();
+        AudioFX.click();
+      }));
+
+      const saveBtn = $("#ctb-save");
+      if (saveBtn) saveBtn.addEventListener("click", () => {
+        Storage.setCustomTheme(App._ctState);
+        Storage.bumpEvent("customThemeSaved"); // achievement: "Remix Artist"
+        App.setTheme("custom");
+        AudioFX.win();
+        App.toast("Custom theme saved", "success");
+        App.evaluateAchievements();
+      });
+      const randBtn = $("#ctb-random");
+      if (randBtn) randBtn.addEventListener("click", () => {
+        const accents = App._ctAccents;
+        const fonts = Object.keys(App._ctFonts);
+        App._ctState.accent = accents[Math.floor(Math.random() * accents.length)];
+        App._ctState.font = fonts[Math.floor(Math.random() * fonts.length)];
+        Storage.setMode(Math.random() < 0.5 ? "light" : "dark");
+        App._ctPreview();
+        App.setTheme("custom");
+        AudioFX.pop();
+        App.toast("🎲 Randomized — tweak and hit Apply & save", "info");
+      });
+    },
+
+    // Live preview of the builder state (applies but doesn't persist).
+    _ctPreview() {
+      Storage.setCustomTheme(App._ctState);
+      if (Storage.getTheme() !== "custom") {
+        App.setTheme("custom");
+      } else {
+        App.applyTheme();
+      }
+      App._syncThemeBuilder(true);
+    },
+
+    // Reflect builder state into its controls. Shown only for custom theme.
+    _syncThemeBuilder(active) {
+      const builder = $("#custom-theme-builder");
+      if (!builder) return;
+      builder.hidden = !active;
+      if (!active || !App._ctState) return;
+      App._ctState = Storage.getCustomTheme() || App._ctState || App._ctDefaults();
+      const colorInput = $("#ctb-accent");
+      if (colorInput) colorInput.value = App._ctState.accent;
+      $$("#ctb-font button").forEach(b => b.classList.toggle("active", b.dataset.font === App._ctState.font));
+      const mode = Storage.getMode();
+      $$("#ctb-base button").forEach(b => b.classList.toggle("active", b.dataset.base === mode));
+      $$("#ctb-swatches .ctb-swatch").forEach(b => b.classList.toggle("active", b.title === App._ctState.accent));
+      // Bring the builder into view inside the (scrollable) theme panel.
+      try {
+        builder.scrollIntoView({block: "nearest", behavior: "smooth"});
+      } catch (e) { /* older browsers */
+      }
+    },
+
+    // Apply (or clear) the custom theme's inline CSS variables on <html>.
+    // `on` = custom theme is active; accent + accent-2 + accent-soft come
+    // from the user's saved accent, fonts from the chosen pairing.
+    _applyCustomThemeVars(on) {
+      const root = document.documentElement;
+      const vars = ["--accent", "--accent-2", "--accent-soft", "--font-body", "--font-heading"];
+      vars.forEach(v => root.style.removeProperty(v));
+      if (!on) return;
+      const ct = Storage.getCustomTheme() || App._ctDefaults();
+      const accent = ct.accent || "#6366f1";
+      // Derive a companion accent (slightly rotated + lightness-tuned).
+      const hsl = App._hexToHsl(accent);
+      const accent2 = `hsl(${(hsl.h + 24) % 360} ${hsl.s}% ${Math.min(72, hsl.l + 12)}%)`;
+      const soft = `hsl(${hsl.h} ${hsl.s}% ${hsl.l}% / 0.14)`;
+      root.style.setProperty("--accent", accent);
+      root.style.setProperty("--accent-2", accent2);
+      root.style.setProperty("--accent-soft", soft);
+      const fonts = (App._ctFonts[ct.font] || App._ctFonts.modern);
+      root.style.setProperty("--font-heading", fonts.heading);
+      root.style.setProperty("--font-body", fonts.body);
+    },
+
+    // hex (#rrggbb) → {h, s, l} (0–360, 0–100, 0–100)
+    _hexToHsl(hex) {
+      let m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+      if (!m) return {h: 235, s: 84, l: 61};
+      const n = parseInt(m[1], 16);
+      const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0;
+      const l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          default:
+            h = (r - g) / d + 4;
+        }
+        h /= 6;
+      }
+      return {h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100)};
     },
 
     // ---------- Init ----------
@@ -1333,15 +2177,11 @@
         }
         App.openGame(pick.id);
       });
-      // Share button — copy a generic result line to clipboard
+      // Share button — copy a rich emoji summary to clipboard
       $("#game-share-btn").addEventListener("click", () => {
         AudioFX.click();
         if (!App.currentGame) return;
-        const best = Storage.getBest(App.currentGame.id);
-        const line = best !== null
-          ? `Played ${App.currentGame.name} — best score: ${best}`
-          : `Playing ${App.currentGame.name} on Pixel Arcade`;
-        App.shareScore(line);
+        App.shareScore();
       });
       // Stats + achievements buttons in the topbar
       $("#stats-btn").addEventListener("click", () => {
@@ -1401,10 +2241,13 @@
         AudioFX.click();
       });
       $$(".menu-chip").forEach(c => c.addEventListener("click", () => {
+        const isCustom = c.dataset.themeId === "custom";
         App.setTheme(c.dataset.themeId);
         AudioFX.click();
-        $("#theme-panel").classList.remove("open");
-        App.toast("Theme: " + c.textContent, "info");
+        // Keep the panel open when picking Custom so the builder is right
+        // there to tweak; every other theme applies instantly and closes.
+        if (!isCustom) $("#theme-panel").classList.remove("open");
+        App.toast(isCustom ? "Custom theme — build yours below 🎛️" : "Theme: " + c.textContent, "info");
       }));
       document.addEventListener("click", (e) => {
         if (!e.target.closest(".menu")) $("#theme-panel").classList.remove("open");
@@ -1482,6 +2325,20 @@
       // Filters
       $$(".filter-chip[data-dim='category']").forEach(c => c.addEventListener("click", () => {
         AudioFX.click();
+        // When browsing a category landing route, moving to another category
+        // goes through the route (keeps the URL shareable) instead of a
+        // direct filter change.
+        const onRoute = location.hash.indexOf("#/category/") === 0;
+        if (onRoute) {
+          const target = c.dataset.filter;
+          if (target === "all") {
+            App._exitCategoryRoute();
+            App.toast("Showing all games", "info");
+          } else {
+            App._gotoCategory(target);
+          }
+          return;
+        }
         $$(".filter-chip[data-dim='category']").forEach(x => x.classList.remove("active"));
         c.classList.add("active");
         App.state.filter = c.dataset.filter;
@@ -1530,6 +2387,7 @@
         App.state.search = "";
         App.state.sort = "default";
         App.state.favOnly = false;
+        App.state.tags = [];
         const favBtn = $("#fav-only-btn");
         favBtn.classList.remove("active");
         favBtn.setAttribute("aria-pressed", "false");
@@ -1576,8 +2434,16 @@
 
       // Esc closes game / modal
       document.addEventListener("keydown", (e) => {
+        // Ctrl+K / Cmd+K toggles the command palette (works everywhere —
+        // home, inside games, inside inputs).
+        if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+          e.preventDefault();
+          App._toggleCommandPalette();
+          return;
+        }
         if (e.key === "Escape") {
-          if ($("#modal-backdrop").classList.contains("open")) App.closeModal();
+          if ($("#cmdk-backdrop") && $("#cmdk-backdrop").classList.contains("open")) App._closeCmdk();
+          else if ($("#modal-backdrop").classList.contains("open")) App.closeModal();
           else if ($("#game-view").classList.contains("active")) App.closeGame();
         }
         // Tab focus trap while a modal is open (keeps keyboard focus
@@ -1689,6 +2555,19 @@
       App._renderGreeting();
       // Search clear button
       App._setupSearchClear();
+      // Ctrl+K command palette
+      App._setupCommandPalette();
+      // Play-time tracking (visibility + unload flush hooks)
+      App._setupPlaytimeTracking();
+      // Custom theme builder
+      App._setupThemeBuilder();
+      // Category landing banner — “✕ View all games” leaves the route
+      const catClear = document.getElementById("category-clear");
+      if (catClear) catClear.addEventListener("click", () => {
+        AudioFX.click();
+        App._exitCategoryRoute();
+        App.toast("Showing all games", "info");
+      });
       // Sort dropdown
       const sortSel = document.getElementById("sort-select");
       if (sortSel) sortSel.addEventListener("change", () => {
@@ -1914,10 +2793,11 @@
       update();
     },
 
-    // Keyboard shortcut help modal — opened with "?" key.
+    // Keyboard shortcut help modal — opened with "?" key or Ctrl+K → shortcuts.
     _showShortcutHelp() {
       const body = `
         <div style="font-size:0.9rem; line-height:1.8;">
+          <p><span class="kbd">Ctrl</span> + <span class="kbd">K</span> — Open the command palette (search games &amp; actions)</p>
           <p><span class="kbd">←</span> <span class="kbd">→</span> <span class="kbd">↑</span> <span class="kbd">↓</span> — Move between game cards on the home grid</p>
           <p><span class="kbd">Enter</span> — Open the focused game card</p>
           <p><span class="kbd">F</span> — Toggle favorite on the focused card</p>

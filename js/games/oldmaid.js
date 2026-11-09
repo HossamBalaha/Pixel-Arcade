@@ -146,7 +146,7 @@
             el.style.cssText = `display:inline-block;width:42px;height:60px;margin:3px;border-radius:7px;
               background:#1e3a8a;color:#93c5fd;font-size:20px;text-align:center;padding-top:14px;cursor:pointer;
               border:2px solid #3b82f6;`;
-            el.textContent = "🂠";
+            el.textContent = "♠";
             el.addEventListener("pointerdown", () => takeFromAI(i));
             aiEl.appendChild(el);
           });
@@ -155,7 +155,7 @@
             const el = document.createElement("div");
             el.style.cssText = `display:inline-block;width:42px;height:60px;margin:3px;border-radius:7px;
               background:#1e3a8a;color:#93c5fd;font-size:20px;text-align:center;padding-top:14px;opacity:0.6;border:2px solid #3b82f6;`;
-            el.textContent = "🂠";
+            el.textContent = "♠";
             aiEl.appendChild(el);
           });
         }

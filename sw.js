@@ -7,7 +7,7 @@
      cache is built and on activate every cache whose key isn't the current
      version is evicted so users always get the latest assets.
 */
-const CACHE_VERSION = "v11";
+const CACHE_VERSION = "v13";
 const CACHE = "pixel-arcade-" + CACHE_VERSION;
 const SHELL = [
   "./",
@@ -31,6 +31,7 @@ const SHELL = [
   "./assets/icons/logo.svg",
   "./assets/icons/favicon-32x32.png",
   "./assets/icons/apple-touch-icon.png",
+  "./assets/og-image.png",
 ];
 
 self.addEventListener("install", (e) => {

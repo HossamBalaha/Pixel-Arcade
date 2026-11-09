@@ -193,6 +193,12 @@ button {
     padding: 10px;
     z-index: 100;
     display: none;
+    /* The theme panel now holds 25 chips + the custom-theme builder —
+       cap it to the viewport and scroll so the builder stays reachable
+       on short screens. */
+    max-height: calc(100vh - var(--topbar-h, 64px) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .menu-panel.open {
@@ -669,12 +675,9 @@ main {
 }
 
 .card .thumb {
-    width: 100%;
-    aspect-ratio: 11/7;
+    /* Sizing/placeholder/shimmer now live on .card .thumb-wrap (v8) —
+       the img itself fills the wrapper and fades in once loaded. */
     object-fit: cover;
-    border-radius: var(--radius-sm);
-    background: var(--bg-soft);
-    margin-bottom: 4px;
 }
 
 [data-theme="arcade"] .card .icon {
@@ -714,6 +717,10 @@ main {
     position: absolute;
     top: 10px;
     right: 10px;
+    /* Must sit above the thumbnail: .thumb-wrap is position:relative +
+       isolation:isolate and comes later in the DOM, so it would otherwise
+       paint over this button (z-index auto stacks in DOM order). */
+    z-index: 3;
     width: 32px;
     height: 32px;
     display: grid;
@@ -1537,6 +1544,7 @@ main {
     position: absolute;
     top: 8px;
     left: 8px;
+    z-index: 3; /* above .thumb-wrap (see .card .fav note) */
     padding: 2px 6px;
     border-radius: 999px;
     background: var(--accent-2);
@@ -2191,4 +2199,641 @@ footer {
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+/* ============================================================
+   v8 enhancements — command palette, batched grid, A–Z bar,
+   tag chips, category banner, continue playing, skeleton
+   shimmer, hover zoom, difficulty badges, achievements
+   progress, custom theme builder
+   ============================================================ */
+
+/* ---------- Cards: scroll anchor offset (fixed topbar) ---------- */
+.card {
+    scroll-margin-top: calc(var(--topbar-h, 64px) + 90px);
+}
+
+/* ---------- Thumbnail skeleton shimmer + hover zoom + preview ---------- */
+.card .thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 11/7;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    margin-bottom: 4px;
+    overflow: hidden; /* clip the zooming image + preview overlay */
+    isolation: isolate;
+}
+
+.card .thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transform: scale(1);
+    transition: opacity 0.35s ease, transform 0.3s ease;
+}
+
+/* Image finished loading → fade in on top of the shimmer. */
+.card .thumb-wrap.thumb-loaded .thumb {
+    opacity: 1;
+}
+
+/* Failed thumbnail (missing svg) → keep the quiet placeholder, show the icon. */
+.card .thumb-wrap.thumb-error .thumb {
+    display: none;
+}
+
+/* Shimmer: a soft diagonal light band that pans across the placeholder
+   until the image loads. Pure CSS; disabled under reduce-motion. */
+.card .thumb-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.09) 50%,
+    transparent 60%);
+    background-size: 220% 100%;
+    animation: thumb-shimmer 1.6s linear infinite;
+    pointer-events: none;
+}
+
+.card .thumb-wrap.thumb-loaded::before,
+.card .thumb-wrap.thumb-error::before {
+    animation: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+@keyframes thumb-shimmer {
+    from {
+        background-position: 130% 0;
+    }
+    to {
+        background-position: -90% 0;
+    }
+}
+
+/* Hover zoom on the thumbnail (desktop pointers only via :hover-capable
+   media query is unnecessary — touch devices simply never hover). */
+@media (hover: hover) {
+    .card:hover .thumb {
+        transform: scale(1.06);
+    }
+}
+
+/* Hover preview: one-line description slides up over the thumbnail. */
+.card .thumb-preview {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: #fff;
+    background: linear-gradient(to top, rgba(10, 12, 20, 0.85), rgba(10, 12, 20, 0));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    pointer-events: none;
+}
+
+@media (hover: hover) {
+    .card:hover .thumb-preview {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Reduce-motion: kill the shimmer pan and the zoom/preview transitions. */
+@media (prefers-reduced-motion: reduce) {
+    .card .thumb-wrap::before {
+        animation: none;
+    }
+
+    .card .thumb,
+    .card .thumb-preview {
+        transition: none;
+    }
+}
+
+[data-a11y-motion="on"] .card .thumb-wrap::before {
+    animation: none;
+}
+
+[data-a11y-motion="on"] .card .thumb,
+[data-a11y-motion="on"] .card .thumb-preview {
+    transition: none;
+}
+
+/* ---------- Grid batch sentinel ---------- */
+.grid-sentinel {
+    grid-column: 1 / -1;
+    height: 1px;
+    min-height: 1px;
+}
+
+/* ---------- Command palette (Ctrl+K) ---------- */
+.cmdk-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 18, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12vh 16px 16px;
+    z-index: 300; /* above modal (200) + toasts */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.cmdk-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.cmdk {
+    width: min(640px, 100%);
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg), 0 20px 60px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    transform: translateY(-8px) scale(0.985);
+    transition: transform 0.15s ease;
+}
+
+.cmdk-backdrop.open .cmdk {
+    transform: none;
+}
+
+.cmdk-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cmdk-magnifier {
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+.cmdk-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+}
+
+.cmdk-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.cmdk-results {
+    overflow-y: auto;
+    padding: 6px;
+    flex: 1;
+    min-height: 60px;
+}
+
+.cmdk-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.cmdk-item.active {
+    background: var(--accent-soft);
+}
+
+.cmdk-item-icon {
+    font-size: 1.25rem;
+    width: 30px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.cmdk-item-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.cmdk-item-label {
+    font-weight: 600;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cmdk-item-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cmdk-item-kind {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    flex-shrink: 0;
+}
+
+.cmdk-item.active .cmdk-item-kind {
+    opacity: 1;
+    color: var(--accent);
+}
+
+.cmdk-empty {
+    padding: 26px 14px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.cmdk-foot {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 9px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.cmdk-foot .kbd {
+    margin-right: 3px;
+}
+
+.cmdk-foot-hint {
+    margin-left: auto;
+    opacity: 0.75;
+}
+
+/* Small ⌘K button in the filter bar (palette discoverability on touch) */
+.cmdk-open-btn {
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+}
+
+.cmdk-open-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.cmdk-open-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Tag filter chips ---------- */
+.tag-chips-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 2px 12px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tag-chips-row::-webkit-scrollbar {
+    height: 5px;
+}
+
+.tag-chips-row::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.tag-chip {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: lowercase;
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.tag-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.tag-chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.tag-chip .tag-count {
+    font-size: 0.66rem;
+    font-weight: 700;
+    background: var(--bg-soft);
+    border-radius: 999px;
+    padding: 1px 6px;
+    color: var(--text-muted);
+}
+
+.tag-chip.active .tag-count {
+    background: var(--accent);
+    color: #fff;
+}
+
+.tag-chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- A–Z jump bar ---------- */
+.az-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 8px 0 12px;
+}
+
+.az-letter {
+    min-width: 26px;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color 0.12s, background 0.12s;
+}
+
+.az-letter:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.az-letter.empty {
+    opacity: 0.25;
+    cursor: default;
+}
+
+.az-letter:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* ---------- Category landing banner ---------- */
+.category-banner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    justify-content: space-between;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+}
+
+.category-banner .cb-title {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    margin: 0 0 4px;
+}
+
+.category-banner .cb-desc {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    max-width: 640px;
+}
+
+.category-banner .btn {
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .category-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+
+/* ---------- Continue playing rail ---------- */
+.rail-card.rail-continue .rail-cat {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* ---------- Achievement progress bars + filters ---------- */
+.achv-filters {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 14px;
+    flex-wrap: wrap;
+}
+
+.achv-filter {
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.achv-filter:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.achv-filter.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.achv-progress {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.achv-progress-track {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.achv-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.4s ease;
+}
+
+.achv-progress-val {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* ---------- Custom theme builder ---------- */
+.custom-theme-builder {
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ctb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ctb-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    width: 52px;
+    flex-shrink: 0;
+}
+
+.ctb-swatches {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ctb-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.ctb-swatch:hover {
+    transform: scale(1.15);
+}
+
+.ctb-swatch.active {
+    border-color: var(--text);
+}
+
+.ctb-color {
+    width: 34px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    cursor: pointer;
+}
+
+.ctb-seg {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.ctb-seg button {
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.ctb-seg button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ctb-seg button.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ctb-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
 }

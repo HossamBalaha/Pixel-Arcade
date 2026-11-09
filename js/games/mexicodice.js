@@ -24,7 +24,7 @@
   GameRegistry.register({
     id: "mexicodice",
     name: "Mexico Dice",
-    icon: "🇲🇽",
+    icon: "🎲",
     category: "strategy",
     description: "Dice climbing vs the bot: roll 2 dice up to 3 times, keeping what you like — highest total takes the round, but 2-1 (Mexico!) beats everything and costs two strikes. Three strikes and you're out.",
     tags: ["dice", "press-your-luck", "ai", "classic"],

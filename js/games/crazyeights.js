@@ -191,7 +191,7 @@
         // table: deck + discard
         tableEl.innerHTML = `
           <div style="display:inline-block;width:48px;height:68px;border-radius:7px;background:#1e3a8a;color:#93c5fd;
-                      font-size:24px;line-height:68px;margin:4px;cursor:pointer;border:2px solid #3b82f6;" id="ce-deck" title="Draw">🂠</div>
+                      font-size:24px;line-height:68px;margin:4px;cursor:pointer;border:2px solid #3b82f6;" id="ce-deck" title="Draw">♠</div>
           <div style="display:inline-block;width:48px;height:68px;border-radius:7px;background:#f8fafc;color:${discard[0].s === "♥" || discard[0].s === "♦" ? "#dc2626" : "#0f172a"};
                       font-weight:800;font-size:15px;text-align:center;padding-top:8px;margin:4px;">${discard[0].r}<br>${discard[0].s}</div>
           <div style="display:inline-block;margin-left:12px;font-size:14px;">Current suit: <b style="font-size:20px;">${suit}</b></div>

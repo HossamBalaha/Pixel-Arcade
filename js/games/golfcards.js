@@ -126,7 +126,7 @@
         const top = waste[waste.length - 1];
         boardEl.insertAdjacentHTML("beforeend", `
           <div style="display:block;margin-top:16px;text-align:center;">
-            <div class="gc-card back" id="gc-stockc" style="display:inline-block;margin-right:16px;">${stock.length}<br>🂠</div>
+            <div class="gc-card back" id="gc-stockc" style="display:inline-block;margin-right:16px;">${stock.length}<br>♠</div>
             <div class="gc-card ${(top.s === "♥" || top.s === "♦") ? "red" : "blk"}" style="display:inline-block;border-color:#64748b;">${top.r}<br>${top.s}</div>
             ${won ? `<button class="btn btn-sm primary" id="gc-again" style="margin-left:14px;vertical-align:middle;">↻ Play again</button>` : ""}
           </div>

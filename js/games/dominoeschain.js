@@ -39,7 +39,7 @@
   GameRegistry.register({
     id: "dominoeschain",
     name: "Domino Chain",
-    icon: "🁣",
+    icon: "⛓️",
     category: "strategy",
     description: "Classic draw dominoes — match the open ends of the chain, empty your hand first.",
     tags: ["strategy", "classic", "dominoes", "ai"],

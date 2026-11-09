@@ -132,7 +132,7 @@
         root.querySelector("#sp-ai").textContent = ai.length;
         boardEl.innerHTML = `
           <div style="display:inline-block;min-width:120px;padding:8px 12px;border-radius:10px;background:var(--bg-soft,#334155);">
-            🤖 AI: ${"🂠 ".repeat(Math.min(ai.length, 5))} (${ai.length})
+            🤖 AI: ${"♠ ".repeat(Math.min(ai.length, 5))} (${ai.length})
           </div>
           <div style="display:inline-flex;gap:14px;margin:10px 0;">
             ${piles.map(p => `

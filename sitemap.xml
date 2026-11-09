@@ -2,9 +2,39 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>https://hossambalaha.github.io/Pixel-Arcade/</loc>
-        <lastmod>2026-11-08</lastmod>
+        <lastmod>2026-11-09</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://hossambalaha.github.io/Pixel-Arcade/?category=word</loc>
+        <lastmod>2026-11-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://hossambalaha.github.io/Pixel-Arcade/?category=logic</loc>
+        <lastmod>2026-11-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://hossambalaha.github.io/Pixel-Arcade/?category=arcade</loc>
+        <lastmod>2026-11-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://hossambalaha.github.io/Pixel-Arcade/?category=strategy</loc>
+        <lastmod>2026-11-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://hossambalaha.github.io/Pixel-Arcade/?category=quiz</loc>
+        <lastmod>2026-11-09</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
     </url>
     <url>
         <loc>https://hossambalaha.github.io/Pixel-Arcade/?game=2048</loc>

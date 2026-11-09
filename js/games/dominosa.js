@@ -4,7 +4,7 @@
   GameRegistry.register({
     id: "dominosa",
     name: "Dominosa",
-    icon: "🁫",
+    icon: "🧩",
     category: "logic",
     description: "Tile the grid into dominoes — each domino value used exactly once",
     tags: ["logic", "dominoes", "deduction"],

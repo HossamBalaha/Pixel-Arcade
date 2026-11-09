@@ -1230,3 +1230,61 @@
     background-image: radial-gradient(circle at 10% 10%, rgba(217, 119, 6, 0.06) 0%, transparent 35%),
     radial-gradient(circle at 90% 85%, rgba(202, 138, 74, 0.06) 0%, transparent 35%);
 }
+
+/* ---------- Theme: Custom (theme builder) ----------
+   Neutral light/dark bases; the accent + font pairing are user-chosen and
+   applied as inline CSS variables on <html> by app.js (they override the
+   defaults below). The base follows the global light/dark mode toggle. */
+[data-theme="custom"][data-mode="light"] {
+    --bg: #f6f7fb;
+    --bg-elev: #ffffff;
+    --bg-elev-2: #ffffff;
+    --bg-soft: #eef0f6;
+    --text: #14161f;
+    --text-muted: #5d6474;
+    --border: #e1e4ee;
+    --border-strong: #c9cede;
+    --accent: #6366f1;
+    --accent-2: #ec4899;
+    --accent-soft: rgba(99, 102, 241, 0.12);
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #0ea5e9;
+    --font-heading: "Inter", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --radius-lg: 22px;
+    --shadow: 0 1px 2px rgba(18, 20, 31, 0.05), 0 4px 12px rgba(18, 20, 31, 0.06);
+    --shadow-lg: 0 10px 30px rgba(18, 20, 31, 0.10);
+    --glow: none;
+}
+
+[data-theme="custom"][data-mode="dark"] {
+    --bg: #0e1118;
+    --bg-elev: #191d28;
+    --bg-elev-2: #242a38;
+    --bg-soft: #1a1f2b;
+    --text: #e9ecf4;
+    --text-muted: #98a0b3;
+    --border: #2b3140;
+    --border-strong: #3d4457;
+    --accent: #818cf8;
+    --accent-2: #f472b6;
+    --accent-soft: rgba(129, 140, 248, 0.18);
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #38bdf8;
+    --font-heading: "Inter", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --radius-lg: 22px;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --glow: none;
+}
