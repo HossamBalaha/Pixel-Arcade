@@ -43,7 +43,9 @@
     setTheme(t) {
       Storage.setTheme(t);
       App.applyTheme();
-      App.renderGrid();
+      // No grid re-render needed: themes are pure CSS variables and
+      // cascade live. Rebuilding the grid here replayed every card's
+      // fade-in animation, which felt like a page reload.
     },
     toggleMode() {
       const next = Storage.getMode() === "dark" ? "light" : "dark";
@@ -235,15 +237,19 @@
         return;
       }
 
-      // Apply sorting (favorites still float to the top within each sort,
-      // unless the user explicitly sorts by name/plays/recent/best).
+      // Apply sorting. The default is the STABLE registry order — favorites
+      // used to float to the top automatically, which re-sorted the grid on
+      // every toggle and made the ordering feel shuffled. "Favorites first"
+      // is now an explicit, opt-in sort.
       const sortMode = App.state.sort;
       const favFirst = (a, b) => {
         const fa = Storage.isFavorite(a.id) ? 0 : 1;
         const fb = Storage.isFavorite(b.id) ? 0 : 1;
         return fa - fb;
       };
-      if (sortMode === "name") {
+      if (sortMode === "favorites") {
+        list.sort(favFirst);
+      } else if (sortMode === "name") {
         list.sort((a, b) => a.name.localeCompare(b.name));
       } else if (sortMode === "plays") {
         list.sort((a, b) => {
@@ -271,8 +277,8 @@
           return bb - ba;
         });
       } else {
-        // Default: favorites first, then registry order
-        list.sort(favFirst);
+        // Default: stable registry order — no re-sort, so favoriting never
+        // shuffles the grid.
       }
 
       list.forEach((g, idx) => {
@@ -300,7 +306,7 @@
         const isNew = newGames.includes(g.id);
         card.innerHTML = `
           ${isNew ? '<span class="new-badge">NEW</span>' : ""}
-          <button class="fav ${isFav ? "active" : ""}" data-fav="${g.id}" title="Favorite" aria-label="Toggle favorite">${isFav ? "♥" : "♡"}</button>
+          <button class="fav ${isFav ? "active" : ""}" data-fav="${g.id}" title="${isFav ? "Remove from favorites" : "Add to favorites"}" aria-label="${isFav ? "Remove from favorites" : "Add to favorites"}" aria-pressed="${isFav}">${isFav ? "♥" : "♡"}</button>
           ${tooltip}
           <img class="thumb" src="assets/thumbnails/${g.id}.svg" alt="${g.name} thumbnail" loading="lazy" onerror="this.style.display='none'"/>
           <div class="icon">${g.icon}</div>
@@ -344,17 +350,72 @@
         const favBtn = card.querySelector("[data-fav]");
         favBtn.addEventListener("click", (e) => {
           e.stopPropagation();
+          e.preventDefault();
           const added = Storage.toggleFavorite(g.id);
           AudioFX.pop();
           App.toast(added ? `Added "${g.name}" to favorites` : `Removed "${g.name}" from favorites`, "info");
-          App.renderGrid();
-          App.updateGameFavBtn();
+          // Update the heart in place. A full renderGrid() here used to
+          // rebuild every card — all fade-in animations replayed and the
+          // grid re-sorted, which looked exactly like a page reload.
+          App._syncFavUi(g.id, favBtn);
+          // In favorites-only view an un-favorited card no longer matches
+          // the filter — fade it out instead of re-rendering the grid.
+          if (!added && App.state.favOnly) App._removeCardFromGrid(g.id);
         });
         grid.appendChild(card);
       });
       // Update visible count if the element exists
       const countEl = $("#filter-count");
       if (countEl) countEl.textContent = list.length;
+    },
+
+    // Sync every on-screen favorite indicator for one game WITHOUT
+    // re-rendering the grid: the card heart (and the game-view button when
+    // that game is open) are updated in place. This keeps toggling a
+    // favorite instant and stops the grid from "reloading".
+    _syncFavUi(id, btnEl) {
+      const isFav = Storage.isFavorite(id);
+      const btn = btnEl || document.querySelector(`#game-grid .card[data-id="${id}"] .fav`);
+      if (btn) {
+        btn.classList.toggle("active", isFav);
+        btn.textContent = isFav ? "♥" : "♡";
+        btn.setAttribute("aria-pressed", isFav ? "true" : "false");
+        const label = isFav ? "Remove from favorites" : "Add to favorites";
+        btn.setAttribute("aria-label", label);
+        btn.title = label;
+      }
+      if (App.currentGame && App.currentGame.id === id) App.updateGameFavBtn();
+    },
+
+    // Remove a single card from the grid with a short fade-out (used when a
+    // card stops matching the active "favorites only" filter). Falls back
+    // to a full re-render when the grid would become empty, so the empty
+    // state still shows.
+    _removeCardFromGrid(id) {
+      const card = document.querySelector(`#game-grid .card[data-id="${id}"]`);
+      if (!card) return;
+      const cards = document.querySelectorAll("#game-grid .card");
+      if (cards.length <= 1) {
+        App.renderGrid();
+        return;
+      }
+      // If keyboard focus is inside the departing card, hand it to a
+      // neighboring card so keyboard navigation keeps working.
+      if (card.contains(document.activeElement)) {
+        const sibs = Array.from(cards).filter(c => c !== card);
+        const pos = Array.prototype.indexOf.call(cards, card);
+        const nextCard = sibs[Math.min(pos, sibs.length - 1)] || sibs[0];
+        if (nextCard) nextCard.focus();
+      }
+      const countEl = $("#filter-count");
+      if (countEl) countEl.textContent = cards.length - 1;
+      card.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+      card.style.opacity = "0";
+      card.style.transform = "scale(0.92)";
+      setTimeout(() => {
+        card.remove();
+        if (!document.querySelectorAll("#game-grid .card").length) App.renderGrid();
+      }, 250);
     },
 
     // ---------- Routing ----------
@@ -1249,11 +1310,14 @@
       });
       $("#game-fav-btn").addEventListener("click", () => {
         if (!App.currentGame) return;
-        const added = Storage.toggleFavorite(App.currentGame.id);
+        const id = App.currentGame.id;
+        const added = Storage.toggleFavorite(id);
         AudioFX.pop();
         App.toast(added ? "Added to favorites" : "Removed from favorites", "info");
         App.updateGameFavBtn();
-        App.renderGrid();
+        // Keep the matching grid card heart in sync without re-rendering
+        // (a full render here felt like a page reload).
+        App._syncFavUi(id);
       });
       // Random game button — jump to a surprise
       const randBtn = $("#random-btn");
@@ -1582,7 +1646,7 @@
         if ($("#modal-backdrop").classList.contains("open")) return;
         const tag = (e.target && e.target.tagName) || "";
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable)) return;
-        if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.key)) return;
+        if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "f", "F"].includes(e.key)) return;
         const cards = Array.from(document.querySelectorAll("#game-grid .card"));
         if (!cards.length) return;
         e.preventDefault();
@@ -1605,12 +1669,9 @@
               const added = Storage.toggleFavorite(id);
               AudioFX.pop();
               App.toast(added ? "★ Favorited" : "☆ Unfavorited", "info");
-              App.renderGrid();
-              // Re-focus the same card after re-render
-              setTimeout(() => {
-                const c = document.querySelector(`.card[data-id="${id}"]`);
-                if (c) c.focus();
-              }, 50);
+              // Update the heart in place — no re-render, no focus loss.
+              App._syncFavUi(id, card.querySelector(".fav"));
+              if (!added && App.state.favOnly) App._removeCardFromGrid(id);
             }
           }
           return;
@@ -1688,8 +1749,9 @@
       }
     },
 
-    // Hook for future lazy-loading of game scripts on hover. For now the
-    // scripts are all loaded upfront via <script> tags, so this is a no-op.
+    // Lazy-load a declared (not yet loaded) game's script on card hover, so
+    // the game starts instantly when clicked. Safe to call repeatedly —
+    // GameRegistry.load() de-duplicates in-flight loads.
     _preloadHint(id) {
       // Warm the cache for a declared (not yet loaded) game on hover.
       if (window.GameRegistry && GameRegistry.isLazy && GameRegistry.isLazy(id)) {

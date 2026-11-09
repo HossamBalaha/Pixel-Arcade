@@ -489,7 +489,8 @@ chips to browse by category, or the search box to find a game by name. Share any
 - **Best scores** saved per game (and per difficulty where applicable) via `localStorage`.
 - **Favorites** — heart any game; the fav filter shows only your starred games.
 - **Search &amp; filter** — filter by category + free-text search.
-- **Sort options** — sort the game grid by default order, name (A–Z), most played, recently played, or best score.
+- **Sort options** — sort the game grid by default order, favorites first, name (A–Z), most played, recently played, or
+  best score.
 - **Back-to-top button** — a floating button appears when you scroll down, smoothly scrolls back to top.
 - **Time-of-day greeting** — the hero shows "Good morning/afternoon/evening!" with your current streak.
 - **Keyboard shortcut help** — press <kbd>?</kbd> to see all shortcuts; press <kbd>/</kbd> to focus the search box.

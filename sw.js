@@ -7,7 +7,7 @@
      cache is built and on activate every cache whose key isn't the current
      version is evicted so users always get the latest assets.
 */
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 const CACHE = "pixel-arcade-" + CACHE_VERSION;
 const SHELL = [
   "./",

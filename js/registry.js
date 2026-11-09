@@ -40,10 +40,17 @@
     register(meta) {
       if (!meta || !meta.id) throw new Error("Game must have an id");
       const lazyPrev = byId[meta.id] || null;
+      // Replace a lazy placeholder IN PLACE (same index) so loading a game's
+      // script never reshuffles the grid. Splicing + pushing to the end used
+      // to teleport every opened/hovered game to the bottom of the grid on
+      // the next render, which made the ordering feel shuffled.
+      let insertAt = games.length;
       if (lazyPrev) {
-        // Remove the previous entry from the games array so we don't double up
         const idx = games.indexOf(lazyPrev);
-        if (idx >= 0) games.splice(idx, 1);
+        if (idx >= 0) {
+          games.splice(idx, 1);
+          insertAt = idx;
+        }
       }
       // Inherit richer metadata (age/difficulty/duration/players) from the
       // catalog's lazy declaration so the game file itself can stay lean.
@@ -72,7 +79,7 @@
         }
         delete pendingAugment[full.id];
       }
-      games.push(full);
+      games.splice(insertAt, 0, full);
       byId[full.id] = full;
     },
     // Declare metadata-only entries. The app renders the grid from these
