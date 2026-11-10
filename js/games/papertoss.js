@@ -159,8 +159,8 @@
         // ground
         ctx.fillStyle = "rgba(0,0,0,0.12)";
         ctx.fillRect(0, H - 20, W, 20);
-        // bin
-        ctx.fillStyle = "#475569";
+        // bin — fixed mid-grays read on both light and dark canvases
+        ctx.fillStyle = "#64748b";
         ctx.beginPath();
         ctx.moveTo(bin.x, H - 100);
         ctx.lineTo(bin.x + bin.w, H - 100);
@@ -168,7 +168,7 @@
         ctx.lineTo(bin.x + 7, H - 18);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = "#334155";
+        ctx.fillStyle = "#94a3b8";
         ctx.fillRect(bin.x - 4, H - 106, bin.w + 8, 8);
         // aim indicator
         if (aiming && !ball.flying) {
@@ -195,7 +195,8 @@
           ctx.save();
           ctx.translate(ball.x, ball.y);
           ctx.rotate(ball.x / 18);
-          ctx.fillStyle = "#f8fafc";
+          // paper ball follows theme text so it is visible on any canvas
+          ctx.fillStyle = text;
           ctx.beginPath();
           ctx.arc(0, 0, 8, 0, Math.PI * 2);
           ctx.fill();

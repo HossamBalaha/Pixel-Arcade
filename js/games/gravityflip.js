@@ -129,9 +129,6 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         // background split
         const g = ctx.createLinearGradient(0, 0, 0, H);
         g.addColorStop(0, "#111827");
@@ -180,15 +177,15 @@
             ctx.fillRect(sx, o.gapY + o.gapH, 18, 3);
           }
         }
-        // player (rotates with gravity)
+        // player — fixed cyan capsule, always visible on the fixed slate scene
         ctx.save();
         ctx.translate(90, y);
         ctx.rotate(flipAnim > 0 ? flipAnim * Math.PI / 4 : (grav > 0 ? 0 : Math.PI));
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#22d3ee";
         ctx.beginPath();
         ctx.roundRect(-14, -PH, 28, PH * 2, 6);
         ctx.fill();
-        ctx.fillStyle = text;
+        ctx.fillStyle = "#fff";
         ctx.beginPath();
         ctx.arc(0, grav > 0 ? PH - 14 : -PH + 14, 4.5, 0, Math.PI * 2);
         ctx.fill();

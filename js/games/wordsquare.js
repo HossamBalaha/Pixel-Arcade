@@ -205,6 +205,24 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const cands = [];
+          for (let r = 0; r < puzzle.size; r++) for (let c = 0; c < puzzle.size; c++) {
+            if (!locked[r][c] && grid[r][c] !== puzzle.words[r][c]) cands.push([r, c]);
+          }
+          if (!cands.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const [r, c] = cands[Math.floor(Math.random() * cands.length)];
+          const ch = puzzle.words[r][c];
+          grid[r][c] = ch;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Row ${r + 1}, letter ${c + 1} is "${ch}"`, "info");
+          checkAuto();
+        },
         solve: function () {
           if (over) return;
           grid = puzzle.words.map(r => r.split(""));
@@ -224,6 +242,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Word Square",

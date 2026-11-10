@@ -418,78 +418,106 @@ chips to browse by category, or the search box to find a game by name. Share any
 
 ## ✨ Features
 
-### 🆕 v8 — Discovery, personalization & quality round
+Everything runs client-side with zero dependencies — vanilla JS, one optional Google Fonts call, and `localStorage`
+for your progress.
 
+### 🎮 The catalog
+
+- **300 games across 5 categories** — word, logic, arcade, strategy, quiz. See the full list above.
 - **Ctrl+K command palette** — press <kbd>Ctrl</kbd>+<kbd>K</kbd> (or the ⌘K chip in the filter bar) anywhere to open a
   fuzzy-searchable launcher over all 300 games **plus quick actions**: random game, stats, achievements, dark/light
   toggle, theme picker, sound, accessibility, category landing pages, data export. Keyboard-navigable (<kbd>↑</kbd>
   <kbd>↓</kbd> to move, <kbd>↵</kbd> to run, <kbd>Esc</kbd> to close) with full ARIA listbox semantics.
-- **Batched grid rendering** — the grid renders 60 cards at a time and streams in the rest as you scroll (via
-  `IntersectionObserver`), so first paint stays fast even with 300 games. Short lists (under one batch) render fully.
-- **A–Z jump bar** — sort by *Name (A–Z)* and a letter strip appears above the grid; click a letter to jump straight
-  to that section (renders any pending batches first). `#` covers names starting with digits/symbols.
-- **Tag filter chips** — a scrollable row of the catalog's top tags (with live counts) above the grid. Multi-select,
-  AND semantics, resets with the other filters.
-- **Play-time tracking** — time spent inside each game is tracked locally (banked every 15 s, on close and on unload;
-  hidden-tab time doesn't count). Shows on the stats dashboard (“Time played”), in card hover tooltips, in the share
-  text, and feeds the play-time achievements.
-- **Difficulty badges** — every card shows a color-coded *Easy / Medium / Hard* badge derived from its catalog
-  metadata (green / neutral / red).
-- **Continue playing rail** — the home rail now shows your 5 most recent games with the **last score** and a relative
-  timestamp (“Last: 34 · 2h ago”) — one click back into the action.
-- **Rich share text** — the 🔗 Share button copies an emoji summary built from your stats: game name, best score,
-  plays, time played, and day streak, plus the shareable deep link.
-- **Custom theme builder** — pick an accent color (8 presets or any hex), a light/dark base, and a font pairing
-  (Modern / Retro / Playful / Elegant / Mono) in the theme panel. Live preview, saved to `localStorage`, listed as a
-  25th “🎛️ Custom” theme. The light/dark base follows the global mode toggle.
-- **Thumbnail skeleton shimmer** — while a card's lazy thumbnail loads, a soft shimmer placeholder shows instead of a
-  pop-in jump. Failed thumbnails fall back to the quiet placeholder + icon.
-- **Hover zoom + preview** — cards gently zoom their thumbnail on hover and slide up a one-line description over the
-  image. Pure CSS, disabled under `prefers-reduced-motion` and the reduce-motion a11y setting.
-- **Subtle UI sound effects** — tiny hover ticks (desktop pointers only), a soft two-note chime on game open, a blip
-  on close, and a sparkle when an achievement unlocks — all through the existing Web Audio engine and all silenced by
-  the persistent 🔊 mute toggle in the topbar.
-- **Achievements expanded 26 → 57** — new families: win-streak combos (Hat-Trick / On Fire / Unstoppable / Rapid
-  Fire), category explorers (5 and 15 distinct games per category), catalog completion milestones (10/25/50/100/200
-  distinct games), play-time badges (30 min → 24 h), curator badges (Archivist / Tidier), time-of-day quirks (Lunch
-  Break / Weekend Warrior) and power-user badges (palette, share, theme switcher, theme builder). **Locked
-  achievements now show progress bars**, and the modal has All / Unlocked / In-progress filter tabs. All 26 original
-  IDs are preserved, so existing unlocks carry over.
-- **Category landing routes** — `index.html#/category/word` (in-app, shareable hash) and
-  `index.html?category=word` (crawler-visible, listed in `sitemap.xml`) open the grid pre-filtered with a proper
-  landing heading, description and title.
-- **SEO fine-tuning** — Open Graph image (`assets/og-image.png`, 1200×630), `og:type`/`og:site_name`, canonical URL,
-  and preloaded critical CSS.
-- **Faster, calmer grid** — batched rendering plus a fix for a latent double-mount: clicking a card used to mount the
-  game twice and double-count the play in the stats log.
-
-### Core features
-
-- **300 games across 5 categories** — word, logic, arcade, strategy, quiz. See the full list below.
-- **Recently played rail** — every game you open is remembered. A "Recently played" rail appears at the top of the home
-  view (quick re-entry) and at the bottom of each game view (jump to another recently played game without going back to
-  the hub). Capped at 20 most-recent-first.
-- **Similar games suggestions** — each game view shows a "You might also like" rail with up to 6 similar games, scored
-  by category, difficulty, duration, player count, and shared tags. Click any card to jump straight in.
-- **Daily challenge** — a banner on the home view features one game per day, picked deterministically by date. Everyone
-  gets the same featured game on the same day.
-- **Recommended for you** — a home rail merging your most-played games from the last 7 days (trending) with personalized
-  picks from your most-played category (for-you). Capped at 8 cards, appears once you've played enough to make a
-  suggestion.
-- **Stats dashboard** — click the 📊 icon in the topbar to see total plays, wins, win rate, current + longest day streak,
-  favorites count, recent count, achievements unlocked, total time played, and a per-category bar breakdown.
-- **Achievements** — 57 unlockable badges (First Win, Centurion, Word Wizard, On a Roll, Night Owl, Marathon Runner,
-  combo medals, category explorers, play-time milestones, and more). Click the 🏅 icon to see them all with progress
-  bars and filter tabs; unlocked ones are highlighted. A dot on the button appears when you have any unlocked.
-- **Share result** — every game has a 🔗 Share button in the header that copies a result line to the clipboard (includes
-  the game name, your best score, and a link back to the game).
-- **Hide games** — right-click (or long-press on mobile) any game card to hide it from your grid. Hidden games are still
-  reachable via the favorites filter.
-- **Keyboard navigation** — arrow keys move focus between game cards on the home grid; Enter opens the focused card.
-  Works alongside the existing keyboard shortcuts inside games.
 - **Advanced multi-dimensional filters** — filter by Type (Word/Logic/Arcade/Strategy/Quiz), Age (Kids 6+/Teens
   13+/Adults 18+), Difficulty (Easy/Medium/Hard), Length (Quick <2 min/Medium 2–10/Long >10 min), and Players
   (1-Player/2-Player). Reset button clears all filters at once. Live count shows how many games match.
+- **Tag filter chips** — a scrollable row of the catalog's top tags (with live counts) above the grid. Multi-select,
+  AND semantics, resets with the other filters.
+- **A–Z jump bar** — sort by *Name (A–Z)* and a letter strip appears above the grid; click a letter to jump straight
+  to that section. `#` covers names starting with digits/symbols.
+- **Difficulty badges** — every card shows a color-coded *Easy / Medium / Hard* badge derived from its catalog
+  metadata (green / neutral / red).
+- **Search &amp; sort** — free-text search, plus sort by default order, favorites first, name (A–Z), most played,
+  recently played, or best score.
+- **Category landing routes** — `index.html#/category/word` (in-app, shareable hash) and `index.html?category=word`
+  (crawler-visible, listed in `sitemap.xml`) open the grid pre-filtered with a proper landing heading, description and
+  title.
+- **Hash routing &amp; deep links** — every game has a shareable URL like `index.html#/wordle` (`?game=id` also
+  works).
+- **Card hover tooltips** — hovering a game card shows play count + best score.
+- **Favorites** — heart any game; the fav filter shows only your starred games.
+- **Hide games** — right-click (or long-press on mobile) any game card to hide it from your grid. Hidden games are
+  still reachable via the favorites filter.
+- **Empty state** — when no games match your filter, a friendly empty state with a reset button appears.
+
+### 🏠 Home rails &amp; personalization
+
+- **Recently played rail** — every game you open is remembered. A "Recently played" rail appears at the top of the home
+  view (quick re-entry) and at the bottom of each game view (jump to another recently played game without going back
+  to the hub). Capped at 20 most-recent-first.
+- **Continue playing rail** — shows your 5 most recent games with the **last score** and a relative timestamp ("Last:
+  34 · 2h ago") — one click back into the action.
+- **Recommended for you** — a home rail merging your most-played games from the last 7 days (trending) with
+  personalized picks from your most-played category (for-you). Capped at 8 cards; appears once you've played enough
+  to make a suggestion.
+- **Similar games suggestions** — each game view shows a "You might also like" rail with up to 6 similar games, scored
+  by category, difficulty, duration, player count, and shared tags.
+- **Curated collections** — editorial shelves like *5-Minute Breaks*, *No Timer — Just Chill*, *Two-Player Night* on
+  the home rail, each with its own shareable `index.html#/collection/<slug>` landing route. Pure data + predicates in
+  [`js/collections.js`](./js/collections.js) — no server, no build.
+- **Anti-rut nudges** — when your recent history camps in one corner of the arcade, the recommendation rail suggests
+  the most-neglected category that still has unplayed games; the 🎲 random button weights unplayed games higher.
+- **Session wrap-up card** — after a good visit, a dismissible 🏁 summary shows games played, wins and best streak
+  with a one-tap share — a friendly stopping cue instead of an endless scroll.
+- **Time-of-day greeting** — the hero shows "Good morning/afternoon/evening!" with your current streak.
+
+### 🎯 Gameplay depth
+
+- **Daily challenge** — a banner on the home view features one game per day, picked deterministically by date:
+  everyone gets the same featured game on the same day. While today's challenge is open and not yet completed, the
+  shell swaps `Math.random` for a **date-seeded PRNG**, so every visitor plays the *identical deal* that day (then
+  it's your own luck again). Completing it grows a 🔥 daily streak shown on the home banner.
+- **Per-game difficulty selector** — games with a difficulty knob get a compact dropdown in the game header; the
+  choice persists per game: 2048 (3×3/4×4/5×5), N-Back (1/2/3), Minesweeper (9×9/12×12/16×14), Memory (6/8/12 pairs),
+  Snake (Chill/Classic/Fast), Word Search (12/14/16), Tetris (Relaxed/Classic/Blitz). The default variant reproduces
+  the classic behavior, and non-default variants keep their own best scores.
+- **Hints in 94 games** — honest, one-nudge hints: cell reveals in the shade puzzles (Aqre, Heyawake, Tapa, LITS…),
+  one-edge reveals in loop/link puzzles (Masyu, Slitherlink, Numberlink, Hashi), next-move BFS in Water Jugs, "this
+  bottle onto that one" in Ball Sort, Warnsdorff-guided next squares in Knight's Tour, letter teasers in word games
+  (Boggle, Crossword, Anagram Cross…), and classic **50:50** in the multiple-choice quizzes. Every hint reveals at
+  most one small thing and degrades to a friendly toast when there's nothing left.
+- **Per-game help &amp; solve buttons** — every game has a Help button explaining the rules; thinking games also have
+  a Solve (reveal the solution) button.
+- **Pass-and-play curtain** — hot-seat games with hidden information (Checkers AI-off sessions, Connect 4, Reversi,
+  Snakes &amp; Ladders) can cover the screen with a "pass the device" curtain between turns; per-game toggle,
+  remembered.
+- **Card dealing animation** — the seven solitaire-family card games (Solitaire, Pyramid, Blackjack, Speed, Crazy
+  Eights, Golf, Old Maid) deal with a staggered fly-in; disabled under reduced-motion.
+- **Personal-best percentiles** — after a round with a score, a toast tells you *"📊 Better than X% of your past N
+  scores"* (only when meaningful — needs ≥3 scored plays and a top-half result, so it celebrates rather than nags).
+- **Best scores** — saved per game (and per difficulty where applicable) via `localStorage`.
+- **Non-predictable content** — Wordle, Hangman, and Trivia can fetch fresh content from Wikipedia and Open Trivia DB
+  at runtime, with offline fallback to bundled lists. Cached 24h in IndexedDB so the same session doesn't re-fetch.
+- **Rich share text** — the 🔗 Share button copies an emoji summary built from your stats: game name, best score,
+  plays, time played, and day streak, plus the shareable deep link.
+- **Mobile-friendly** — responsive grid, D-pads, swipe gestures, long-press flags.
+
+### 📊 Progress &amp; achievements
+
+- **Stats dashboard** — click the 📊 icon in the topbar to see total plays, wins, win rate, current + longest day
+  streak, favorites count, recent count, achievements unlocked, total time played, and a per-category bar breakdown.
+- **Achievements** — 57 unlockable badges: First Win, Centurion, Word Wizard, On a Roll, Night Owl, Marathon Runner,
+  win-streak combos (Hat-Trick / On Fire / Unstoppable / Rapid Fire), category explorers (5 and 15 distinct games per
+  category), catalog completion milestones (10/25/50/100/200 distinct games), play-time badges (30 min → 24 h),
+  curator badges (Archivist / Tidier), time-of-day quirks (Lunch Break / Weekend Warrior) and power-user badges.
+  Locked achievements show progress bars, and the modal has All / Unlocked / In-progress filter tabs.
+- **Play-time tracking** — time spent inside each game is tracked locally (banked every 15 s, on close and on unload;
+  hidden-tab time doesn't count). Shows on the stats dashboard ("Time played"), in card hover tooltips, in the share
+  text, and feeds the play-time achievements.
+- **Confetti** — a celebratory animation fires when you unlock an achievement.
+
+### 🎨 Themes &amp; visual quality
+
 - **24 visual themes + custom builder** switchable in-app (retro, modern, aesthetic, seasonal, plus a build-your-own
   🎛️ Custom theme):
     - **Modern Minimal** — clean, indigo accent (Inter)
@@ -516,54 +544,101 @@ chips to browse by category, or the search box to find a game by name. Share any
     - **❄️ Arctic Frost** — icy blues with soft glows
     - **🍬 Candy Pop** — pink/violet pastels with rounded shapes (Baloo 2 / Nunito)
     - **☕ Coffee House** — warm browns with serif type (Georgia)
-    - **🎛️ Custom** — build your own: accent color + light/dark base + font pairing, saved locally
-- **Fixed top navigation** — the nav bar stays pinned to the top of the viewport while you scroll (its height is
-  auto-synced to `--topbar-h`, so themes and font scaling never break the layout).
-- **Accessibility panel** — font size (A−/A+), high contrast, reduce motion, dyslexia-friendly font, large focus rings,
-  color-blind simulation (protanopia/deuteranopia/tritanopia), and OS-settings auto-detect (`prefers-reduced-motion` /
-  `prefers-contrast`). Settings persist via `localStorage`. Includes a screen-reader `aria-live` region that announces
-  game opens and wins.
+    - **🎛️ Custom** — build your own: accent color (8 presets or any hex), light/dark base, and a font pairing (Modern /
+      Retro / Playful / Elegant / Mono) with live preview, saved to `localStorage` and listed as a 25th
+      "Custom" theme
+- **Cross-platform icon safety** — every game's icon uses glyphs that render on Windows, Linux, Android and Apple
+  platforms. Card-back codepoints from the *Playing Cards* Unicode block, mahjong-tile and domino codepoints, and
+  regional-flag emoji all show as tofu boxes or letter pairs on some systems, so the affected games use safe suit
+  characters, festive emoji and object glyphs instead — catalog, game files and thumbnails kept in sync.
+- **Guaranteed color contrast in every theme** — a zero-dependency analyzer ([
+  `tools/audit-colors.py`](./tools/audit-colors.py))
+  reconstructs each canvas game's paint layers and computes the worst-case WCAG contrast ratio for every
+  element/background pair across all 79 theme-variant combinations. Two theme-level collisions (MS-DOS's soft-panel
+  color identical to its text color; Game Boy's border identical to its canvas background) and 32 games where a
+  critical element could vanish in certain themes — from the Air Hockey puck to game-over overlays, maze walls and
+  crosshairs — were found and fixed.
+- **One design rule for canvas games** — a game with a fixed scene (rink, cave, night sky, snowfield) draws its
+  elements in fixed high-contrast colors that never follow the theme, while a game that follows the theme draws
+  background *and* elements from theme variables — so contrast holds in every theme × light/dark.
+- **Thumbnail skeleton shimmer** — while a card's lazy thumbnail loads, a soft shimmer placeholder shows instead of a
+  pop-in jump. Failed thumbnails fall back to the quiet placeholder + icon.
+- **Hover zoom + preview** — cards gently zoom their thumbnail on hover and slide up a one-line description over the
+  image. Pure CSS, disabled under `prefers-reduced-motion` and the reduce-motion a11y setting.
+- **Favorite hearts** — a frosted chip behind each heart keeps it readable on any thumbnail (always floating above
+  the hover-zoom layer), turning solid red when active.
+- **Card stagger animation** — cards fade in with a stagger when the grid renders.
+- **Custom scrollbars** — themed scrollbars matching the active theme.
+
+### ♿ Accessibility
+
+- **Accessibility panel** — font size (A−/A+), high contrast, reduce motion, dyslexia-friendly font, large focus
+  rings, color-blind simulation (protanopia/deuteranopia/tritanopia), and OS-settings auto-detect
+  (`prefers-reduced-motion` / `prefers-contrast`). Settings persist via `localStorage`. Includes a screen-reader
+  `aria-live` region that announces game opens and wins.
+- **Roving-tabindex grid navigation** — <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> + <kbd>Home</kbd>/
+  <kbd>End</kbd> move focus across the game grid, and Enter opens the focused card; only the focused card is in the
+  tab order, so <kbd>Tab</kbd> stays a short hop instead of a 300-step marathon.
 - **Dialog accessibility** — modals use `role="dialog"` + `aria-modal`, move focus into themselves on open, trap
   <kbd>Tab</kbd> inside while open, and restore focus to the invoking element on close. Toggle buttons (sound, mode,
   favorites filter, theme chips) expose `aria-pressed` state, and the search field has an `aria-label`.
-- **Favorite hearts** — a frosted chip behind each heart keeps it readable on any thumbnail, turning solid red when
-  active.
-- **Data export / import** — download all your data (favorites, scores, stats, achievements, recent, hidden, settings)
-  as a JSON backup, and restore it on another device. Also a "Reset all" option to erase everything.
+- **Keyboard nav without browser interference** — every game supports the physical keyboard. The hub prevents Firefox
+  quick-find (`/`, `'`) from firing while a game is active, so typing letters / arrows / digits goes straight to the
+  game. <kbd>Ctrl</kbd>+<kbd>K</kbd> still opens the command palette everywhere.
+- **Keyboard shortcut help** — press <kbd>?</kbd> to see all shortcuts; press <kbd>/</kbd> to focus the search box.
+- **Focus management** — closing a game returns focus to the card you opened it from.
+
+### 🖥️ Interface polish
+
+- **Fixed top navigation** — the nav bar stays pinned to the top of the viewport while you scroll (its height is
+  auto-synced to `--topbar-h`, so themes and font scaling never break the layout).
+- **Back-to-top button** — a floating button appears when you scroll down, smoothly scrolls back to top.
+- **Print-friendly CSS** — print the stats or achievements modal cleanly (hides navigation, game view, etc.).
+- **SEO** — Open Graph image (`assets/og-image.png`, 1200×630), `og:type`/`og:site_name`, canonical URL, and preloaded
+  critical CSS.
+
+### 🛡️ Reliability &amp; performance
+
+- **Runtime error net** — mid-play errors in handlers/timers/promises no longer die silently: the shell keeps running
+  and offers a one-tap recovery when a game is the likely source (throttled to one notice per 4 s).
+- **Storage health &amp; migrations** — a data-health line in settings tracks backup age and storage errors; import
+  offers **Replace or Merge** (combine progress from two devices instead of overwriting), and old data shapes migrate
+  forward on load.
+- **Data export / import** — download all your data (favorites, scores, stats, achievements, recent, hidden,
+  settings) as a JSON backup, and restore it on another device. Also a "Reset all" option to erase everything.
+- **Save-Data support** — on `Save-Data`/2G connections the shell skips decorative effects and idle game prefetching;
+  data first.
+- **Fast 300-game grid** — rendering is batched (60 cards at a time, streaming in the rest via
+  `IntersectionObserver`), offscreen cards skip layout/paint via `content-visibility: auto`, thumbnails decode
+  asynchronously, search is debounced, and touch handlers are passive. Mounting is single-shot, so plays are never
+  double-counted.
+- **PWA-ready** — installable on mobile, works offline via service worker. Long-press the installed app icon for
+  shortcuts: 🎲 Random game, 2048, Wordle, Minesweeper.
 - **PWA install prompt** — a banner appears (on supported browsers) inviting you to install the app for offline play.
   Dismissible.
 - **Offline indicator** — a small "Offline" badge appears in the topbar when `navigator.onLine` is false, so you know
   you're playing from cache.
-- **Sound FX** — Web Audio API beeps for click / win / lose / pop / flip, with mute toggle.
-- **Best scores** saved per game (and per difficulty where applicable) via `localStorage`.
-- **Favorites** — heart any game; the fav filter shows only your starred games.
-- **Search &amp; filter** — filter by category + free-text search.
-- **Sort options** — sort the game grid by default order, favorites first, name (A–Z), most played, recently played, or
-  best score.
-- **Back-to-top button** — a floating button appears when you scroll down, smoothly scrolls back to top.
-- **Time-of-day greeting** — the hero shows "Good morning/afternoon/evening!" with your current streak.
-- **Keyboard shortcut help** — press <kbd>?</kbd> to see all shortcuts; press <kbd>/</kbd> to focus the search box.
-- **Confetti** — a celebratory animation fires when you unlock an achievement.
-- **Card hover tooltips** — hovering a game card shows play count + best score.
-- **Card stagger animation** — cards fade in with a stagger when the grid renders.
-- **Custom scrollbars** — themed scrollbars matching the active theme.
-- **Empty state** — when no games match your filter, a friendly empty state with a reset button appears.
-- **Focus management** — closing a game returns focus to the card you opened it from.
 - **Game mount error UI** — if a game fails to load, a friendly error with "Back to hub" and "Try again" buttons
   appears.
-- **Print-friendly CSS** — print the stats or achievements modal cleanly (hides navigation, game view, etc.).
-- **Hash routing** — each game has a shareable URL like `index.html#/wordle`.
-- **Per-game help, hint, and solve buttons** — every game has a Help button explaining the rules; thinking games also
-  have Hint (a nudge) and Solve (reveal the solution) buttons.
-- **Non-predictable content** — Wordle, Hangman, and Trivia can fetch fresh content from Wikipedia and Open Trivia DB at
-  runtime, with offline fallback to bundled lists. Cached 24h in IndexedDB so the same session doesn't re-fetch.
-- **Mobile-friendly** — responsive grid, D-pads, swipe gestures, long-press flags.
-- **Keyboard nav without browser interference** — every game supports the physical keyboard. The hub prevents Firefox
-  quick-find (`/`, `'`) from firing while a game is active, so typing letters / arrows / digits goes straight to the
-  game. <kbd>Ctrl</kbd>+<kbd>K</kbd> still opens the command palette everywhere.
-- **PWA-ready** — installable on mobile, works offline via service worker.
-- **Zero dependencies** — vanilla ES5/ES6 JS. Only one CDN call for Google Fonts (graceful fallback to system fonts if
-  offline).
+- **Sound FX** — Web Audio API beeps for click / win / lose / pop / flip, with a persistent 🔊 mute toggle. Subtle UI
+  sounds too: hover ticks (desktop pointers only), a soft two-note chime on game open, a blip on close, and a sparkle
+  when an achievement unlocks.
+- **Zero dependencies** — vanilla ES5/ES6 JS. Only one CDN call for Google Fonts (graceful fallback to system fonts
+  if offline).
+
+### 🧰 Developer tools
+
+The site ships 100% static — these tools live in [`tools/`](./tools) and never run in the browser:
+
+- **Headless test harness** — [`tools/test-games.js`](./tools/test-games.js) mounts all 300 games in JSDOM (stubbed
+  canvas/audio/storage) and verifies parse → register → mount → render → `hint()`/`solve()`/`help()` → cleanup for
+  every one of them, in ~3 s. Dev-only dependency (`jsdom`).
+- **Thumbnail generator** — [`tools/generate-thumbnails.js`](./tools/generate-thumbnails.js) is the source of truth
+  for all 300 card thumbnails (`--check` verifies, `--only=<id>` regenerates one).
+- **Color-clash linter** — [`tools/audit-colors.py`](./tools/audit-colors.py) computes the worst-case WCAG contrast
+  of every canvas element across all 79 theme variants (Python 3 stdlib only).
+- **Contributor guide** — [CONTRIBUTING.md](./CONTRIBUTING.md) documents the toolchain, the difficulty-variant
+  convention, the curated-collection recipe and the canvas color rule.
 
 ---
 
@@ -578,6 +653,17 @@ python3 -m http.server 8000
 
 Or just open `index.html` directly in a browser. (Web Audio and service worker need a `localhost` or `https://` origin,
 but everything else works on `file://`.)
+
+### Deploying to GitHub Pages
+
+The site is build-free — no bundler, no CI, no environment variables.
+
+1. Push the repository to GitHub (folder at the repo root, `main` branch).
+2. Repo **Settings → Pages** → *Build and deployment* → Source: **Deploy from a branch** → `main` / `/ (root)`.
+3. Save — your arcade is live at `https://<user>.github.io/<repo>/` within a minute or so.
+
+All asset paths are relative and routing is hash-based, so the site works from a subdirectory (`/<repo>/`) without
+any configuration, and the included `.nojekyll` file makes sure every file passes through untouched.
 
 ---
 
@@ -600,15 +686,17 @@ Pixel-Arcade/
 ├── robots.txt              # Allow all
 ├── sitemap.xml             # root URL only (per-game URLs are hash-routed)
 ├── .gitignore              # OS / editor / node cruft
+├── manifest.json           # PWA manifest copy with app shortcuts
 ├── css/
 │   ├── themes.css          # 24 themes × light/dark via CSS variables
 │   ├── base.css            # Layout, topbar, cards, buttons, modal, toasts
 │   └── games.css           # Shared game-board styles
 ├── js/
-│   ├── storage.js          # localStorage helpers (theme/mode/sound/favs/bests)
+│   ├── storage.js          # localStorage helpers (theme/mode/sound/favs/bests/variants)
 │   ├── audio.js            # Web Audio sound FX
 │   ├── registry.js         # GameRegistry.register() pattern
 │   ├── wikifetch.js        # Wikipedia + Open Trivia DB fetch with offline fallback
+│   ├── collections.js      # Curated editorial collections (data + predicates)
 │   ├── app.js              # Router, theme switcher, grid, modal, toasts
 │   ├── wordlist.js         # Comprehensive English word list (4/5/6-letter, NLTK-based)
 │   └── games/              # 300 self-contained game files
@@ -617,8 +705,13 @@ Pixel-Arcade/
 │       ├── ...
 │       └── slotmachine.js
 ├── tools/
-│   └── generate-thumbnails.js  # Thumbnail generator — edit + re-run to
-│                                # overwrite every game thumbnail (source of truth)
+│   ├── generate-thumbnails.js  # Thumbnail generator — edit + re-run to
+│   │                           # overwrite every game thumbnail (source of truth)
+│   ├── test-games.js           # Headless JSDOM smoke test — mounts all 300
+│   │                           # games, exercises hint/solve/help/cleanup
+│   └── audit-colors.py         # Color-clash linter — worst-case contrast of
+│                               # every canvas element across all 79 theme
+│                               # variants (Python 3 stdlib only)
 └── assets/
     ├── .gitkeep
     ├── icons/
@@ -748,6 +841,9 @@ Switching themes at runtime: `document.documentElement.setAttribute("data-theme"
 - All keyboard-operable games respect `prefers-reduced-motion`.
 - Buttons have `aria-label`s where icons-only.
 - Color contrast follows WCAG AA in the Modern Minimal theme.
+- Canvas games are contrast-audited across all 79 theme variants — run
+  `python3 tools/audit-colors.py` after changing any game or theme colors to catch invisible elements before they
+  ship.
 - The whole app works without a mouse.
 - Most games are keyboard-only navigable.
 
@@ -844,6 +940,17 @@ Yes — drop the folder in, no build command needed. Set publish directory to th
 
 The games fall back to bundled word lists (50+ words per difficulty) so the game remains playable. The cache is held in
 IndexedDB for 24h, so even after the network comes back, you won't re-fetch the same content during the same session.
+</details>
+
+<details>
+<summary><b>Why do some games keep their own dark background while others follow my theme?</b></summary>
+
+Scene-based games (Air Hockey's rink, Cave Flyer's cave, Moon Buggy's lunar surface, Slalom's snowfield…) use a
+**fixed** backdrop on purpose — the scene *is* the game's identity — so their pieces use fixed high-contrast colors
+that are guaranteed visible on it. Abstract games (Snake, Tetris, Pong, Breakout…) follow your theme: canvas and
+pieces both come from theme variables, so they always contrast. Both patterns were verified across all 79
+theme × mode combinations by `tools/audit-colors.py`.
+
 </details>
 
 <details>

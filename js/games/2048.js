@@ -1,7 +1,11 @@
-/* 2048 — slide tiles to combine numbers, reach 2048 */
+/* 2048 — slide tiles to combine numbers, reach 2048.
+   Board size is a variant: 3×3 Blitz / Classic 4×4 / 5×5 Marathon —
+   selected from the game-header dropdown, persisted per player. */
 (function () {
+  let SIZE = 4; // set at mount from the stored variant
+
   function newBoard() {
-    const b = Array(16).fill(0);
+    const b = Array(SIZE * SIZE).fill(0);
     addTile(b);
     addTile(b);
     return b;
@@ -9,7 +13,7 @@
 
   function addTile(b) {
     const empty = [];
-    for (let i = 0; i < 16; i++) if (!b[i]) empty.push(i);
+    for (let i = 0; i < SIZE * SIZE; i++) if (!b[i]) empty.push(i);
     if (empty.length === 0) return false;
     const i = empty[Math.floor(Math.random() * empty.length)];
     b[i] = Math.random() < 0.9 ? 2 : 4;
@@ -17,11 +21,12 @@
   }
 
   function rows(b) {
-    return [0, 1, 2, 3].map(r => b.slice(r * 4, r * 4 + 4));
+    return Array.from({length: SIZE}, (_, r) => b.slice(r * SIZE, r * SIZE + SIZE));
   }
 
   function cols(b) {
-    return [0, 1, 2, 3].map(c => [b[c], b[c + 4], b[c + 8], b[c + 12]]);
+    return Array.from({length: SIZE}, (_, c) =>
+      Array.from({length: SIZE}, (_, k) => b[c + k * SIZE]));
   }
 
   function slide(line) {
@@ -35,13 +40,13 @@
         i++;
       } else out.push(a[i]);
     }
-    while (out.length < 4) out.push(0);
+    while (out.length < SIZE) out.push(0);
     return {line: out, score};
   }
 
   function move(b, dir) {
     let score = 0, moved = false;
-    const newB = Array(16).fill(0);
+    const newB = Array(SIZE * SIZE).fill(0);
     const apply = (idxs, line) => {
       const r = slide(line);
       r.line.forEach((v, i) => {
@@ -50,10 +55,12 @@
       });
       score += r.score;
     };
-    if (dir === "left") rows(b).forEach((row, r) => apply([r * 4, r * 4 + 1, r * 4 + 2, r * 4 + 3], row));
-    if (dir === "right") rows(b).forEach((row, r) => apply([r * 4 + 3, r * 4 + 2, r * 4 + 1, r * 4], row.slice().reverse()));
-    if (dir === "up") cols(b).forEach((col, c) => apply([c, c + 4, c + 8, c + 12], col));
-    if (dir === "down") cols(b).forEach((col, c) => apply([c + 12, c + 8, c + 4, c], col.slice().reverse()));
+    const rowIdxs = r => Array.from({length: SIZE}, (_, k) => r * SIZE + k);
+    const colIdxs = c => Array.from({length: SIZE}, (_, k) => c + k * SIZE);
+    if (dir === "left") rows(b).forEach((row, r) => apply(rowIdxs(r), row));
+    if (dir === "right") rows(b).forEach((row, r) => apply(rowIdxs(r).slice().reverse(), row.slice().reverse()));
+    if (dir === "up") cols(b).forEach((col, c) => apply(colIdxs(c), col));
+    if (dir === "down") cols(b).forEach((col, c) => apply(colIdxs(c).slice().reverse(), col.slice().reverse()));
     return {board: newB, score, moved};
   }
 
@@ -75,8 +82,15 @@
     category: "logic",
     description: "Combine matching tiles to reach 2048",
     tags: ["puzzle", "keyboard", "popular"],
+    variants: [
+      {key: "4", label: "Classic 4×4"},
+      {key: "3", label: "3×3 Blitz"},
+      {key: "5", label: "5×5 Marathon"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       let b, score, best;
+      // Variant: board size from the persisted choice.
+      SIZE = parseInt(Storage.getVariant("2048", "4"), 10) || 4;
 
       function init() {
         b = newBoard();
@@ -139,6 +153,7 @@
 
       function render() {
         boardEl.innerHTML = "";
+        boardEl.style.gridTemplateColumns = `repeat(${SIZE}, 1fr)`;
         b.forEach(v => {
           const t = document.createElement("div");
           t.className = "tile-2048";

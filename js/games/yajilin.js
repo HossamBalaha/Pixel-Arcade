@@ -198,6 +198,26 @@
         render();
       });
       live = {
+        hint: function () {
+          if (over) return;
+          const want = {};
+          puzzle.shaded.forEach(k => want[k] = 2);
+          puzzle.loopPath.forEach(k => want[k] = 1);
+          const wrong = [];
+          for (const k in want) {
+            const [r, c] = k.split(",").map(Number);
+            if (grid[r][c] !== want[k]) wrong.push([r, c, want[k]]);
+          }
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [r, c, w] = wrong[Math.floor(Math.random() * wrong.length)];
+          grid[r][c] = w;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${r + 1}, column ${c + 1} ${w === 2 ? "should be shaded" : "belongs on the loop"}`, "info");
+        },
         solve: function () {
           if (over) return;
           const N = puzzle.N;
@@ -225,6 +245,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Yajilin",

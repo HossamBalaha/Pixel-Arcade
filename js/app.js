@@ -20,7 +20,13 @@
       playersFilter: "all",
       sort: "default",
       tags: [],           // required tag chips (AND semantics)
+      collectionFilter: null, // active #/collection/<id> route
     },
+
+    // Session summary — counters for this page visit.
+    _session: {start: Date.now(), games: 0, wins: 0, wrapShown: false},
+    // Daily-challenge seeded RNG state.
+    _origRandom: null,
 
     // Batched grid rendering state (see renderGrid / _renderCardBatch).
     _gridBatch: null,
@@ -241,10 +247,19 @@
       if (!App.state.favOnly) {
         list = list.filter(g => !Storage.isHidden(g.id));
       }
+      // Collection landing route (#/collection/<id>) narrows the grid
+      // to the collection's members.
+      if (App.state.collectionFilter && window.Collections) {
+        const c = Collections.get(App.state.collectionFilter);
+        if (c) list = list.filter(g => c.match(g));
+        else App.state.collectionFilter = null;
+      }
 
-      // Render the home rails: daily challenge, recommended (trending + for-you),
-      // recently played, and the "new games" (v4 batch) rail.
+      // Render the home rails: daily challenge, curated collections,
+      // recommended (trending + for-you), recently played, and the "new
+      // games" (v4 batch) rail.
       App.renderDailyChallenge();
+      App.renderCollectionsShelf();
       App.renderHomeRecommended();
       App.renderHomeRecent();
       App.renderHomeNew();
@@ -390,6 +405,9 @@
       const card = document.createElement("button");
       card.className = "card";
       card.dataset.id = g.id;
+      // Roving tabindex: only the first card is tabbable; arrow keys
+      // move focus within the grid (see _setupGridKeyboard).
+      card.tabIndex = idx === 0 ? 0 : -1;
       card.style.animationDelay = Math.min(idx * 0.02, 0.3) + "s"; // stagger fade-in
       // Difficulty badge (text, color-coded) + duration + players
       const diffLabel = g.difficulty === "easy" ? "Easy" : g.difficulty === "hard" ? "Hard" : "Medium";
@@ -413,7 +431,7 @@
           <button class="fav ${isFav ? "active" : ""}" data-fav="${g.id}" title="${isFav ? "Remove from favorites" : "Add to favorites"}" aria-label="${isFav ? "Remove from favorites" : "Add to favorites"}" aria-pressed="${isFav}">${isFav ? "♥" : "♡"}</button>
           ${tooltip}
           <div class="thumb-wrap">
-            <img class="thumb" src="assets/thumbnails/${g.id}.svg" alt="${g.name} thumbnail" loading="lazy"
+            <img class="thumb" src="assets/thumbnails/${g.id}.svg" alt="${g.name} thumbnail" loading="lazy" decoding="async"
               onload="this.closest('.thumb-wrap').classList.add('thumb-loaded')"
               onerror="this.closest('.thumb-wrap').classList.add('thumb-error')"/>
             <div class="thumb-preview">${g.description}</div>
@@ -447,10 +465,10 @@
       }, {passive: true});
       card.addEventListener("touchend", () => {
         if (pressTimer) clearTimeout(pressTimer);
-      });
+      }, {passive: true});
       card.addEventListener("touchmove", () => {
         if (pressTimer) clearTimeout(pressTimer);
-      });
+      }, {passive: true});
       // Hover: preload the game script (future lazy-load hook) + a very
       // subtle tick on devices that actually have a hover pointer.
       card.addEventListener("mouseenter", () => {
@@ -632,6 +650,14 @@
           App.openGame(gameQ);
           return;
         }
+        // PWA manifest shortcut: ?random=1 opens a surprise game.
+        if (qs.get("random")) {
+          const pick = App._randomPick();
+          if (pick) {
+            App.openGame(pick.id);
+            return;
+          }
+        }
         // Category landing routes: #/category/word (in-app) and the
         // crawler-friendly ?category=word variant (used in sitemap.xml).
         const catQ = qs.get("category");
@@ -647,6 +673,15 @@
           return;
         }
         App._applyCategoryRoute(hash.slice("category/".length));
+        return;
+      }
+      // Collection landing routes: #/collection/five-minute-breaks
+      if (hash.indexOf("collection/") === 0) {
+        if (App._hashOpenId === hash) {
+          App._hashOpenId = null;
+          return;
+        }
+        App._applyCollectionRoute(hash.slice("collection/".length));
         return;
       }
       const game = GameRegistry.get(hash);
@@ -671,6 +706,7 @@
       if (!valid.includes(cat)) return false;
       if (App.currentGame) App.closeGame();
       App.state.filter = cat;
+      App.state.collectionFilter = null; // one route at a time
       // Sync the category chips with the route.
       $$('.filter-chip[data-dim="category"]').forEach(x => {
         const on = x.dataset.filter === cat;
@@ -698,7 +734,9 @@
     // No-op while the URL still points at a category route (e.g. closeGame
     // ran while browsing #/category/word) unless `force` is set.
     _clearCategoryRoute(force) {
-      if (!force && location.hash.indexOf("#/category/") === 0) return;
+      const onRoute = location.hash.indexOf("#/category/") === 0 ||
+        location.hash.indexOf("#/collection/") === 0;
+      if (!force && onRoute) return;
       const banner = $("#category-banner");
       if (banner && banner.style.display !== "none") {
         banner.style.display = "none";
@@ -708,12 +746,14 @@
     },
 
     // "✕ View all games" on the category landing banner — leave the route.
+    // Also serves as the exit for collection routes.
     _exitCategoryRoute() {
       App.state.filter = "all";
+      App.state.collectionFilter = null;
       $$('.filter-chip[data-dim="category"]').forEach(x => {
         x.classList.toggle("active", x.dataset.filter === "all");
       });
-      if (location.hash.indexOf("#/category/") === 0) {
+      if (location.hash.indexOf("#/category/") === 0 || location.hash.indexOf("#/collection/") === 0) {
         history.replaceState(null, "", location.pathname + location.search);
       }
       App._clearCategoryRoute(true);
@@ -748,6 +788,20 @@
       }
       App.currentGame = game;
 
+      // Daily Challenge: while today's not-yet-completed daily game
+      // is open, swap Math.random for the date-seeded PRNG so every visitor
+      // plays the identical deal.
+      const dailyGame = App.getDailyGame();
+      const dailyState = Storage.getDaily();
+      if (dailyGame && dailyGame.id === id && dailyState.date !== App._todayKey()) {
+        App._installDailyRNG(App._dailySeed());
+      } else {
+        App._restoreRandom();
+      }
+
+      // Session wrap-up counters
+      App._session.games++;
+
       // Per-game <head> meta: title, description, Open Graph tags, canonical.
       App.updateMeta(game);
 
@@ -779,6 +833,34 @@
       $("#game-solve-btn").classList.toggle("hidden", !game.solve);
       // Share button is always available — it shares a generic result line
       App.updateGameFavBtn();
+
+      // Variant (difficulty) selector: games that declare `variants`
+      // get a compact dropdown in the game header; the choice persists.
+      const varHost = $("#game-variant-host");
+      if (varHost) {
+        varHost.innerHTML = "";
+        if (Array.isArray(game.variants) && game.variants.length > 1) {
+          const sel = document.createElement("select");
+          sel.id = "game-variant-select";
+          sel.className = "variant-select";
+          sel.setAttribute("aria-label", "Choose a difficulty for this game");
+          sel.title = "Difficulty";
+          game.variants.forEach(v => {
+            const o = document.createElement("option");
+            o.value = v.key;
+            o.textContent = v.label;
+            sel.appendChild(o);
+          });
+          sel.value = Storage.getVariant(id, game.variants[0].key) || game.variants[0].key;
+          sel.addEventListener("change", () => {
+            Storage.setVariant(id, sel.value);
+            AudioFX.click();
+            App.toast("Difficulty applied — new round starting", "info");
+            App.restart();
+          });
+          varHost.appendChild(sel);
+        }
+      }
 
       // Announce game opened for screen readers
       App.announce(`Opened ${game.name}.`);
@@ -847,6 +929,26 @@
       const id = App.currentGame.id;
       Storage.updateLastPlay(id, won, score);
       if (score !== undefined && score !== null) Storage.submitScore(id, score);
+      // Personal-best percentile: "better than X% of your past N scores".
+      const pct = Storage.getScorePercentile(id, score);
+      if (pct !== null && pct >= 50) {
+        const n = Storage.getPlaysFor(id).filter(p => typeof p.score === "number").length;
+        App.toast(`📊 Better than ${pct}% of your past ${n} scores`, "info");
+      }
+      // Daily Challenge completion — counts the first result today.
+      const dailyGame = App.getDailyGame();
+      if (dailyGame && dailyGame.id === id) {
+        const ds = Storage.getDaily();
+        if (ds.date !== App._todayKey() || !ds.done) {
+          const streak = Storage.completeDaily(!!won);
+          if (won) {
+            App.toast(`🎯 Daily complete! ${streak}-day streak${streak > 1 ? " 🔥" : ""}`, "success");
+            App._fireConfetti();
+          }
+        }
+      }
+      // Session wrap-up counter
+      if (won) App._session.wins++;
       const newly = App.evaluateAchievements();
       newly.forEach(a => {
         App.toast(`🏅 Achievement unlocked: ${a.title}`, "success");
@@ -1040,6 +1142,16 @@
       }
       const streak = Storage.getStreak();
       if (streak.current > 1) lines.push(`🔥 ${streak.current}-day streak`);
+      // Daily-challenge line — day number + daily streak.
+      const dailyGame = App.getDailyGame();
+      if (g && dailyGame && dailyGame.id === g.id) {
+        const ds = Storage.getDaily();
+        if (ds.date === App._todayKey() && ds.done) {
+          const day = App._dailyDayNumber() - 20490; // readable day count since launch
+          const dstreak = Storage.getDailyStreak();
+          lines.push(`🎯 Daily #${day}${dstreak > 1 ? ` · 🔥 ${dstreak}-day streak` : ""}`);
+        }
+      }
       lines.push(link);
       const full = lines.join("\n");
       const fallback = () => {
@@ -1190,6 +1302,7 @@
       const MAX = 8;
       const seen = new Set();
       const picks = []; // [{ game, sub }]
+      const stats = Storage.getStats();
       // 1) Trending first — top most-played games in the last 7 days.
       const trending = Storage.getWeeklyTrending()
         .filter(t => !Storage.isHidden(t.id))
@@ -1201,9 +1314,32 @@
         seen.add(g.id);
         picks.push({game: g, sub: `${t.count} plays this week`});
       }
+      // 1b) Anti-rut nudge: when the last several games all came from
+      // the same corner of the arcade, suggest the most-neglected category
+      // that still has unplayed games waiting.
+      const recentIds = Storage.getRecent().slice(0, 15);
+      if (recentIds.length >= 8) {
+        const playedCats = new Set(recentIds.map(rid => (GameRegistry.get(rid) || {}).category).filter(Boolean));
+        const neglected = ["word", "logic", "arcade", "strategy", "quiz"]
+          .filter(c => !playedCats.has(c))
+          .map(c => ({
+            cat: c,
+            unplayed: GameRegistry.byCategory(c).filter(g => !Storage.isHidden(g.id) && !(stats.gamesPlayed[g.id] || 0)),
+          }))
+          .filter(x => x.unplayed.length > 0)
+          .sort((a, b) => b.unplayed.length - a.unplayed.length)[0];
+        if (neglected && picks.length < MAX) {
+          // Prefer a popular-tagged unplayed game from that category.
+          const pool = neglected.unplayed;
+          const pick = pool.find(g => (g.tags || []).includes("popular")) || pool[0];
+          if (!seen.has(pick.id)) {
+            seen.add(pick.id);
+            picks.push({game: pick, sub: `💤 ${neglected.cat} — not tried yet`, nudge: true});
+          }
+        }
+      }
       // 2) For-you: unplayed games from the user's most-played category, then
       //    fall back to similar-to-last-played when there is no category history.
-      const stats = Storage.getStats();
       const cats = Object.entries(stats.categoriesPlayed || {}).sort((a, b) => b[1] - a[1]);
       let forYouPool = [];
       if (cats.length > 0) {
@@ -1241,9 +1377,9 @@
       }
       host.style.display = "";
       row.innerHTML = "";
-      picks.forEach(({game: g, sub}) => {
+      picks.forEach(({game: g, sub, nudge}) => {
         const card = document.createElement("button");
-        card.className = "rail-card";
+        card.className = "rail-card" + (nudge ? " nudge" : "");
         card.innerHTML = `
           <span class="rail-icon">${g.icon}</span>
           <span class="rail-name">${g.name}</span>
@@ -1308,13 +1444,24 @@
         host.style.display = "none";
         return;
       }
-      // Date-based deterministic pick
+      // Date-based deterministic pick — SAME formula as App.getDailyGame()
+      // so the banner always matches the game the RNG seeding expects.
       const d = new Date();
       const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
       const game = games[seed % games.length];
       $("#daily-name").textContent = `${game.icon} ${game.name}`;
       $("#daily-desc").textContent = game.description;
+      // Streak + completion state
+      const streak = Storage.getDailyStreak();
+      const streakEl = $("#daily-streak");
+      if (streakEl) {
+        streakEl.textContent = streak > 0 ? `🔥 ${streak}-day streak` : "";
+        streakEl.style.display = streak > 0 ? "" : "none";
+      }
+      const done = Storage.getDaily().date === App._todayKey() && Storage.getDaily().done;
       const playBtn = $("#daily-play");
+      playBtn.textContent = done ? "✓ Done — play again ↻" : "Play today's →";
+      playBtn.classList.toggle("btn-outline", done);
       // Replace listener
       const newBtn = playBtn.cloneNode(true);
       playBtn.parentNode.replaceChild(newBtn, playBtn);
@@ -1550,27 +1697,53 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      Storage.markBackup(); // track backup health
+      App._renderDataHealth();
       AudioFX.click();
       App.toast("Backup downloaded", "success");
     },
 
-    // Data import — read JSON file and restore.
+    // Data import — read JSON file and restore. Shows a Replace/Merge choice
+    // so players can combine progress from two devices instead of
+    // overwriting one with the other.
     importData(file) {
       const reader = new FileReader();
       reader.onload = () => {
+        let data;
         try {
-          const data = JSON.parse(reader.result);
-          Storage.importData(data);
-          App.applyTheme();
-          App.applySound();
-          App.applyA11y();
-          App.renderGrid();
-          App.evaluateAchievements();
-          AudioFX.win();
-          App.toast("Backup restored", "success");
+          data = JSON.parse(reader.result);
         } catch (e) {
           App.toast("Invalid backup file: " + e.message, "warning");
+          return;
         }
+        const apply = (mode) => {
+          try {
+            if (mode === "merge") Storage.importDataMerge(data);
+            else Storage.importData(data);
+            App.applyTheme();
+            App.applySound();
+            App.applyA11y();
+            App.renderGrid();
+            App.evaluateAchievements();
+            App._renderDataHealth();
+            AudioFX.win();
+            App.toast(mode === "merge" ? "Backup merged into your data" : "Backup restored", "success");
+          } catch (e) {
+            App.toast("Import failed: " + e.message, "warning");
+          }
+        };
+        const favs = (data.favorites || []).length;
+        const plays = data.stats ? (data.stats.totalPlays || 0) : 0;
+        const when = data.exportedAt ? new Date(data.exportedAt).toLocaleDateString() : "unknown date";
+        App.showModal("Import backup",
+          `This backup from <b>${when}</b> contains <b>${favs} favorites</b> and <b>${plays} plays</b>.<br><br>
+           <b>Replace</b> wipes current data and restores the backup.<br>
+           <b>Merge</b> keeps both — favorites and achievements are combined, best scores keep the higher value.`,
+          [
+            {label: "Cancel"},
+            {label: "Merge", onClick: () => apply("merge")},
+            {label: "Replace", primary: true, onClick: () => apply("replace")},
+          ]);
       };
       reader.readAsText(file);
     },
@@ -1579,6 +1752,8 @@
       // Bank any outstanding play time for the game we're leaving.
       const wasOpen = !!App.currentGame;
       App._stopPlayTimer();
+      // Restore the real Math.random if the daily-challenge PRNG is active.
+      App._restoreRandom();
       if (App.currentCleanup) {
         try {
           App.currentCleanup();
@@ -1601,11 +1776,13 @@
         skip.href = "#game-grid";
         skip.textContent = "Skip to games";
       }
-      if (location.hash && location.hash.indexOf("#/category/") !== 0) {
+      if (location.hash && location.hash.indexOf("#/category/") !== 0 && location.hash.indexOf("#/collection/") !== 0) {
         history.replaceState(null, "", location.pathname + location.search);
       }
       App._clearCategoryRoute();
       App.renderGrid(); // refresh best scores / favs
+      // Session wrap-up card: after a decent session, offer a summary.
+      App._maybeShowSessionWrapup();
       // Gentle blip when returning to the hub (only if a game was open).
       if (wasOpen) AudioFX.close();
       // Return focus to the card the user opened the game from (if still in DOM)
@@ -1705,8 +1882,8 @@
       const ACTIONS = [
         {
           icon: "🎲", label: "Random game", sub: "Jump to a surprise", run: () => {
-            const all = GameRegistry.all();
-            if (all.length) App.openGame(all[Math.floor(Math.random() * all.length)].id);
+            const pick = App._randomPick();
+            if (pick) App.openGame(pick.id);
           }
         },
         {icon: "📊", label: "View stats", sub: "Plays, wins, play time, streaks", run: () => App.showStats()},
@@ -2095,11 +2272,326 @@
       return {h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100)};
     },
 
+    // ============================================================
+    // Round 7 + 8 additions
+    // ============================================================
+
+    // ---------- Runtime error net ----------
+    // Catches mid-play errors (click handlers, timers, promises) that would
+    // otherwise die silently in the console. The shell keeps running and the
+    // player gets a one-tap recovery when a game is the likely source.
+    _setupErrorNet() {
+      let lastToast = 0;
+      const report = (label) => {
+        const now = Date.now();
+        if (now - lastToast < 4000) return; // throttle: one per 4s
+        lastToast = now;
+        const inGame = !!App.currentGame;
+        App.toast(inGame
+          ? `⚠️ "${App.currentGame.name}" hit a snag — the rest of the arcade is fine`
+          : "⚠️ Something went wrong — the arcade keeps running", "warning");
+        if (!inGame) return;
+        // Attach a reload action to the toast we just created.
+        const toasts = document.querySelectorAll("#toast-area .toast");
+        const t = toasts[toasts.length - 1];
+        if (!t) return;
+        const btn = document.createElement("button");
+        btn.className = "btn btn-sm";
+        btn.style.marginLeft = "10px";
+        btn.textContent = "↻ Reload game";
+        btn.addEventListener("click", () => {
+          btn.remove();
+          App.restart();
+        });
+        t.appendChild(btn);
+      };
+      window.addEventListener("error", (e) => {
+        // Skip pure resource-load failures (missing img/script) — nothing to recover.
+        if (e && e.target && (e.target.tagName === "IMG" || e.target.tagName === "SCRIPT" || e.target.tagName === "LINK")) return;
+        report(e && e.message ? e.message : "Unknown error");
+      }, true);
+      window.addEventListener("unhandledrejection", (e) => {
+        const r = e.reason;
+        report(r && r.message ? r.message : "Unhandled promise rejection");
+      });
+    },
+
+    // ---------- Daily Challenge ----------
+    // One deterministic game per calendar day. While today's (not yet
+    // completed) daily game is open, Math.random is swapped for a seeded
+    // PRNG so every visitor plays the SAME deal — no per-game code changes
+    // needed because games shuffle through Math.random.
+    _todayKey() {
+      const d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    },
+    _dailyDayNumber() {
+      const d = new Date();
+      return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    },
+    getDailyGame() {
+      const games = GameRegistry.all().filter(g => !Storage.isHidden(g.id));
+      if (!games.length) return null;
+      return games[App._dailyDayNumber() % games.length];
+    },
+    _installDailyRNG(seed) {
+      if (App._origRandom) return; // already installed
+      let s = (seed >>> 0) || 1;
+      App._origRandom = Math.random;
+      Math.random = function () { // mulberry32 — small, fast, good enough
+        s |= 0;
+        s = (s + 0x6D2B79F5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    },
+    _restoreRandom() {
+      if (!App._origRandom) return;
+      Math.random = App._origRandom;
+      App._origRandom = null;
+    },
+    _dailySeed() {
+      // Knuth multiplicative hash of the day number → well-spread 32-bit seed.
+      return (App._dailyDayNumber() * 2654435761) >>> 0;
+    },
+
+    // ---------- Curated collections ----------
+    renderCollectionsShelf() {
+      const host = $("#home-collections");
+      const row = $("#home-collections-row");
+      if (!host || !row || !window.Collections) return;
+      const filtering = App.state.filter !== "all" || App.state.collectionFilter ||
+        App.state.ageFilter !== "all" || App.state.diffFilter !== "all" ||
+        App.state.durFilter !== "all" || App.state.playersFilter !== "all" ||
+        App.state.search || App.state.favOnly;
+      if (filtering) {
+        host.style.display = "none";
+        row.innerHTML = "";
+        return;
+      }
+      row.innerHTML = "";
+      Collections.all().forEach(c => {
+        const count = Collections.games(c.id).length;
+        const card = document.createElement("button");
+        card.className = "collection-card";
+        card.innerHTML = `
+          <span class="collection-icon">${c.icon}</span>
+          <span class="collection-name">${c.name}</span>
+          <span class="collection-count">${count} games</span>
+        `;
+        card.addEventListener("click", () => {
+          AudioFX.click();
+          App._gotoCollection(c.id);
+        });
+        row.appendChild(card);
+      });
+      host.style.display = "";
+    },
+    _gotoCollection(colId) {
+      App.closeGame();
+      App._applyCollectionRoute(colId);
+      if (location.hash !== "#/collection/" + colId) {
+        App._hashOpenId = "collection/" + colId;
+        location.hash = "#/collection/" + colId;
+      }
+    },
+    _applyCollectionRoute(colId) {
+      const c = window.Collections ? Collections.get(colId) : null;
+      if (!c) return false;
+      if (App.currentGame) App.closeGame();
+      App.state.collectionFilter = colId;
+      // Collections sit across categories — deactivate the category chips.
+      $$('.filter-chip[data-dim="category"]').forEach(x => x.classList.remove("active"));
+      App.renderGrid();
+      const banner = $("#category-banner");
+      if (banner) {
+        const count = Collections.games(colId).length;
+        $("#category-title").textContent = `${c.icon} ${c.name}`;
+        $("#category-desc").textContent = `${c.blurb} — ${count} free games, playable right in your browser.`;
+        banner.style.display = "";
+      }
+      const titleEl = document.head.querySelector("title");
+      if (titleEl) titleEl.textContent = `${c.name} — Pixel Arcade`;
+      window.scrollTo(0, 0);
+      App.announce(`Showing the ${c.name} collection.`);
+      return true;
+    },
+    _exitCollectionRoute() {
+      App.state.collectionFilter = null;
+      if (location.hash.indexOf("#/collection/") === 0) {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+      // Reuse the category exit (resets chips + banner + title).
+      App._exitCategoryRoute();
+    },
+
+    // ---------- Keyboard grid navigation ----------
+    // Roving-tabindex arrow navigation across the visible card grid.
+    _setupGridKeyboard() {
+      const grid = $("#game-grid");
+      if (!grid) return;
+      grid.addEventListener("keydown", (e) => {
+        const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"];
+        if (!navKeys.includes(e.key)) return;
+        const cards = $$(".card", grid).filter(c => c.offsetParent); // visible only
+        if (!cards.length) return;
+        e.preventDefault();
+        const cur = document.activeElement;
+        const idx = cards.indexOf(cur);
+        let next = -1;
+        if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = cards.length - 1;
+        else {
+          // Column count from real geometry (cards in the first row share offsetTop).
+          const top = cards[0].offsetTop;
+          const cols = cards.filter(c => c.offsetTop === top).length || 1;
+          if (e.key === "ArrowRight") next = idx + 1;
+          else if (e.key === "ArrowLeft") next = idx - 1;
+          else if (e.key === "ArrowDown") next = idx + cols;
+          else if (e.key === "ArrowUp") next = idx - cols;
+        }
+        if (next < 0 || next >= cards.length || next === idx) return;
+        // Roving tabindex: only the focused card stays tabbable.
+        if (idx >= 0) cur.tabIndex = -1;
+        cards[next].tabIndex = 0;
+        cards[next].focus();
+      });
+    },
+
+    // ---------- Pass-and-play curtain ----------
+    // Covers the game with a "pass the device" screen until the next player
+    // taps Ready — hidden hands stay hidden on shared screens.
+    passTurn(label, onReady) {
+      const stage = $("#game-stage");
+      if (!stage) {
+        if (onReady) onReady();
+        return;
+      }
+      if (stage.querySelector(".passplay-curtain")) return; // already up
+      const curtain = document.createElement("div");
+      curtain.className = "passplay-curtain";
+      curtain.innerHTML = `
+        <div class="passplay-card">
+          <div class="passplay-icon">🤫</div>
+          <div class="passplay-title">Pass the device to ${label}</div>
+          <button class="btn primary" type="button">I'm ${label} — ready</button>
+        </div>`;
+      curtain.querySelector("button").addEventListener("click", () => {
+        curtain.remove();
+        AudioFX.pop();
+        if (onReady) onReady();
+      });
+      stage.appendChild(curtain);
+    },
+
+    // ---------- Session wrap-up ----------
+    _maybeShowSessionWrapup() {
+      const s = App._session;
+      if (s.wrapShown || s.games < 3) return;
+      const mins = (Date.now() - s.start) / 60000;
+      if (mins < 6) return;
+      s.wrapShown = true;
+      const host = $("#session-wrapup");
+      if (!host) return;
+      $("#session-wrapup-text").textContent =
+        `Nice session! ${s.games} games · ${Math.max(1, Math.round(mins))} min · ${s.wins} win${s.wins === 1 ? "" : "s"}`;
+      host.style.display = "";
+      AudioFX.ding();
+    },
+
+    // ---------- Random pick, weighted toward unplayed ----------
+    _randomPick() {
+      const all = GameRegistry.all().filter(g => !Storage.isHidden(g.id));
+      if (!all.length) return null;
+      const played = Storage.getStats().gamesPlayed || {};
+      // Unplayed games get 3 tickets, played ones 1 — a gentle nudge toward
+      // discovery without ever hiding the old favourites.
+      const tickets = [];
+      all.forEach(g => {
+        const n = played[g.id] ? 1 : 3;
+        for (let i = 0; i < n; i++) tickets.push(g);
+      });
+      let pick = tickets[Math.floor(Math.random() * tickets.length)];
+      if (App.currentGame && all.length > 1) {
+        let guard = 0;
+        while (pick.id === App.currentGame.id && guard++ < 10) {
+          pick = tickets[Math.floor(Math.random() * tickets.length)];
+        }
+      }
+      return pick;
+    },
+
+    // ---------- Data health ----------
+    _renderDataHealth() {
+      const host = $("#data-health");
+      if (!host) return;
+      let used = 0;
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          used += (k.length + (localStorage.getItem(k) || "").length) * 2; // UTF-16
+        }
+      } catch (e) { /* private mode */
+      }
+      const kb = Math.round(used / 1024);
+      const age = Storage.getBackupAgeDays();
+      const ageTxt = age === null
+        ? `<span class="data-warn">no backup yet — export one above</span>`
+        : (age > 30 ? `<span class="data-warn">last backup ${age} days ago</span>`
+          : `last backup ${age === 0 ? "today" : age + " day" + (age === 1 ? "" : "s") + " ago"}`);
+      host.innerHTML = `💾 Stored locally: ~${kb} KB of ~5 MB · ${ageTxt}`;
+    },
+    _maybeNudgeBackup() {
+      const stats = Storage.getStats();
+      if ((stats.totalPlays || 0) < 50) return;
+      const age = Storage.getBackupAgeDays();
+      if (age !== null && age <= 30) return;
+      const flag = "gamehub:backup-nudge:" + App._todayKey();
+      try {
+        if (localStorage.getItem(flag)) return;
+        localStorage.setItem(flag, "1");
+      } catch (e) {
+        return;
+      }
+      App.toast("💾 Lots of progress saved — consider a backup (⚙ → Your data)", "info");
+    },
+
     // ---------- Init ----------
     init() {
       // Theme/mode/sound
       App.applyTheme();
       App.applySound();
+      // Runtime error net — before anything else can throw.
+      App._setupErrorNet();
+      // Save-Data / 2G awareness: skip decorative effects + prefetch.
+      try {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+        if (navigator.saveData || /(^|\b)2g/.test(conn.effectiveType || "")) {
+          document.documentElement.dataset.saveData = "1";
+        }
+      } catch (e) { /* some browsers lock navigator.connection down */
+      }
+      // Keyboard grid navigation
+      App._setupGridKeyboard();
+      // Data health line + backup nudge
+      App._renderDataHealth();
+      App._maybeNudgeBackup();
+      // Session wrap-up card handlers
+      const wrapClose = $("#session-wrapup-close");
+      if (wrapClose) wrapClose.addEventListener("click", () => {
+        AudioFX.click();
+        const host = $("#session-wrapup");
+        if (host) host.style.display = "none";
+      });
+      const wrapShare = $("#session-wrapup-share");
+      if (wrapShare) wrapShare.addEventListener("click", () => {
+        AudioFX.click();
+        const s = App._session;
+        const mins = Math.max(1, Math.round((Date.now() - s.start) / 60000));
+        const text = `Just played ${s.games} games at Pixel Arcade — ${s.wins} win${s.wins === 1 ? "" : "s"} in ${mins} min 🎮`;
+        App.shareScore(text);
+      });
       // Sync the favorites-only toggle initial state (class + aria-pressed)
       const favOnlyBtn = $("#fav-only-btn");
       if (favOnlyBtn) {
@@ -2163,19 +2655,12 @@
         // (a full render here felt like a page reload).
         App._syncFavUi(id);
       });
-      // Random game button — jump to a surprise
+      // Random game button — jump to a surprise (weighted toward unplayed)
       const randBtn = $("#random-btn");
       if (randBtn) randBtn.addEventListener("click", () => {
         AudioFX.pop();
-        const all = GameRegistry.all();
-        if (!all.length) return;
-        let pick = all[Math.floor(Math.random() * all.length)];
-        if (App.currentGame && all.length > 1) {
-          // avoid picking the game we're in
-          let guard = 0;
-          while (pick.id === App.currentGame.id && guard++ < 10) pick = all[Math.floor(Math.random() * all.length)];
-        }
-        App.openGame(pick.id);
+        const pick = App._randomPick();
+        if (pick) App.openGame(pick.id);
       });
       // Share button — copy a rich emoji summary to clipboard
       $("#game-share-btn").addEventListener("click", () => {
@@ -2325,10 +2810,11 @@
       // Filters
       $$(".filter-chip[data-dim='category']").forEach(c => c.addEventListener("click", () => {
         AudioFX.click();
-        // When browsing a category landing route, moving to another category
-        // goes through the route (keeps the URL shareable) instead of a
-        // direct filter change.
-        const onRoute = location.hash.indexOf("#/category/") === 0;
+        // When browsing a category/collection landing route, moving to another
+        // category goes through the route (keeps the URL shareable) instead
+        // of a direct filter change.
+        const onRoute = location.hash.indexOf("#/category/") === 0 ||
+          location.hash.indexOf("#/collection/") === 0;
         if (onRoute) {
           const target = c.dataset.filter;
           if (target === "all") {
@@ -2342,6 +2828,7 @@
         $$(".filter-chip[data-dim='category']").forEach(x => x.classList.remove("active"));
         c.classList.add("active");
         App.state.filter = c.dataset.filter;
+        App.state.collectionFilter = null; // leaving any collection context
         App.renderGrid();
       }));
       // Debounced search input — re-rendering 150 cards on every keystroke is
@@ -2632,6 +3119,8 @@
     // the game starts instantly when clicked. Safe to call repeatedly —
     // GameRegistry.load() de-duplicates in-flight loads.
     _preloadHint(id) {
+      // Save-Data / 2G users skip idle prefetching — data first.
+      if (document.documentElement.dataset.saveData) return;
       // Warm the cache for a declared (not yet loaded) game on hover.
       if (window.GameRegistry && GameRegistry.isLazy && GameRegistry.isLazy(id)) {
         GameRegistry.load(id).catch(() => {

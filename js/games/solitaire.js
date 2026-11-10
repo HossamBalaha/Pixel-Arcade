@@ -36,6 +36,8 @@
       let alive = true;
       let stock = [], waste = [], foundations = [[], [], [], []], tableau = [[], [], [], [], [], [], []], over = false;
       let moves = 0;
+      // Deal-in animation: true right after deal(), consumed by render().
+      let justDealt = false, dealIdx = 0;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -84,6 +86,7 @@
         foundations = [[], [], [], []];
         moves = 0;
         over = false;
+        justDealt = true; // animate the fresh deal in
       }
 
       function canPlaceFoundation(card, fIdx) {
@@ -245,6 +248,10 @@
           // Position the tableau pile in the second row
           boardEl.appendChild(tEl);
         }
+        if (justDealt) {
+          justDealt = false;
+          dealIdx = 0;
+        } // one animation per deal
         checkWin();
       }
 
@@ -252,6 +259,10 @@
         const el = document.createElement("div");
         el.className = "sl-card" + (c.faceUp ? (isRed(c.suit) ? " red" : " black") : " face-down");
         if (c.faceUp) el.textContent = c.rank + c.suit;
+        if (justDealt) {
+          el.classList.add("deal-in");
+          el.style.animationDelay = Math.min(dealIdx++ * 28, 750) + "ms";
+        }
         return el;
       }
 

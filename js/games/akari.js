@@ -246,6 +246,19 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const missing = puzzle.sol.filter(([r, c]) => !bulbs[r][c]);
+          if (!missing.length) {
+            App.toast("All bulbs are in the right place 💡", "info");
+            return;
+          }
+          const pick = missing[Math.floor(Math.random() * missing.length)];
+          bulbs[pick[0]][pick[1]] = true;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: a bulb belongs at row ${pick[0] + 1}, column ${pick[1] + 1}`, "info");
+        },
         solve: function () {
           if (over) return;
           bulbs = Array.from({length: N}, () => Array(N).fill(false));
@@ -265,6 +278,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Light Up (Akari)",

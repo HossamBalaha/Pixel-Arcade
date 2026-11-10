@@ -301,6 +301,17 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const remaining = findWords(grid).filter(w => !found.has(w));
+          if (!remaining.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const w = remaining[Math.floor(Math.random() * remaining.length)];
+          AudioFX.reveal();
+          App.toast(`💡 There's a ${w.length}-letter word starting with ${w[0]}…`, "info");
+        },
         solve: function () {
           if (over) return;
           clearInterval(timerInterval);
@@ -325,6 +336,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Boggle",

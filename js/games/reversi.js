@@ -138,16 +138,49 @@
       }
 
       root.innerHTML = `
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="difficulty" id="rv-mode">
+            <button class="diff-btn active" data-m="ai">vs AI</button>
+            <button class="diff-btn" data-m="2p">2P</button>
+          </div>
+          <button class="diff-btn" id="rv-pass" title="Show a privacy screen between turns when playing 2P">🙈 Pass: ON</button>
+        </div>
         <div class="status info" id="rv-status">Your turn (Black)</div>
         <div class="scoreboard">
-          <div class="score-cell"><div class="label">Black (You)</div><div class="val" id="rv-p">2</div></div>
-          <div class="score-cell"><div class="label">White (AI)</div><div class="val" id="rv-a">2</div></div>
+          <div class="score-cell"><div class="label" id="rv-p-label">Black (You)</div><div class="val" id="rv-p">2</div></div>
+          <div class="score-cell"><div class="label" id="rv-a-label">White (AI)</div><div class="val" id="rv-a">2</div></div>
         </div>
         <div class="center"><div id="rv-board" style="display:grid;grid-template-columns:repeat(8,40px);grid-template-rows:repeat(8,40px);gap:2px;background:var(--accent);padding:4px;border-radius:var(--radius-sm);"></div></div>
         <p class="hint">Click a green dot to place. Outflank to flip. Most pieces wins.</p>
       `;
       const boardEl = root.querySelector("#rv-board");
       const statusEl = root.querySelector("#rv-status");
+      // 2P hot-seat mode + pass-screen pref.
+      let mode = "ai";
+      let passOn = Storage.getPassPlay("reversi", true);
+      const passBtn = root.querySelector("#rv-pass");
+      const syncPassBtn = () => {
+        passBtn.textContent = "🙈 Pass: " + (passOn ? "ON" : "OFF");
+        passBtn.classList.toggle("active", passOn);
+      };
+      syncPassBtn();
+      passBtn.addEventListener("click", () => {
+        passOn = !passOn;
+        Storage.setPassPlay("reversi", passOn);
+        syncPassBtn();
+        AudioFX.click();
+      });
+      root.querySelectorAll("#rv-mode .diff-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          root.querySelectorAll("#rv-mode .diff-btn").forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          mode = btn.dataset.m;
+          AudioFX.click();
+          root.querySelector("#rv-p-label").textContent = mode === "2p" ? "Black (P1)" : "Black (You)";
+          root.querySelector("#rv-a-label").textContent = mode === "2p" ? "White (P2)" : "White (AI)";
+          newGame();
+        });
+      });
 
       function newGame() {
         b = startBoard();
@@ -173,7 +206,8 @@
 
       function render() {
         boardEl.innerHTML = "";
-        const moves = (turn === P && !over) ? validMoves(b, P) : [];
+        const humanTurn = !over && (mode === "2p" || turn === P);
+        const moves = humanTurn ? validMoves(b, turn) : [];
         for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
           const cell = document.createElement("div");
           cell.style.background = "var(--bg-soft)";
@@ -208,17 +242,37 @@
       }
 
       function onCell(r, c) {
-        if (over || turn !== P) return;
-        const moves = validMoves(b, P);
+        if (over) return;
+        if (mode === "ai" && turn !== P) return;
+        const mover = turn;
+        const moves = validMoves(b, mover);
         const m = moves.find(x => x.r === r && x.c === c);
         if (!m) {
           AudioFX.error();
           return;
         }
-        applyM(b, m, P);
+        applyM(b, m, mover);
         AudioFX.place();
         hl = null;
         if (endCheck()) return;
+        if (mode === "2p") {
+          // Hot-seat: switch sides, handle passes, show the curtain.
+          const next = mover === P ? A : P;
+          if (validMoves(b, next).length) {
+            turn = next;
+            const label = next === P ? "Black (P1)" : "White (P2)";
+            setStatus(label + " — your turn");
+            render();
+            if (passOn) App.passTurn(label);
+          } else if (validMoves(b, mover).length) {
+            setStatus((next === P ? "White (P2)" : "Black (P1)") + " has no moves — passes", "info");
+            render();
+            if (passOn) App.passTurn(mover === P ? "Black (P1)" : "White (P2)");
+          } else {
+            finish();
+          }
+          return;
+        }
         turn = A;
         setStatus("AI thinking…");
         render();
@@ -268,13 +322,15 @@
       function finish() {
         over = true;
         const ct = count();
+        const pName = mode === "2p" ? "Black (P1)" : "You";
+        const aName = mode === "2p" ? "White (P2)" : "AI";
         if (ct.p > ct.a) {
-          setStatus(`🎉 You win ${ct.p}-${ct.a}!`, "win");
+          setStatus(`🎉 ${pName} win${mode === "2p" ? "" : ""} ${ct.p}-${ct.a}!`, "win");
           AudioFX.win();
           Storage.submitScore("reversi", (Storage.getBest("reversi") || 0) + 1);
         } else if (ct.p < ct.a) {
-          setStatus(`AI wins ${ct.a}-${ct.p} 💀`, "lose");
-          AudioFX.lose();
+          setStatus(`${aName} wins ${ct.a}-${ct.p}${mode === "2p" ? " 🎉" : " 💀"}`, mode === "2p" ? "win" : "lose");
+          AudioFX.win();
         } else {
           setStatus(`Draw ${ct.p}-${ct.a}`, "info");
           AudioFX.lose();

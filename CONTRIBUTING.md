@@ -12,7 +12,19 @@ python3 -m http.server 8000
 # open http://localhost:8000/ in your browser
 ```
 
-No `npm install`, no compilation. Just edit, refresh, ship.
+No `npm install` for the site itself, no compilation. Just edit, refresh, ship.
+
+## The toolchain (dev-only, never shipped)
+
+The site stays 100% static, but the repo ships a few developer tools you can run locally:
+
+| Tool                                        | What it does                                                                                                                                          | When to run it                     |
+|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
+| `node tools/test-games.js`                  | Headless JSDOM smoke test — mounts all 300 games, calls `hint()`/`solve()`/`help()`/cleanup, fails on any throw. Needs `npm i jsdom` once (dev-only). | After touching any game            |
+| `node tools/generate-thumbnails.js --check` | Verifies every catalog game has a valid, font-safe SVG thumbnail.                                                                                     | After adding a game                |
+| `python3 tools/audit-colors.py`             | Color-clash audit — computes worst-case WCAG contrast for every canvas element/background pair across all 79 theme variants.                          | After touching canvas drawing code |
+
+Run the relevant ones before opening a PR — it saves everyone time.
 
 ## Ways to contribute
 
@@ -84,13 +96,32 @@ No `npm install`, no compilation. Just edit, refresh, ship.
 3. Test by visiting `http://localhost:8000/#/mygame` (or `?game=mygame` for the shareable deep link).
 
 4. If your game has a "best score" worth tracking, call `Storage.setBest("mygame", value)` when the game ends.
+5. Optional — declare difficulty variants so the shell shows a dropdown in the game header:
+
+   ```javascript
+   variants: [
+     {key: "4", label: "Classic 4×4"},   // first entry = the default
+     {key: "3", label: "3×3 Blitz"},
+   ],
+   // inside mount():
+   const SIZE = parseInt(Storage.getVariant("mygame", "4"), 10) || 4;
+   ```
+
+   The shell persists the choice per game and re-mounts on change. The first entry MUST match the mount fallback, and
+   the default variant must reproduce the classic behavior. If variants make best scores incomparable (different board
+   sizes, speeds), key bests as `"mygame:<key>"` for non-default variants and keep the plain id for the default, so
+   existing players' bests survive.
 
 ## Coding style
 
 - **Vanilla ES5/ES6 only** — no jQuery, no React, no bundler. (Yes, jQuery is allowed per project policy, but the
   existing games don't use it — keep it that way for consistency.)
-- **CSS variables for theming** — never hardcode colors. Always use `var(--accent)`, `var(--bg-elev)`, etc. so the 4
-  themes + light/dark all work.
+- **CSS variables for theming** — never hardcode colors in DOM/UI code. Always use `var(--accent)`, `var(--bg-elev)`,
+  etc. so all 79 theme variants × light/dark keep working.
+- **Canvas color rule** (learned the hard way): a game with a FIXED scene background (a rink, a night sky, a cave)
+  must draw its elements in FIXED high-contrast colors — never `var(--text)`/`var(--accent)`, which can collide with
+  the scene in some themes. A game that fills its canvas with `var(--bg-soft)` must draw everything with theme
+  variables that contrast in every theme. Run `python3 tools/audit-colors.py` if unsure — it checks all 79 themes.
 - **Respect reduced motion** — wrap animations in `@media (prefers-reduced-motion: no-preference)` where aggressive.
 - **Always clean up** — your `mount()` MUST return a cleanup function that removes event listeners, clears
   `setInterval`/`setTimeout`, and cancels `requestAnimationFrame`. Use the `alive` flag pattern shown above.
@@ -106,7 +137,15 @@ No `npm install`, no compilation. Just edit, refresh, ship.
 - [ ] Game is mobile-friendly (responsive, swipe where applicable)
 - [ ] Game registered in `js/catalog.js` and thumbnail generated via `tools/generate-thumbnails.js`
   (`node tools/generate-thumbnails.js --check` passes)
+- [ ] `node tools/test-games.js` passes for your game (and ideally the full 300)
 - [ ] README updated if the game list changed
+
+## Adding a curated collection
+
+Curated shelves ("5-Minute Breaks", "Two-Player Night", …) live in `js/collections.js`. Add an entry with a unique
+`id` (slug — it becomes the `#/collection/<id>` hash route), a display `name`, an `icon`, a one-line `blurb`, and a
+cheap `match(g)` predicate over catalog metadata. Keep predicates pure and fast — they run over all 300 games on
+route. No server, no build step.
 
 ## Reporting bugs
 

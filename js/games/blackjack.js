@@ -8,6 +8,7 @@
     mount: function (root, ctx) {
       const {App, AudioFX} = ctx;
       let deck = [], you = [], dealer = [], chips = 100, bet = 10, phase = "bet", alive = true;
+      let justDealt = false; // deal-in animation flag
 
       const SUITS = ["♠", "♥", "♦", "♣"], RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
@@ -50,7 +51,8 @@
         you = [draw(), draw()];
         dealer = [draw(), draw()];
         phase = "play";
-        AudioFX.click();
+        justDealt = true; // animate the fresh hand
+        AudioFX.flip();
         if (isBJ(you)) {
           settle();
           return;
@@ -159,6 +161,17 @@
         if (yv) yv.textContent = you.length ? val(you) : "—";
         if (dv) dv.textContent = dealer.length ? (phase === "done" ? val(dealer) : val([dealer[0]]) + "+") : "—";
         if (dc) dc.textContent = phase === "done" ? fmt(dealer) : (dealer.length ? dealer[0].r + dealer[0].s + " ♠" : "♠ ♠");
+        // Deal-in animation: slide the fresh hands in once per deal.
+        if (justDealt) {
+          justDealt = false;
+          [dc, yc].forEach((el, i) => {
+            if (!el) return;
+            el.classList.remove("deal-in");
+            void el.offsetWidth; // restart the animation
+            el.classList.add("deal-in");
+            el.style.animationDelay = (i * 120) + "ms";
+          });
+        }
         root.querySelector("#bj-bets").style.display = phase === "bet" ? "" : "none";
         root.querySelector("#bj-acts").style.display = phase === "play" ? "" : "none";
         // after settle, show deal button again

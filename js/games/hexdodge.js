@@ -129,9 +129,6 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         ctx.fillStyle = "#0b1020";
         ctx.fillRect(0, 0, W, H);
         // rotating hex backdrop
@@ -154,11 +151,11 @@
           ctx.lineWidth = 18;
           ctx.stroke();
         }
-        // player triangle pointing at rot
+        // player triangle pointing at rot — fixed cyan: dark canvas in every theme
         ctx.save();
         ctx.translate(CX, CY);
         ctx.rotate(rot);
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#22d3ee";
         ctx.beginPath();
         ctx.moveTo(26, 0);
         ctx.lineTo(-14, -15);
@@ -166,7 +163,7 @@
         ctx.lineTo(-14, 15);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = text;
+        ctx.fillStyle = "#fff";
         ctx.beginPath();
         ctx.arc(0, 0, 3, 0, Math.PI * 2);
         ctx.fill();

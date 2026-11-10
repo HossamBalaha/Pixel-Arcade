@@ -22,6 +22,7 @@
       const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
       const SUITS = ["♠", "♥", "♦", "♣"];
       let you, ai, turn, won, wins, best;
+      let justDealt = false, dIdx = 0; // deal-in animation
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -52,6 +53,7 @@
         ai = deck.splice(0, 26);
         turn = "you";
         won = null;
+        justDealt = true;
         autoPair();
         render();
       }
@@ -136,6 +138,10 @@
             background:#f8fafc;color:${c.s === "♥" || c.s === "♦" ? "#dc2626" : "#0f172a"};
             font-weight:800;font-size:14px;text-align:center;padding-top:6px;${c.r === "Q" ? "border:2px solid #ec4899;box-shadow:0 0 8px rgba(236,72,153,0.5);" : "border:2px solid #cbd5e1;"}`;
           el.innerHTML = `${c.r}<br>${c.s}`;
+          if (justDealt) {
+            el.classList.add("deal-in");
+            el.style.animationDelay = Math.min(dIdx++ * 25, 600) + "ms";
+          }
           handEl.appendChild(el);
         });
         aiEl.innerHTML = "";
@@ -162,6 +168,10 @@
         if (won) {
           aiEl.insertAdjacentHTML("beforeend", `<button class="btn btn-sm primary" id="om-again" style="margin-left:12px;">↻ Play again</button>`);
           aiEl.querySelector("#om-again").addEventListener("click", deal);
+        }
+        if (justDealt) {
+          justDealt = false;
+          dIdx = 0;
         }
       }
 

@@ -283,6 +283,28 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const cands = [];
+          puzzle.words.forEach(w => {
+            for (let i = 0; i < w.word.length; i++) {
+              const r = w.row + (w.dir === "down" ? i : 0);
+              const c = w.col + (w.dir === "across" ? i : 0);
+              if (grid[r][c] !== w.word[i] && !locked[r][c]) cands.push({w, i, r, c});
+            }
+          });
+          if (!cands.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const pick = cands[Math.floor(Math.random() * cands.length)];
+          const ch = pick.w.word[pick.i];
+          grid[pick.r][pick.c] = ch;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 ${pick.w.dir === "across" ? "Across" : "Down"} "${pick.w.clue}": letter ${pick.i + 1} is "${ch}"`, "info");
+          checkAuto();
+        },
         solve: function () {
           if (over) return;
           puzzle.words.forEach(w => {
@@ -308,6 +330,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Anagram Crossword",

@@ -142,7 +142,6 @@
 
       function render() {
         const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
         const text = st.getPropertyValue("--text").trim() || "#eee";
         ctx.fillStyle = "#0e7490";
         ctx.fillRect(0, 0, W, H);
@@ -169,11 +168,11 @@
         ctx.lineTo(W / 2, 58);
         ctx.closePath();
         ctx.fill();
-        // target
+        // target — post lightened to read against the green field
         const th = 84 - dist * 0.55;
         const ty = by - 20 - (dist - 35) * 2.4;
         const tx = 300;
-        ctx.strokeStyle = "#78350f";
+        ctx.strokeStyle = "#d97706";
         ctx.lineWidth = 6;
         ctx.beginPath();
         ctx.moveTo(tx + 14, ty + th / 2);
@@ -186,10 +185,10 @@
           ctx.ellipse(tx, ty, th * 0.14, th / 2 * rr, 0, 0, Math.PI * 2);
           ctx.fill();
         }
-        // aim indicators
+        // aim indicators — fixed yellow guide on the fixed teal sky
         if (phase === "angle" || phase === "power") {
           const a = angle * Math.PI / 180;
-          ctx.strokeStyle = phase === "angle" ? accent : "#fcd34d";
+          ctx.strokeStyle = "#fde047";
           ctx.setLineDash([5, 6]);
           ctx.lineWidth = 2;
           const len = phase === "power" ? power * 12 : 80;
@@ -203,8 +202,8 @@
           ctx.textAlign = "left";
           ctx.fillText(phase === "angle" ? `ANGLE ${Math.round(angle)}°` : `POWER ${power.toFixed(1)}`, 12, 20);
         }
-        // bow
-        ctx.strokeStyle = "#78350f";
+        // bow — lightened wood so it stands out on the teal sky
+        ctx.strokeStyle = "#a16207";
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.arc(bx, by, 22, -Math.PI / 3, Math.PI / 3);

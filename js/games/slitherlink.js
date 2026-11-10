@@ -1,7 +1,13 @@
 /* Slitherlink — draw a single closed loop. Each clue says how many of its 4 edges are part of the loop. */
 (function () {
   // 4×4 grid of clues (-1 = no clue). Loop runs on edges between dots.
-  const PUZZLES = [{"clues": [[-1, 1, -1, 1], [1, 0, -1, 1], [-1, 0, 1, 1], [2, 1, 2, -1]]}, {"clues": [[0, 1, 1, 1], [1, 2, -1, 2], [1, 1, 0, -1], [-1, 2, -1, 2]]}];
+  const PUZZLES = [{
+    "clues": [[-1, 1, -1, 1], [1, 0, -1, 1], [-1, 0, 1, 1], [2, 1, 2, -1]],
+    "sol": ["0,0,1,0", "1,0,2,0", "2,0,3,0", "3,0,4,0", "4,0,4,1", "4,1,4,2", "4,2,4,3", "3,3,4,3", "2,3,3,3", "1,3,2,3", "0,3,1,3", "0,2,0,3", "0,1,0,2", "0,0,0,1"]
+  }, {
+    "clues": [[0, 1, 1, 1], [1, 2, -1, 2], [1, 1, 0, -1], [-1, 2, -1, 2]],
+    "sol": ["1,1,2,1", "2,1,3,1", "3,1,4,1", "4,1,4,2", "4,2,4,3", "3,3,4,3", "3,3,3,4", "2,4,3,4", "1,4,2,4", "1,3,1,4", "1,2,1,3", "1,1,1,2"]
+  }];
   const N = 4; // N×N clues; (N+1)×(N+1) dots; edges in 2 directions.
 
   let live = null;
@@ -240,6 +246,21 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const missing = puzzle.sol.filter(k => edges[k] !== 1);
+          if (!missing.length) {
+            const extras = Object.keys(edges).filter(k => edges[k] === 1 && puzzle.sol.indexOf(k) < 0);
+            App.toast(extras.length ? "💡 All loop edges are placed — remove the extra ones" : "Nothing more to reveal 💡", "info");
+            return;
+          }
+          const pick = missing[Math.floor(Math.random() * missing.length)];
+          edges[pick] = 1;
+          AudioFX.reveal();
+          render();
+          const [r1, c1, r2, c2] = pick.split(",").map(Number);
+          App.toast(`💡 Hint: the loop uses the edge between dots (${r1 + 1},${c1 + 1}) and (${r2 + 1},${c2 + 1})`, "info");
+        },
         solve: function () {
           if (over) return;
           App.showModal("Slitherlink", "Try this puzzle — solution revealing is complex. Use the Check button to validate your loop.");
@@ -250,6 +271,9 @@
         alive = false;
         live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Slitherlink",

@@ -122,9 +122,6 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         ctx.fillStyle = "#1e1b4b";
         ctx.fillRect(0, 0, W, H);
         // spotlight cone
@@ -146,12 +143,12 @@
         ctx.lineTo(W, H - 8);
         ctx.stroke();
         ctx.setLineDash([]);
-        // paddle (hands)
-        ctx.fillStyle = accent;
+        // paddle (hands) — fixed amber on the fixed night canvas
+        ctx.fillStyle = "#fbbf24";
         ctx.beginPath();
         ctx.roundRect(paddle.x - PW / 2, H - 30, PW, 12, 6);
         ctx.fill();
-        ctx.fillStyle = text;
+        ctx.fillStyle = "#fff";
         ctx.font = "16px sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("🤲", paddle.x - PW / 2 + 10, H - 18);

@@ -1,5 +1,6 @@
 /* Aqre — shade cells to match room counts, four in a row is too many */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "aqre",
     name: "Aqre",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 10;
-      let rooms, shaded, solvedCount, best;
+      let rooms, shaded, target, solvedCount, best;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -130,6 +131,7 @@
           for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (shade[y][x]) c++;
           r.count = c > 0 || Math.random() < 0.4 ? c : null;
         });
+        target = shade;
         shaded = Array.from({length: N}, () => Array(N).fill(false));
         render();
         statusEl.textContent = "Shade the right number of cells in each room";
@@ -210,12 +212,32 @@
       });
       root.querySelector("#aq-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!target) return;
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shaded[y][x] !== target[y][x]) wrong.push([x, y]);
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [x, y] = wrong[Math.floor(Math.random() * wrong.length)];
+          shaded[y][x] = target[y][x];
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} ${target[y][x] ? "should be shaded" : "should not be shaded"}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Aqre",

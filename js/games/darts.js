@@ -84,9 +84,10 @@
       });
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         t += 1;
+        // fixed wall — the board, darts and crosshair all use fixed colors on it
+        ctx.fillStyle = "#1c1917";
+        ctx.fillRect(0, 0, W, H);
         // board
         const rings = [
           {r: 110, c: "#111827"}, {r: 85, c: "#16a34a"}, {r: 52, c: "#dc2626"},
@@ -124,10 +125,10 @@
           ctx.arc(d.x, d.y, 3.5, 0, Math.PI * 2);
           ctx.fill();
         });
-        // crosshair
+        // crosshair — fixed bright on the fixed dark wall
         if (!over) {
           const a = aimPos();
-          ctx.strokeStyle = text;
+          ctx.strokeStyle = "#f8fafc";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(a.x - 16, a.y);
@@ -141,7 +142,7 @@
           ctx.stroke();
           ctx.beginPath();
           ctx.arc(a.x, a.y, 2, 0, Math.PI * 2);
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#f8fafc";
           ctx.fill();
         }
         if (over) {

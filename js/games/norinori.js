@@ -1,5 +1,6 @@
 /* Norinori — shade dominoes so every region holds exactly one half */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "norinori",
     name: "Norinori",
@@ -116,6 +117,77 @@
         return null;
       }
 
+      // Hint-only pure solver: extends the player's current shading so every region
+      // keeps exactly one shaded cell and shaded cells pair into isolated dominoes.
+      // Deterministic backtracking with a step budget; never used by gameplay.
+      function solveNorinori() {
+        const byRegion = {};
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) (byRegion[regions[y][x]] = byRegion[regions[y][x]] || []).push([x, y]);
+        const ids = Object.keys(byRegion).map(Number);
+        if (ids.length % 2) return null; // odd region count can never pair into dominoes
+        const pre = {}; // region id → the cell the player already shaded (at most one, checked here)
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shaded[y][x]) {
+          const r = regions[y][x];
+          if (pre[r]) return null;
+          pre[r] = [x, y];
+        }
+        const state = {}; // region id → 0 untouched, 1 shaded needs partner, 2 paired
+        ids.forEach(r => {
+          if (pre[r]) state[r] = 1;
+        });
+        const on = new Set();
+        for (const r in pre) on.add(pre[r].join(","));
+        const chosen = [];
+        let steps = 0;
+        const inb = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+
+        function canPlace(c, d) {
+          for (const [p, q] of [[c, d], [d, c]]) {
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const nx = p[0] + dx, ny = p[1] + dy;
+              if (nx === q[0] && ny === q[1]) continue;
+              if (inb(nx, ny) && on.has(nx + "," + ny)) return false;
+            }
+          }
+          return true;
+        }
+
+        function bt(k) {
+          if (k === ids.length) return true;
+          if (++steps > 100000) return false;
+          const r = ids[k];
+          if (state[r] === 2) return bt(k + 1);
+          const anchors = state[r] === 1 ? [pre[r]] : byRegion[r];
+          for (const c of anchors) {
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const nx = c[0] + dx, ny = c[1] + dy;
+              if (!inb(nx, ny)) continue;
+              const r2 = regions[ny][nx];
+              if (r2 === r || state[r2] === 2) continue;
+              if (state[r2] === 1 && (pre[r2][0] !== nx || pre[r2][1] !== ny)) continue;
+              const d = [nx, ny];
+              if (!canPlace(c, d)) continue;
+              state[r] = 2;
+              state[r2] = 2;
+              on.add(c.join(","));
+              on.add(d.join(","));
+              chosen.push(c, d);
+              if (bt(k + 1)) return true;
+              chosen.pop();
+              chosen.pop();
+              on.delete(c.join(","));
+              on.delete(d.join(","));
+              state[r2] = pre[r2] ? 1 : 0;
+              state[r] = pre[r] ? 1 : 0;
+            }
+          }
+          return false;
+        }
+
+        if (!bt(0)) return null;
+        return chosen.slice();
+      }
+
       function check() {
         const err = validate();
         if (!err) {
@@ -164,12 +236,48 @@
       });
       root.querySelector("#no-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!validate()) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const doms = solveNorinori();
+          if (!doms) {
+            App.toast("💡 No valid domino shading found — try ↻ Clear or 🆕 New puzzle", "info");
+            return;
+          }
+          const open = [];
+          for (let i = 0; i < doms.length; i += 2) {
+            if (!shaded[doms[i][1]][doms[i][0]] || !shaded[doms[i + 1][1]][doms[i + 1][0]]) open.push([doms[i], doms[i + 1]]);
+          }
+          if (!open.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const [a, b] = open[Math.floor(Math.random() * open.length)];
+          shaded[a[1]][a[0]] = true;
+          shaded[b[1]][b[0]] = true;
+          AudioFX.reveal();
+          render();
+          const r1 = a[1] + 1, c1 = a[0] + 1, r2 = b[1] + 1, c2 = b[0] + 1;
+          const where = r1 === r2
+            ? `row ${r1}, columns ${Math.min(c1, c2)}–${Math.max(c1, c2)}`
+            : `column ${c1}, rows ${Math.min(r1, r2)}–${Math.max(r1, r2)}`;
+          App.toast(`💡 Hint: shade the domino at ${where}`, "info");
+        }
+      };
+
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Norinori",

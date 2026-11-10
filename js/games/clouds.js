@@ -1,5 +1,6 @@
 /* Clouds — place clouds to match the row and column counts */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "clouds",
     name: "Clouds",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 8;
-      let clouds, shaded, rowClues, colClues, solvedCount, best;
+      let clouds, shaded, solution, rowClues, colClues, solvedCount, best;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -74,6 +75,7 @@
         rects.forEach(r => {
           for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) sol[y][x] = true;
         });
+        solution = sol;
         rowClues = sol.map(r => r.filter(Boolean).length);
         colClues = [];
         for (let x = 0; x < N; x++) {
@@ -198,12 +200,32 @@
       });
       root.querySelector("#cl-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!solution) return;
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shaded[y][x] !== solution[y][x]) wrong.push([x, y]);
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [x, y] = wrong[Math.floor(Math.random() * wrong.length)];
+          shaded[y][x] = solution[y][x];
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} ${solution[y][x] ? "should be a cloud cell" : "should be empty sky"}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Clouds",

@@ -130,7 +130,7 @@
             ${Array.from({length: NUM}, (_, i) => `
               <div>
                 <div class="cw-coin ${left.has(i) ? "onL" : right.has(i) ? "onR" : ""}" data-coin="${i}">${i + 1}</div>
-                <div class="row gap-0" style="justify-content:center;">
+                <div class="row" style="justify-content:center;">
                   <button class="btn btn-sm" style="padding:1px 5px;font-size:10px;" data-toL="${i}">L</button>
                   <button class="btn btn-sm" style="padding:1px 5px;font-size:10px;" data-toR="${i}">R</button>
                   <button class="btn btn-sm" style="padding:1px 5px;font-size:10px;" data-off="${i}">–</button>

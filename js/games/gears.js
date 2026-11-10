@@ -138,11 +138,11 @@
         ctx.roundRect(10, 10, W - 20, H - 20, 14);
         ctx.fill();
         const {crankLinks, wheelLinks, adj} = adjacency();
-        // pegs
+        // pegs — brightened so empty sockets stay findable on the dark plate
         pegs.forEach((p, i) => {
           const on = placed.has(i);
           if (!on) {
-            ctx.fillStyle = "#57534e";
+            ctx.fillStyle = "#8a8078";
             ctx.beginPath();
             ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
             ctx.fill();

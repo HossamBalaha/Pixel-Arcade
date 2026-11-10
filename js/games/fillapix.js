@@ -1,5 +1,6 @@
 /* Fill-a-Pix — each number counts shaded neighbors; reveal the picture */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "fillapix",
     name: "Fill-a-Pix",
@@ -146,12 +147,34 @@
       });
       root.querySelector("#fp-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+            if (shaded[y][x] !== solution[y][x]) wrong.push([x, y]);
+          }
+          if (!wrong.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const pick = wrong[Math.floor(Math.random() * wrong.length)];
+          shaded[pick[1]][pick[0]] = solution[pick[1]][pick[0]];
+          AudioFX.reveal();
+          render();
+          checkWin();
+          App.toast(`💡 Hint: the cell at column ${pick[0] + 1}, row ${pick[1] + 1} ${solution[pick[1]][pick[0]] ? "is part of the picture" : "stays empty"}`, "info");
+        }
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Fill-a-Pix",

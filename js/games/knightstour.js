@@ -3,6 +3,7 @@
   "use strict";
   const MOVES = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
 
+  let live = null;
   GameRegistry.register({
     id: "knightstour", name: "Knight's Tour", icon: "♞", category: "logic",
     description: "Visit every square exactly once with chess-knight moves", tags: ["chess", "logic", "classic"],
@@ -126,10 +127,54 @@
         reset();
       });
 
+      live = {
+        hint: function () {
+          if (over) return;
+          // Warnsdorff-ordered depth-first search for a full tour from the current position (small boards — cheap)
+          const vis = visited.map(row => row.slice());
+          let budget = 200000;
+
+          function nextMove(r, c, left) {
+            if (budget-- <= 0) return null;
+            if (left === 0) return [];
+            const opts = [];
+            for (const [dr, dc] of MOVES) {
+              const nr = r + dr, nc = c + dc;
+              if (nr >= 0 && nr < N && nc >= 0 && nc < N && !vis[nr][nc]) {
+                let deg = 0;
+                for (const [er, ec] of MOVES) {
+                  const ar = nr + er, ac = nc + ec;
+                  if (ar >= 0 && ar < N && ac >= 0 && ac < N && !vis[ar][ac]) deg++;
+                }
+                opts.push({nr, nc, deg});
+              }
+            }
+            opts.sort((a, b) => a.deg - b.deg || Math.random() - 0.5);
+            for (const o of opts) {
+              vis[o.nr][o.nc] = true;
+              if (nextMove(o.nr, o.nc, left - 1)) return [o.nr, o.nc];
+              vis[o.nr][o.nc] = false;
+            }
+            return null;
+          }
+
+          const next = nextMove(pos[0], pos[1], N * N - steps);
+          if (!next || !next.length) {
+            App.toast("💡 No tour found from this position — tap ↺ Restart for a fresh route", "info");
+            return;
+          }
+          AudioFX.reveal();
+          App.toast(`💡 Hint: hop to row ${next[0] + 1}, column ${next[1] + 1} to keep the tour alive`, "info");
+        }
+      };
       reset();
       return function cleanup() {
         alive = false;
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Knight's Tour",

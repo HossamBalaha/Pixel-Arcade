@@ -130,11 +130,9 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#111";
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
-        ctx.fillStyle = bgSoft;
+        // fixed night-city scene — never follows the theme, so every element below
+        // can use fixed colors that are guaranteed to contrast
+        ctx.fillStyle = "#1e293b";
         ctx.fillRect(0, 0, W, H);
         // parallax city
         ctx.fillStyle = "rgba(120,120,150,0.16)";
@@ -164,14 +162,14 @@
         for (const o of obstacles) {
           const sx = o.x - camX;
           if (o.type === "box") {
-            ctx.fillStyle = "#b45309";
+            ctx.fillStyle = "#f59e0b";
             ctx.fillRect(sx, groundY - 28, 26, 28);
             ctx.strokeStyle = "#78350f";
             ctx.strokeRect(sx, groundY - 28, 26, 28);
           } else {
             ctx.fillStyle = "#ef4444";
             ctx.fillRect(sx, groundY - 46, 34, 7);
-            ctx.fillStyle = "#7f1d1d";
+            ctx.fillStyle = "#b91c1c";
             ctx.fillRect(sx + 14, groundY - 46, 5, 46);
           }
         }
@@ -182,19 +180,19 @@
           ctx.arc(c.x - camX, c.y, 7, 0, Math.PI * 2);
           ctx.fill();
         }
-        // runner
+        // runner — fixed amber so it pops on both the night sky and the slate road
         const rh = runner.duck && runner.onGround ? 20 : 38;
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#fbbf24";
         ctx.beginPath();
         ctx.roundRect(70 - 12, runner.y - rh, 24, rh, 5);
         ctx.fill();
-        ctx.fillStyle = text;
+        ctx.fillStyle = "#1e293b";
         ctx.beginPath();
         ctx.arc(70 + 2, runner.y - rh + 7, 5, 0, Math.PI * 2);
         ctx.fill();
         // legs animation
         if (runner.onGround) {
-          ctx.strokeStyle = accent;
+          ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 3;
           const ph = Math.sin(dist * 2.4) * 6;
           ctx.beginPath();

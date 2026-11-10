@@ -219,7 +219,7 @@
     players: "single",
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
-      let qs = [], idx = 0, score = 0, answered = false;
+      let qs = [], idx = 0, score = 0, answered = false, hintUsed = -1;
       root.innerHTML = `
         <div class="scoreboard">
           <div class="score-cell"><div class="label">Question</div><div class="val" id="hq-q">1/${PER}</div></div>
@@ -309,18 +309,52 @@
         idx = 0;
         score = 0;
         answered = false;
+        hintUsed = -1;
         root.querySelector("#hq-best").textContent = Storage.getBest("historyquiz") || "—";
         statusEl.textContent = "Pick the correct answer.";
         statusEl.className = "status info";
         render();
       }
 
-      live = {};
+      live = {
+        hint: function () {
+          if (idx >= qs.length) {
+            App.toast("💡 Round over — play again", "info");
+            return;
+          }
+          if (answered) {
+            App.toast("💡 Wait for the next question", "info");
+            return;
+          }
+          if (hintUsed === idx) {
+            App.toast("💡 Already used for this question", "info");
+            return;
+          }
+          const cur = qs[idx];
+          let removed = 0;
+          cur.opts.forEach((opt, i) => {
+            if (removed >= 2 || i === cur.a) return;
+            const b = optsEl.children[i];
+            if (b) {
+              b.style.opacity = "0.4";
+              b.style.textDecoration = "line-through";
+              b.style.pointerEvents = "none";
+            }
+            removed++;
+          });
+          hintUsed = idx;
+          AudioFX.reveal();
+          App.toast("💡 Two wrong answers eliminated", "info");
+        },
+      };
       newRound();
       return function cleanup() {
         alive = false;
         live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play History Quiz",

@@ -1,4 +1,6 @@
-/* Block Drop — simplified Tetris. Pieces drop straight down; arrange rows to clear them. */
+/* Block Drop — simplified Tetris. Pieces drop straight down; arrange rows to clear them.
+   Gravity is a variant: Classic / Relaxed (slow drop) / Blitz (fast drop) —
+   chosen in the game-header dropdown, persisted per player. */
 (function () {
   const COLS = 6, ROWS = 12;
   const PIECES = [
@@ -22,10 +24,19 @@
     difficulty: "easy",
     duration: "medium",
     players: "single",
+    variants: [
+      {key: "600", label: "Classic"},
+      {key: "900", label: "Relaxed (slow drop)"},
+      {key: "350", label: "Blitz (fast drop)"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
       let grid = [], piece = null, px = 0, py = 0, over = false, score = 0, raf = null, dropTimer = 0;
-      const DROP_MS = 600;
+      // Variant: gravity (ms per row) from the persisted choice.
+      const DROP_MS = parseInt(Storage.getVariant("tetris", "600"), 10) || 600;
+      // Best-score fairness: the default gravity keeps the legacy
+      // "tetris" best key so existing bests survive; other speeds track their own.
+      const BEST_KEY = DROP_MS === 600 ? "tetris" : "tetris:" + DROP_MS;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -47,7 +58,7 @@
         over = false;
         root.querySelector("#bt-score").textContent = 0;
         root.querySelector("#bt-lines").textContent = 0;
-        const best = Storage.getBest("tetris") || 0;
+        const best = Storage.getBest(BEST_KEY) || 0;
         root.querySelector("#bt-best").textContent = best;
         spawn();
       }
@@ -62,10 +73,10 @@
           statusEl.textContent = `💀 Game Over. Score: ${score}`;
           statusEl.className = "status lose";
           AudioFX.lose();
-          Storage.submitScore("tetris", score, {});
-          const best = Storage.getBest("tetris") || 0;
+          Storage.submitScore(BEST_KEY, score, {});
+          const best = Storage.getBest(BEST_KEY) || 0;
           if (score > best) {
-            Storage.setBest("tetris", score);
+            Storage.setBest(BEST_KEY, score);
             root.querySelector("#bt-best").textContent = score;
           }
         }

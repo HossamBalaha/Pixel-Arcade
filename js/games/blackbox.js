@@ -1,5 +1,6 @@
 /* Black Box — probe with rays to locate the hidden atoms */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "blackbox",
     name: "Black Box",
@@ -150,8 +151,8 @@
         root.querySelector("#bb-n").textContent = NUM_ATOMS;
         ctx.fillStyle = "#020617";
         ctx.fillRect(0, 0, 380, 380);
-        // grid
-        ctx.fillStyle = "#0f172a";
+        // grid — lifted off the frame so the play area reads
+        ctx.fillStyle = "#16213c";
         ctx.fillRect(OFF, OFF, N * CELL, N * CELL);
         ctx.strokeStyle = "rgba(148,163,184,0.2)";
         ctx.lineWidth = 1;
@@ -303,10 +304,41 @@
       root.querySelector("#bb-check").addEventListener("click", verify);
       root.querySelector("#bb-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          // gentlest honest hint: one cell that certainly has NO atom (prefer one with no atom adjacent either)
+          const cold = [], empty = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+            if (atoms.has(idx(x, y)) || marks.has(idx(x, y))) continue;
+            let near = false;
+            for (let dy = -1; dy <= 1 && !near; dy++) for (let dx = -1; dx <= 1; dx++) {
+              const nx = x + dx, ny = y + dy;
+              if (nx >= 0 && ny >= 0 && nx < N && ny < N && atoms.has(idx(nx, ny))) {
+                near = true;
+                break;
+              }
+            }
+            (near ? empty : cold).push([x, y]);
+          }
+          const pool = cold.length ? cold : empty;
+          if (!pool.length) {
+            if (marks.size > NUM_ATOMS) App.toast(`💡 Hint: you've marked ${marks.size} cells but only ${NUM_ATOMS} atoms hide here`, "info");
+            else App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const [x, y] = pool[Math.floor(Math.random() * pool.length)];
+          AudioFX.reveal();
+          App.toast(`💡 Hint: there is no atom at row ${y + 1}, column ${x + 1} — rule it out`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Black Box",

@@ -131,11 +131,8 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#020617";
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
-        ctx.fillStyle = bgSoft;
+        // fixed lunar space — stars, ground and buggy use fixed colors
+        ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, W, H);
         // stars
         ctx.fillStyle = "rgba(255,255,255,0.7)";
@@ -183,14 +180,14 @@
         ctx.font = "22px sans-serif";
         ctx.textAlign = "center";
         for (const r of rocks) ctx.fillText("🪨", r.x - camX, r.y);
-        // buggy
+        // buggy — fixed white body so it reads on the gray moonscape
         ctx.save();
         ctx.translate(60, buggy.y - 8);
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#f8fafc";
         ctx.beginPath();
         ctx.roundRect(-22, -12, 44, 14, 4);
         ctx.fill();
-        ctx.fillStyle = "#93c5fd";
+        ctx.fillStyle = "#1e3a8a";
         ctx.beginPath();
         ctx.roundRect(-10, -22, 20, 12, 4);
         ctx.fill();

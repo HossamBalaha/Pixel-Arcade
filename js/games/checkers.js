@@ -161,16 +161,49 @@
       }
 
       root.innerHTML = `
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="difficulty" id="ck-mode">
+            <button class="diff-btn active" data-m="ai">vs AI</button>
+            <button class="diff-btn" data-m="2p">2P</button>
+          </div>
+          <button class="diff-btn" id="ck-pass" title="Show a privacy screen between turns when playing 2P">🙈 Pass: ON</button>
+        </div>
         <div class="status info" id="ck-status">Your turn (Red)</div>
         <div class="scoreboard">
-          <div class="score-cell"><div class="label">Red (You)</div><div class="val" id="ck-p">0</div></div>
-          <div class="score-cell"><div class="label">Black (AI)</div><div class="val" id="ck-a">0</div></div>
+          <div class="score-cell"><div class="label" id="ck-p-label">Red (You)</div><div class="val" id="ck-p">0</div></div>
+          <div class="score-cell"><div class="label" id="ck-a-label">Black (AI)</div><div class="val" id="ck-a">0</div></div>
         </div>
         <div class="center"><div id="ck-board" style="display:grid;grid-template-columns:repeat(8,40px);grid-template-rows:repeat(8,40px);gap:2px;background:var(--border);padding:2px;border-radius:var(--radius-sm);"></div></div>
         <p class="hint">Click a red piece, then a destination. Jumps are forced. Kings move both ways.</p>
       `;
       const boardEl = root.querySelector("#ck-board");
       const statusEl = root.querySelector("#ck-status");
+      // 2P hot-seat mode + pass-screen pref.
+      let mode = "ai";
+      let passOn = Storage.getPassPlay("checkers", true);
+      const passBtn = root.querySelector("#ck-pass");
+      const syncPassBtn = () => {
+        passBtn.textContent = "🙈 Pass: " + (passOn ? "ON" : "OFF");
+        passBtn.classList.toggle("active", passOn);
+      };
+      syncPassBtn();
+      passBtn.addEventListener("click", () => {
+        passOn = !passOn;
+        Storage.setPassPlay("checkers", passOn);
+        syncPassBtn();
+        AudioFX.click();
+      });
+      root.querySelectorAll("#ck-mode .diff-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          root.querySelectorAll("#ck-mode .diff-btn").forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          mode = btn.dataset.m;
+          AudioFX.click();
+          root.querySelector("#ck-a-label").textContent = mode === "2p" ? "Black (P2)" : "Black (AI)";
+          root.querySelector("#ck-p-label").textContent = mode === "2p" ? "Red (P1)" : "Red (You)";
+          newGame();
+        });
+      });
 
       function newGame() {
         b = startBoard();
@@ -189,7 +222,8 @@
 
       function render() {
         boardEl.innerHTML = "";
-        const moves = turn === "P" && !over ? allMoves(b, "P") : [];
+        const humanTurn = !over && (mode === "2p" || turn === "P");
+        const moves = humanTurn ? allMoves(b, turn) : [];
         const selMoves = sel ? moves.filter(m => m.from[0] === sel[0] && m.from[1] === sel[1]) : [];
         for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
           const cell = document.createElement("div");
@@ -229,16 +263,18 @@
       }
 
       function onCell(r, c) {
-        if (over || turn !== "P") return;
+        if (over) return;
+        if (mode === "ai" && turn !== "P") return;
         const p = b[r][c];
-        if (p && isPlayer(p)) {
+        const ownPiece = p && (turn === "P" ? isPlayer(p) : isAI(p));
+        if (ownPiece) {
           sel = [r, c];
           AudioFX.click();
           render();
           return;
         }
         if (!sel) return;
-        const moves = allMoves(b, "P");
+        const moves = allMoves(b, turn);
         const m = moves.find(mv => mv.from[0] === sel[0] && mv.from[1] === sel[1] && mv.to[0] === r && mv.to[1] === c);
         if (!m) {
           sel = null;
@@ -249,11 +285,18 @@
         AudioFX.place();
         sel = null;
         hl = null;
-        if (checkEnd("P")) return;
-        turn = "A";
-        setStatus("AI thinking…");
-        render();
-        later(aiTurn, 500);
+        if (checkEnd(turn)) return;
+        turn = turn === "P" ? "A" : "P";
+        if (mode === "ai") {
+          setStatus("AI thinking…");
+          render();
+          later(aiTurn, 500);
+        } else {
+          const label = turn === "P" ? "Red (P1)" : "Black (P2)";
+          setStatus(label + " — your move");
+          render();
+          if (passOn) App.passTurn(label);
+        }
       }
 
       function aiTurn() {
@@ -279,13 +322,13 @@
           over = true;
           if (side === "P") {
             scores.P++;
-            setStatus("🎉 You win!", "win");
+            setStatus(mode === "2p" ? "🎉 Red (P1) wins!" : "🎉 You win!", "win");
             AudioFX.win();
             Storage.submitScore("checkers", (Storage.getBest("checkers") || 0) + 1);
           } else {
             scores.A++;
-            setStatus("AI wins 💀", "lose");
-            AudioFX.lose();
+            setStatus(mode === "2p" ? "🎉 Black (P2) wins!" : "AI wins 💀", mode === "2p" ? "win" : "lose");
+            AudioFX.win();
           }
           render();
           return true;

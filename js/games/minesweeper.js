@@ -1,4 +1,6 @@
-/* Minesweeper — classic grid puzzle. Flag mines, reveal numbers, clear all safe cells */
+/* Minesweeper — classic grid puzzle. Flag mines, reveal numbers, clear all safe cells.
+   Board size / mine count is a variant: Easy 9×9 / Med 12×12 / Hard 16×14 —
+   chosen in the game-header dropdown, persisted per player. */
 (function () {
   const LEVELS = {
     easy: {rows: 9, cols: 9, mines: 10},
@@ -47,18 +49,24 @@
     category: "logic",
     description: "Clear the board without detonating any mines",
     tags: ["puzzle", "classic", "popular"],
+    variants: [
+      {key: "easy", label: "Easy 9×9"},
+      {key: "medium", label: "Medium 12×12"},
+      {key: "hard", label: "Hard 16×14"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
-      let level = "easy";
+      // Variant: starting board size from the persisted choice.
+      let level = Storage.getVariant("minesweeper", "easy") || "easy";
       let b, started, over, flags, revealed, total, time, timerInterval;
       let hintsUsed = 0;
 
       root.innerHTML = `
         <div class="row" style="justify-content:center;">
           <div class="difficulty" id="mw-diff">
-            <button class="diff-btn active" data-l="easy">Easy 9×9</button>
-            <button class="diff-btn" data-l="medium">Med 12×12</button>
-            <button class="diff-btn" data-l="hard">Hard 16×14</button>
+            <button class="diff-btn ${level === "easy" ? "active" : ""}" data-l="easy">Easy 9×9</button>
+            <button class="diff-btn ${level === "medium" ? "active" : ""}" data-l="medium">Med 12×12</button>
+            <button class="diff-btn ${level === "hard" ? "active" : ""}" data-l="hard">Hard 16×14</button>
           </div>
         </div>
         <div class="scoreboard">

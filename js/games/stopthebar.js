@@ -91,8 +91,8 @@
       function draw() {
         g.fillStyle = "#020617";
         g.fillRect(0, 0, W, 96);
-        // track
-        g.fillStyle = "#1e293b";
+        // track — lifted off the night bg
+        g.fillStyle = "#243353";
         g.fillRect(20, 34, W - 40, 28);
         // zone
         g.fillStyle = over ? "#166534" : "#22c55e";

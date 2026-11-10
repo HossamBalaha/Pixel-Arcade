@@ -1,5 +1,6 @@
 /* Kakurasu — shade cells so row and column weights add up */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "kakurasu",
     name: "Kakurasu",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 7;
-      let rowClues, colClues, shaded, solvedCount, best;
+      let rowClues, colClues, shaded, solvedCount, best, solGrid;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -66,6 +67,7 @@
           colClues.push(s);
         }
         shaded = Array.from({length: N}, () => Array(N).fill(false));
+        solGrid = sol;
         render();
         statusEl.textContent = "Rows sum their column weights, columns sum their row weights";
         statusEl.className = "status info";
@@ -185,12 +187,45 @@
       });
       root.querySelector("#kk-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          const cur = current();
+          if (cur.rows.every((v, i) => v === rowClues[i]) && cur.cols.every((v, i) => v === colClues[i])) {
+            App.toast("The sums already match — press ✔ Check 💡", "info");
+            return;
+          }
+          const missing = [], extra = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+            if (solGrid[y][x] && !shaded[y][x]) missing.push([x, y]);
+            if (!solGrid[y][x] && shaded[y][x]) extra.push([x, y]);
+          }
+          if (missing.length) {
+            const [x, y] = missing[Math.floor(Math.random() * missing.length)];
+            shaded[y][x] = true;
+            AudioFX.reveal();
+            render();
+            App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} should be shaded`, "info");
+          } else if (extra.length) {
+            const [x, y] = extra[Math.floor(Math.random() * extra.length)];
+            shaded[y][x] = false;
+            AudioFX.reveal();
+            render();
+            App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} should stay empty`, "info");
+          } else {
+            App.toast("Nothing more to reveal 💡", "info");
+          }
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Kakurasu",

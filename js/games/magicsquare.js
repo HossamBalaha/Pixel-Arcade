@@ -179,7 +179,42 @@
         statusEl.className = "status lose";
       }
 
-      live = {solve: doSolve};
+      live = {
+        solve: doSolve,
+        hint: function () {
+          // solutions consistent with every number placed so far
+          const fits = SOLUTIONS.filter(s => s.every((row, r) => row.every((v, c) => grid[r][c] === null || grid[r][c] === v)));
+          if (!fits.length) {
+            // find a placed number that no solution agrees with (keeping the others fixed)
+            for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+              if (grid[r][c] === null) continue;
+              const others = SOLUTIONS.filter(s => s.every((row, rr) => row.every((v, cc) => (rr === r && cc === c) || grid[rr][cc] === null || grid[rr][cc] === v)));
+              if (others.length && !others.some(s => s[r][c] === grid[r][c])) {
+                AudioFX.reveal();
+                App.toast(`💡 Hint: the ${grid[r][c]} at row ${r + 1}, column ${c + 1} can't be right — send it back`, "info");
+                return;
+              }
+            }
+            App.toast("💡 Hint: a placed number doesn't fit any magic square — send one back", "info");
+            return;
+          }
+          const empties = [];
+          for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) if (grid[r][c] === null) empties.push([r, c]);
+          if (!empties.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const sol = fits[Math.floor(Math.random() * fits.length)];
+          const [r, c] = empties[Math.floor(Math.random() * empties.length)];
+          const v = sol[r][c];
+          grid[r][c] = v;
+          tray = tray.filter(x => x !== v);
+          if (sel === v) sel = null;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${r + 1}, column ${c + 1} is ${v}`, "info");
+        }
+      };
       newGame();
       return function cleanup() {
         alive = false;
@@ -189,6 +224,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Magic Square",

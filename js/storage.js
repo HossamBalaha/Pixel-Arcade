@@ -29,9 +29,51 @@
     PLAYTIME: NS + "playtime",    // { gameId: seconds } — cumulative play time
     EVENTS: NS + "events",        // { shared: n, themeChanged: n, paletteUsed: n, ... } — one-off UI event counters
     CUSTOM_THEME: NS + "custom-theme", // user-built theme { accent, base, font }
+    DAILY: NS + "daily",          // { date: "YYYY-MM-DD", gameId, done, won, history: { "YYYY-MM-DD": true } }
+    VARIANT: NS + "variant",      // { gameId: <key> } — per-game difficulty/variant choice
+    PASSPLAY: NS + "passplay",    // { gameId: bool } — pass-and-play screen enabled per hot-seat game
+    LAST_BACKUP: NS + "last-backup", // ms timestamp of the last successful export
+    SCHEMA: NS + "schema",        // integer — storage schema version for migrations
   };
   const RECENT_MAX = 20;
   const WEEKLY_DAYS = 7;
+  const SCHEMA_VERSION = 3;
+
+  // ---------- Schema migrations ----------
+  // Runs once at load. Each step upgrades the stored data one version.
+  // Keep steps idempotent — they may re-run after a failed write.
+  const MIGRATIONS = {
+    // v1 → v2: plays entries gained a `score` field (already optional — nothing to do,
+    // recorded for history). Best-scores stayed compatible.
+    2: function () {
+    },
+    // v2 → v3: streak object gained a `dailyHistory` map used by the Daily Challenge
+    // streak counter. Existing streaks keep counting overall play days.
+    3: function () {
+      const s = get(KEYS.STREAK, {current: 0, longest: 0, lastDay: null});
+      if (!Array.isArray(s.dailyHistory)) s.dailyHistory = {};
+      set(KEYS.STREAK, s);
+      // Daily-challenge state introduced in v3 — nothing to carry over.
+      set(KEYS.DAILY, {date: null, gameId: null, done: false, won: false, history: {}});
+    },
+  };
+
+  function migrate() {
+    let v = get(KEYS.SCHEMA, 0);
+    if (v >= SCHEMA_VERSION) return;
+    for (let step = v + 1; step <= SCHEMA_VERSION; step++) {
+      if (MIGRATIONS[step]) {
+        try {
+          MIGRATIONS[step]();
+        } catch (e) {
+          console.warn("migration step", step, "failed", e);
+        }
+      }
+    }
+    set(KEYS.SCHEMA, SCHEMA_VERSION);
+  }
+
+  migrate();
 
   // Build the per-game state key (kept inside Storage so we can list/clear later).
   function stateKey(gameId) {
@@ -415,6 +457,86 @@
       return ids;
     },
 
+    // ---------- Daily Challenge ----------
+    // One deterministic game per calendar day. `history` maps dayKey → true
+    // for every day the daily was completed — powers the streak counter.
+    getDaily() {
+      return Object.assign({date: null, gameId: null, done: false, won: false, history: {}}, get(KEYS.DAILY, {}));
+    },
+    setDaily(patch) {
+      set(KEYS.DAILY, Object.assign(Storage.getDaily(), patch));
+    },
+    // Register today's daily result. Returns the new daily streak.
+    completeDaily(won) {
+      const d = Storage.getDaily();
+      const today = dayKey();
+      if (d.date !== today || !d.done) {
+        d.date = today;
+        d.done = true;
+        d.won = !!won;
+        d.history[today] = true;
+        Storage.setDaily(d);
+      }
+      return Storage.getDailyStreak();
+    },
+    // Consecutive days (ending today or yesterday) with a completed daily.
+    getDailyStreak() {
+      const d = Storage.getDaily();
+      const hist = d.history || {};
+      let streak = 0;
+      let day = new Date();
+      // A streak survives if yesterday's daily was done but today's isn't yet.
+      if (!hist[dayKey(day)]) day = new Date(Date.now() - 86400000);
+      while (hist[dayKey(day)]) {
+        streak++;
+        day = new Date(day.getTime() - 86400000);
+      }
+      return streak;
+    },
+
+    // ---------- Per-game variant (difficulty) prefs ----------
+    getVariant(id, fallback) {
+      const v = get(KEYS.VARIANT, {});
+      return (id in v) ? v[id] : (fallback ?? null);
+    },
+    setVariant(id, key) {
+      const v = get(KEYS.VARIANT, {});
+      v[id] = key;
+      set(KEYS.VARIANT, v);
+    },
+
+    // ---------- Pass-and-play screen prefs ----------
+    getPassPlay(id, fallback) {
+      const v = get(KEYS.PASSPLAY, {});
+      return (id in v) ? !!v[id] : !!fallback;
+    },
+    setPassPlay(id, on) {
+      const v = get(KEYS.PASSPLAY, {});
+      v[id] = !!on;
+      set(KEYS.PASSPLAY, v);
+    },
+
+    // ---------- Backup health ----------
+    markBackup() {
+      set(KEYS.LAST_BACKUP, Date.now());
+    },
+    getBackupAgeDays() {
+      const ts = get(KEYS.LAST_BACKUP, null);
+      if (!ts) return null;
+      return Math.floor((Date.now() - ts) / 86400000);
+    },
+
+    // ---------- Score percentiles ----------
+    // Percentage of this game's past scores that `score` beats (strictly).
+    // Returns null when there isn't enough history to be meaningful.
+    getScorePercentile(id, score) {
+      if (typeof score !== "number" || !isFinite(score)) return null;
+      const plays = Storage.getPlaysFor(id).filter(p => typeof p.score === "number");
+      if (plays.length < 3) return null;
+      const lower = plays.filter(p => p.score < score).length;
+      return Math.round((lower / plays.length) * 100);
+    },
+
     // ---------- Export / import all user data ----------
     // Bundles favorites, bests, recent, plays, stats, streak, achievements,
     // hidden, a11y settings, theme/mode/sound, plus any saved game states —
@@ -445,6 +567,8 @@
         playtime: Storage.getPlaytime(),
         events: Storage.getEvents(),
         customTheme: Storage.getCustomTheme(),
+        // daily-challenge progress for streak continuity across devices.
+        daily: Storage.getDaily(),
       };
     },
     importData(data) {
@@ -472,11 +596,78 @@
         }
       }
     },
+    // Merge a backup into the current data instead of replacing it.
+    // Numeric aggregates take the max, lists are unioned, play logs are
+    // concatenated + de-duplicated by timestamp. Theme-ish keys (theme,
+    // mode, sound, a11y, customTheme) keep the LOCAL values.
+    importDataMerge(data) {
+      if (!data || data.version !== 2) throw new Error("Incompatible backup version");
+      const union = (a, b) => Array.from(new Set([...(a || []), ...(b || [])]));
+      // Favorites + hidden: union
+      set(KEYS.FAVS, union(Storage.getFavorites(), data.favorites));
+      set(KEYS.HIDDEN, union(Storage.getHidden(), data.hidden));
+      // Bests: keep the better score per game (respect lower-better games by
+      // keeping whichever value exists per key when only one side has it, and
+      // the max otherwise — bests are "higher is better" for the vast majority,
+      // and merging max never *loses* data).
+      const bests = Storage.getBests();
+      for (const id in (data.bests || {})) {
+        if (!(id in bests) || data.bests[id] > bests[id]) bests[id] = data.bests[id];
+      }
+      set(KEYS.BESTS, bests);
+      // Recent: union, imported entries appended after local ones
+      const recent = Storage.getRecent();
+      set(KEYS.RECENT, recent.concat((data.recent || []).filter(x => !recent.includes(x))).slice(0, RECENT_MAX));
+      // Plays: concat per game + dedupe by ts
+      const plays = Storage.getPlays();
+      for (const id in (data.plays || {})) {
+        const mine = plays[id] || [];
+        const seen = new Set(mine.map(p => p.ts));
+        const theirs = (data.plays[id] || []).filter(p => !seen.has(p.ts));
+        plays[id] = mine.concat(theirs).sort((a, b) => a.ts - b.ts).slice(-200);
+      }
+      set(KEYS.PLAYS, plays);
+      // Stats: take the max of each counter, merge the maps with max per key
+      const s = Storage.getStats();
+      const d = data.stats || {};
+      ["totalPlays", "totalWins"].forEach(k => {
+        s[k] = Math.max(s[k] || 0, d[k] || 0);
+      });
+      if (d.firstPlayTs && (!s.firstPlayTs || d.firstPlayTs < s.firstPlayTs)) s.firstPlayTs = d.firstPlayTs;
+      ["categoriesPlayed", "gamesPlayed"].forEach(k => {
+        s[k] = s[k] || {};
+        for (const kk in (d[k] || {})) s[k][kk] = Math.max(s[k][kk] || 0, d[k][kk]);
+      });
+      set(KEYS.STATS, s);
+      // Playtime: max per game (additive would double-count shared sessions)
+      const pt = Storage.getPlaytime();
+      for (const id in (data.playtime || {})) {
+        pt[id] = Math.max(pt[id] || 0, data.playtime[id] || 0);
+      }
+      set(KEYS.PLAYTIME, pt);
+      // Achievements + events: union / max
+      set(KEYS.ACHV, union(Storage.getAchievements(), data.achievements));
+      const ev = Storage.getEvents();
+      for (const k in (data.events || {})) ev[k] = Math.max(ev[k] || 0, data.events[k]);
+      set(KEYS.EVENTS, ev);
+      // Streak: keep whichever streak object is further along
+      const mineS = Storage.getStreak(), theirS = data.streak || {};
+      if ((theirS.longest || 0) > (mineS.longest || 0)) set(KEYS.STREAK, theirS);
+      // Game states: keep local, import any game the local set lacks
+      const gs = data.gameStates || {};
+      Storage.listGameStateIds().forEach(id => delete gs[id]);
+      for (const id in gs) if (gs[id] != null) set(stateKey(id), gs[id]);
+      // Daily-challenge history: union of day keys
+      const daily = Storage.getDaily();
+      const dd = data.daily || {};
+      daily.history = Object.assign({}, dd.history || {}, daily.history || {});
+      set(KEYS.DAILY, daily);
+    },
     // Wipe everything (used by "reset all data" button)
     wipeAll() {
       [KEYS.FAVS, KEYS.BESTS, KEYS.RECENT, KEYS.PLAYS, KEYS.STATS,
         KEYS.STREAK, KEYS.ACHV, KEYS.HIDDEN, KEYS.WEEKLY, KEYS.INSTALL_DISMISS,
-        KEYS.PLAYTIME, KEYS.EVENTS].forEach(remove);
+        KEYS.PLAYTIME, KEYS.EVENTS, KEYS.DAILY, KEYS.VARIANT, KEYS.PASSPLAY].forEach(remove);
       // Also drop any saved game states.
       Storage.listGameStateIds().forEach(id => remove(stateKey(id)));
     },

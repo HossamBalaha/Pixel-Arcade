@@ -1,6 +1,7 @@
 /* montyhall — three doors, one car, a host who knows; switch or stay? */
 (function () {
   "use strict";
+  let live = null;
   GameRegistry.register({
     id: "montyhall", name: "Monty Hall", icon: "🚪", category: "logic",
     description: "Three doors, one goat-free car — is switching worth it?", tags: ["probability", "classic", "brain"],
@@ -121,10 +122,20 @@
       root.querySelector("#mh-switch").addEventListener("click", () => decide(true));
       root.querySelector("#mh-stay").addEventListener("click", () => decide(false));
 
+      live = {
+        hint: function () {
+          AudioFX.reveal();
+          App.toast("💡 After the reveal, the car is behind the other door 2 out of 3 times — switching doubles your odds!", "info");
+        }
+      };
       newRound();
       return function cleanup() {
         alive = false;
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("The Monty Hall problem",

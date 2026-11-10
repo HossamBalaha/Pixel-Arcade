@@ -1,5 +1,6 @@
 /* Sukoro — every cell tells how many numbered neighbors it has */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "sukoro",
     name: "Sukoro",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 7;
-      let nums, given, solvedCount, best, sel;
+      let nums, given, target, solvedCount, best, sel;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -71,6 +72,7 @@
             grid[y][x] = c || 0; // if count drops to 0, cell must empty
           }
         }
+        target = grid;
         // givens: keep ~45% of numbered cells
         given = grid.map(r => r.map(v => Math.random() < 0.45 ? v : 0));
         // player state: numbers visible only where given; empties as "filled" (unknown)
@@ -141,13 +143,33 @@
       document.addEventListener("keydown", onKey);
       root.querySelector("#sk2-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!target) return;
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!given[y][x] && nums[y][x] !== target[y][x]) wrong.push([x, y]);
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [x, y] = wrong[Math.floor(Math.random() * wrong.length)];
+          nums[y][x] = target[y][x];
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} ${target[y][x] ? "should hold " + target[y][x] : "should stay blank"}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
         document.removeEventListener("keydown", onKey);
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Sukoro",

@@ -209,6 +209,7 @@
             if (!alive) return;
             aiTurn();
           }, 500);
+          else if (mode === "2p" && passOn) App.passTurn(current === P1 ? "Red (P1)" : "Yellow (P2)");
         } else render(placedRow, c);
       }
 
@@ -260,6 +261,23 @@
         scores = {P1: 0, P2: 0, draw: 0};
         newGame();
       }));
+      // Pass-and-play curtain — optional privacy screen between 2P turns.
+      let passOn = Storage.getPassPlay("connect4", false); // fast turns: opt-in
+      const passBtn = document.createElement("button");
+      passBtn.className = "diff-btn";
+      passBtn.title = "Show a privacy screen between turns when playing 2P";
+      const syncPassBtn = () => {
+        passBtn.textContent = "🙈 Pass: " + (passOn ? "ON" : "OFF");
+        passBtn.classList.toggle("active", passOn);
+      };
+      syncPassBtn();
+      passBtn.addEventListener("click", () => {
+        passOn = !passOn;
+        Storage.setPassPlay("connect4", passOn);
+        syncPassBtn();
+        AudioFX.click();
+      });
+      root.querySelector("#c4-mode").appendChild(passBtn);
       root.querySelectorAll("#c4-diff .diff-btn").forEach(btn => btn.addEventListener("click", () => {
         AudioFX.click();
         root.querySelectorAll("#c4-diff .diff-btn").forEach(x => x.classList.remove("active"));

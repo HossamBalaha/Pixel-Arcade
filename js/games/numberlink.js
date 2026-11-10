@@ -3,8 +3,13 @@
   // Pre-baked puzzle: pairs of endpoints (same label), paths must connect them.
   const PUZZLES = [{
     "N": 5,
-    "endpoints": {"1": [[2, 4], [3, 3]], "2": [[3, 4], [2, 2]], "3": [[2, 1], [0, 2]]}
-  }, {"N": 5, "endpoints": {"1": [[2, 2], [1, 3]], "2": [[1, 2], [4, 0]], "3": [[4, 1], [4, 4]]}}];
+    "endpoints": {"1": [[2, 4], [3, 3]], "2": [[3, 4], [2, 2]], "3": [[2, 1], [0, 2]]},
+    "sol": [["3", "3", "3", "1", "1"], ["3", "3", "3", "1", "1"], ["3", "3", "2", "1", "1"], ["3", "3", "2", "1", "2"], ["3", "3", "2", "2", "2"]]
+  }, {
+    "N": 5,
+    "endpoints": {"1": [[2, 2], [1, 3]], "2": [[1, 2], [4, 0]], "3": [[4, 1], [4, 4]]},
+    "sol": [["2", "2", "2", "2", "2"], ["2", "2", "2", "1", "2"], ["2", "2", "1", "1", "2"], ["2", "2", "2", "2", "2"], ["2", "3", "3", "3", "3"]]
+  }];
   let live = null;
   GameRegistry.register({
     id: "numberlink",
@@ -203,6 +208,59 @@
         newGame();
       });
       live = {
+        hint: function () {
+          if (over) return;
+          const N = puzzle.N;
+          const labels = Object.keys(puzzle.endpoints);
+          // find labels whose two endpoints aren't connected yet
+          const todo = labels.filter(L => {
+            const [a, b] = puzzle.endpoints[L];
+            const seen = new Set([`${a[0]},${a[1]}`]);
+            const q = [[a[0], a[1]]];
+            while (q.length) {
+              const [r, c] = q.shift();
+              if (r === b[0] && c === b[1]) return false;
+              for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+                const rr = r + dr, cc = c + dc, key = `${rr},${cc}`;
+                if (rr < 0 || cc < 0 || rr >= N || cc >= N || seen.has(key)) continue;
+                const v = cells[rr][cc];
+                if (v === L || (v && typeof v === "object" && v.label === L)) {
+                  seen.add(key);
+                  q.push([rr, cc]);
+                }
+              }
+            }
+            return true;
+          });
+          if (!todo.length) {
+            App.toast("All pairs are connected — fill the remaining cells 💡", "info");
+            return;
+          }
+          // reveal one empty solution cell of an unfinished path, preferring one next to that path
+          const near = [], far = [];
+          for (const L of todo) {
+            for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+              if (puzzle.sol[r][c] !== L || cells[r][c] !== 0) continue;
+              const touches = [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dr, dc]) => {
+                const rr = r + dr, cc = c + dc;
+                if (rr < 0 || cc < 0 || rr >= N || cc >= N) return false;
+                const v = cells[rr][cc];
+                return v === L || (v && typeof v === "object" && v.label === L);
+              });
+              (touches ? near : far).push([r, c, L]);
+            }
+          }
+          const pool = near.length ? near : far;
+          if (!pool.length) {
+            App.toast("Some paths sit on wrong cells — try redrawing them 💡", "info");
+            return;
+          }
+          const pick = pool[Math.floor(Math.random() * pool.length)];
+          cells[pick[0]][pick[1]] = {label: pick[2]};
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: marked a cell that belongs to path ${pick[2]}`, "info");
+        },
         solve: function () {
           // Reveal by clearing paths but keeping endpoints
           newGame();
@@ -222,6 +280,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Number Link",

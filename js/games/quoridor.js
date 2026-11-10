@@ -277,7 +277,7 @@
 
       function render() {
         updateHud();
-        ctx.fillStyle = "#78350f";
+        ctx.fillStyle = "#8a5a24";
         ctx.fillRect(0, 0, 396, 396);
         for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
           ctx.fillStyle = (x + y) % 2 ? "#d9b382" : "#e7c795";

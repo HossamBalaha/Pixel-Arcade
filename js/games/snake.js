@@ -1,4 +1,6 @@
-/* Snake — eat food, grow, don't hit the walls or yourself */
+/* Snake — eat food, grow, don't hit the walls or yourself.
+   Speed is a variant: Chill (slow) / Classic / Fast — chosen in the
+   game-header dropdown, persisted per player. */
 (function () {
   GameRegistry.register({
     id: "snake",
@@ -7,10 +9,19 @@
     category: "arcade",
     description: "Eat food, grow longer — don't crash",
     tags: ["arcade", "classic", "keyboard"],
+    variants: [
+      {key: "medium", label: "Classic"},
+      {key: "easy", label: "Chill (slow)"},
+      {key: "hard", label: "Fast (blitz)"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       const SIZE = 17;
       const SPEEDS = {easy: 180, medium: 120, hard: 80};
-      let level = "medium";
+      // Variant: snake speed from the persisted choice.
+      let level = Storage.getVariant("snake", "medium") || "medium";
+      // Best-score fairness: the default speed keeps the legacy "snake"
+      // best key so existing bests survive; other speeds track their own bests.
+      const BEST_KEY = level === "medium" ? "snake" : "snake:" + level;
       let snake, dir, nextDir, food, score, best, over, loop, speed;
 
       function reset() {
@@ -53,7 +64,7 @@
       const canvas = root.querySelector("#sn-canvas");
       const ctx = canvas.getContext("2d");
       const statusEl = root.querySelector("#sn-status");
-      best = Storage.getBest("snake") || 0;
+      best = Storage.getBest(BEST_KEY) || 0;
 
       function placeFood() {
         while (true) {
@@ -90,7 +101,7 @@
         AudioFX.lose();
         if (score > best) {
           best = score;
-          Storage.setBest("snake", score);
+          Storage.setBest(BEST_KEY, score);
           App.toast("New best: " + score, "success");
         }
         render();
@@ -130,7 +141,7 @@
         if (over) {
           ctx.fillStyle = "rgba(0,0,0,0.6)";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#fff";
           ctx.font = "bold 24px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 10);

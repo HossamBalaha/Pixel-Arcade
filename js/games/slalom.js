@@ -37,18 +37,24 @@
         crashed = false;
         gates = [];
         trees = [];
-        for (let i = 0; i < 8; i++) addGate(i);
+        for (let i = 0; i < 8; i++) addGate();
         updateHud();
         statusEl.textContent = "Ski with ← → — pass gates on the side of the red pole";
         statusEl.className = "status info";
       }
 
-      function addGate(i) {
-        const side = gates.length % 2 === 0 ? 1 : -1; // alternate required side
+      function addGate() {
+        // Stack each new gate 130px above the current topmost gate (screen
+        // space — the array scrolls with the world, so this stays correct no
+        // matter how far the run has gone). Side alternates from the LAST
+        // gate's side; deriving it from gates.length broke alternation once
+        // old gates started filtering out.
+        const side = gates.length ? -gates[gates.length - 1].side : 1;
+        const y = gates.length ? gates[gates.length - 1].y - 130 : -60;
         const cx = W / 2 + side * (35 + Math.random() * 60);
-        gates.push({y: -i * 130 - 60, cx, side, passed: false, flash: 0});
+        gates.push({y, cx, side, passed: false, flash: 0});
         if (Math.random() < 0.55) {
-          trees.push({x: 30 + Math.random() * (W - 60), y: -i * 130 - 115});
+          trees.push({x: 30 + Math.random() * (W - 60), y: y - 55});
         }
       }
 
@@ -70,7 +76,7 @@
           for (const t of trees) t.y += speed;
           gates = gates.filter(g => g.y < H + 80);
           trees = trees.filter(t => t.y < H + 40);
-          while (gates.length < 8) addGate(gates.length + 8);
+          while (gates.length < 8) addGate();
           // gate pass check at player line
           for (const g of gates) {
             if (!g.passed && g.y + 10 >= H - 70 && g.y - 10 <= H - 70) {
@@ -114,13 +120,8 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#eef";
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const accent2 = st.getPropertyValue("--accent-2").trim() || "#ec4899";
-        const text = st.getPropertyValue("--text").trim() || "#222";
-        // snow
-        ctx.fillStyle = bgSoft;
+        // fixed snowfield — trees, gates and skier use fixed colors that pop on white
+        ctx.fillStyle = "#e2e8f0";
         ctx.fillRect(0, 0, W, H);
         // slope piste lines (moving)
         ctx.strokeStyle = "rgba(128,128,160,0.25)";
@@ -147,23 +148,23 @@
         // gates: blue + red pole pair
         for (const g of gates) {
           ctx.fillStyle = "#2563eb";
-          ctx.fillRect(g.cx + (g.side === 1 ? -60 : 26), g.y - 14, 6, 34);
+          ctx.fillRect(g.cx + (g.side === 1 ? -60 : 60), g.y - 14, 6, 34);
           ctx.fillStyle = g.flash > 0 ? "#22c55e" : "#dc2626";
           ctx.fillRect(g.cx - 3, g.y - 16, 6, 38);
           if (g.flash > 0) g.flash--;
         }
-        // player
+        // skier — fixed dark silhouette on the fixed snow
         ctx.save();
         ctx.translate(px, H - 70);
         ctx.rotate(vx * 0.04);
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#0f172a";
         ctx.beginPath();
         ctx.moveTo(0, -12);
         ctx.lineTo(-9, 12);
         ctx.lineTo(9, 12);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = text;
+        ctx.fillStyle = "#e2e8f0";
         ctx.beginPath();
         ctx.arc(0, -8, 4, 0, Math.PI * 2);
         ctx.fill();

@@ -1,5 +1,6 @@
 /* Matchsticks — move or remove matches to fix the equation */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "matchsticks",
     name: "Matchsticks",
@@ -279,11 +280,68 @@
       });
       let curIdx = 0;
 
+      live = {
+        hint: function () {
+          if (won) return;
+          const segNames = ["top", "top-right", "bottom-right", "bottom", "bottom-left", "top-left", "middle"];
+          const ords = ["1st", "2nd", "3rd"];
+          const slots = [];
+          symbols.forEach((s, i) => {
+            if (s.segs) slots.push(i);
+          });
+          const opSym = symbols.find(s => s.ch === "+" || s.ch === "-");
+          if (slots.length !== 3 || !opSym) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          // nearest true equation reachable by moving matches (each move = take one, place one)
+          let target = null, targetDist = Infinity;
+          for (let a = 0; a <= 9; a++) for (let b = 0; b <= 9; b++) {
+            const c = opSym.ch === "+" ? a + b : a - b;
+            if (c < 0 || c > 9) continue;
+            const want = [SEGS[String(a)], SEGS[String(b)], SEGS[String(c)]];
+            let rem = 0, add = 0;
+            for (let k = 0; k < 3; k++) {
+              const cur = symbols[slots[k]].segs;
+              for (let si = 0; si < 7; si++) {
+                if (cur[si] === 1 && want[k][si] === 0) rem++;
+                else if (cur[si] === 0 && want[k][si] === 1) add++;
+              }
+            }
+            const dist = (rem + add) / 2;
+            if (rem === add && dist > 0 && dist < targetDist) {
+              targetDist = dist;
+              target = want;
+            }
+          }
+          if (!target) {
+            App.toast("💡 Hint: no clean fix from this position — try ↻ Reset", "info");
+            return;
+          }
+          // reveal ONE match that has to move
+          for (let k = 0; k < 3; k++) {
+            const cur = symbols[slots[k]].segs;
+            for (let si = 0; si < 7; si++) {
+              if (cur[si] === 1 && target[k][si] === 0) {
+                AudioFX.reveal();
+                App.toast(`💡 Hint: the ${segNames[si]} match of the ${ords[k]} digit needs to move`, "info");
+                return;
+              }
+            }
+          }
+          App.toast("Nothing more to reveal 💡", "info");
+        },
+      };
+
       curIdx = Math.floor(Math.random() * PUZZLES.length);
       load(PUZZLES[curIdx]);
       return function cleanup() {
         __t.forEach(clearTimeout);
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Matchsticks",

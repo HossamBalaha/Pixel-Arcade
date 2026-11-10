@@ -43,6 +43,7 @@
     return all;
   }
 
+  let live = null;
   GameRegistry.register({
     id: "wordhunt",
     name: "Word Hunt",
@@ -218,12 +219,29 @@
       }
 
       document.addEventListener("keydown", onKey);
+      live = {
+        hint: function () {
+          if (time <= 0) return;
+          const remaining = allWords.filter(w => !found.has(w.toUpperCase()));
+          if (!remaining.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const w = remaining[Math.floor(Math.random() * remaining.length)];
+          AudioFX.reveal();
+          App.toast(`💡 There's a ${w.length}-letter word starting with ${w[0].toUpperCase()}…`, "info");
+        }
+      };
       newGame();
       return function cleanup() {
         alive = false;
+        live = null;
         document.removeEventListener("keydown", onKey);
         clearInterval(timerInt);
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Word Hunt",

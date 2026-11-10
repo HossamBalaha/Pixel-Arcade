@@ -158,8 +158,8 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
+        // digger — player fixed amber: it must pop on every fixed tile color
+        const accent = "#fbbf24";
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
             const c = grid[y][x];

@@ -22,6 +22,7 @@
       const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
       const SUITS = ["♠", "♥", "♦", "♣"];
       let deck, you, ai, discard, suit, turn, won, wins, best, msg;
+      let justDealt = false, hIdx = 0; // deal-in animation
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -53,6 +54,7 @@
         suit = discard[0].s;
         turn = "you";
         won = null;
+        justDealt = true;
         render();
       }
 
@@ -207,9 +209,17 @@
             font-weight:800;font-size:15px;text-align:center;padding-top:6px;cursor:pointer;
             border:2px solid ${can ? "#16a34a" : "#cbd5e1"};${can ? "" : "opacity:0.6;"}`;
           el.innerHTML = `${c.r}<br>${c.s}`;
+          if (justDealt) {
+            el.classList.add("deal-in");
+            el.style.animationDelay = Math.min(hIdx++ * 45, 400) + "ms";
+          }
           el.addEventListener("pointerdown", () => playCard(c));
           handEl.appendChild(el);
         });
+        if (justDealt) {
+          justDealt = false;
+          hIdx = 0;
+        }
       }
 
       deal();

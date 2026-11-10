@@ -1,5 +1,6 @@
 /* Heyawake — shade rooms to their counts, never three shaded in a row */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "heyawake",
     name: "Heyawake",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 9;
-      let rooms, counts, shaded, solvedCount, best;
+      let rooms, counts, shaded, target, solvedCount, best;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -107,6 +108,7 @@
           for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (shade[y][x]) c++;
           r.count = (c > 0 && Math.random() < 0.75) ? c : (c === 0 && Math.random() < 0.35 ? 0 : null);
         });
+        target = shade;
         shaded = Array.from({length: N}, () => Array(N).fill(false));
         render();
         statusEl.textContent = "Shade the number of cells shown in each room";
@@ -184,12 +186,32 @@
       });
       root.querySelector("#hy-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!target) return;
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shaded[y][x] !== target[y][x]) wrong.push([x, y]);
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [x, y] = wrong[Math.floor(Math.random() * wrong.length)];
+          shaded[y][x] = target[y][x];
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} ${target[y][x] ? "should be shaded" : "should not be shaded"}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Heyawake",

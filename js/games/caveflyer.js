@@ -31,12 +31,14 @@
         y = H / 2;
         vy = 0;
         hold = false;
-        cols = [];
-        for (let i = 0; i < W / CW + 4; i++) cols.push(makeCol(i));
         dist = 0;
         score = 0;
         over = false;
         gems = [];
+        // build the cave AFTER score/dist exist — makeCol() reads score for
+        // the gap width; building first produced NaN top/bot (invisible walls)
+        cols = [];
+        for (let i = 0; i < W / CW + 4; i++) cols.push(makeCol(i));
         updateHud();
         statusEl.textContent = "Hold (mouse / touch / Space) to rise — release to fall";
         statusEl.className = "status info";
@@ -44,7 +46,13 @@
 
       function makeCol(i) {
         const gap = Math.max(84, GAP0 - score * 1.1);
-        const mid = 60 + Math.random() * (H - 120);
+        // The opening columns wrap gently around the bat's start height so a
+        // fresh cave is always survivable — with fully random mids the first
+        // screen could spawn a wall straight through the bat (instant death
+        // the moment the walls became visible/collidable).
+        const mid = i < 6
+          ? H / 2 + (Math.random() - 0.5) * 80
+          : 60 + Math.random() * (H - 120);
         const top = Math.max(14, mid - gap / 2);
         const bot = Math.min(H - 14, mid + gap / 2);
         return {top, bot};
@@ -62,11 +70,6 @@
           y += vy;
           dist += 2.6;
           score = Math.floor(dist / 12);
-          // scroll columns
-          const shift = 2.6;
-          cols.forEach(c => {
-            c.top -= 0;
-          });
           // regenerate world every column-width of travel
           if (dist % CW < 2.7) {
             cols.shift();
@@ -78,14 +81,13 @@
           }
           for (const g of gems) g.x -= 2.6;
           gems = gems.filter(g => g.x > -20 && !g.got);
-          // collision: check column under player (player x = 80)
-          const idx = Math.floor((80 + dist - (Math.floor(dist / CW) * CW)) / CW);
-          const col = cols[Math.min(cols.length - 1, Math.max(0, Math.floor((80 + (dist % CW)) / CW)))] || cols[0];
-          // player's column: since world scrolls by dist, compute via modulo
+          // collision: check the column under the player (player x = 80).
+          // worldCol = floor((dist + 80) / CW) − floor(dist / CW) resolves to
+          // the on-screen column spanning x = 80, independent of scroll phase.
           const px = 80;
           const worldCol = Math.floor((dist + px) / CW) - Math.floor(dist / CW);
           const c = cols[Math.min(cols.length - 1, worldCol)] || cols[0];
-          if (y < c.top + 8 || y > c.bot - 8) return die("Crashed into the cave wall!");
+          if (y < c.top + 8 || y > c.bot - 8) die("Crashed into the cave wall!");
           // gems
           for (const g of gems) {
             if (!g.got && Math.abs(g.x - px) < 18 && Math.abs(g.y - y) < 18) {
@@ -115,11 +117,8 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#111";
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
-        ctx.fillStyle = bgSoft;
+        // fixed deep-cave backdrop — walls, gems and bat use fixed colors
+        ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, W, H);
         // cave walls — scroll by dist
         const off = dist % CW;
@@ -157,11 +156,11 @@
           ctx.closePath();
           ctx.fill();
         }
-        // bat
+        // bat — fixed violet on the cave black
         ctx.save();
         ctx.translate(80, y);
         ctx.rotate(Math.max(-0.5, Math.min(0.5, vy * 0.09)));
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#a78bfa";
         ctx.beginPath();
         ctx.ellipse(0, 0, 9, 7, 0, 0, Math.PI * 2);
         ctx.fill();

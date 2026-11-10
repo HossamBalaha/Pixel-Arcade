@@ -1,6 +1,8 @@
-/* Word Search — 12x12 grid with 8 hidden words. Drag to select. Hint reveals first letter of one word. */
+/* Word Search — letter grid with 8 hidden words. Drag to select. Hint reveals first letter of one word.
+   Grid size is a variant: Classic 12×12 / Big 14×14 / Expert 16×16 —
+   chosen in the game-header dropdown, persisted per player. */
 (function () {
-  const N = 12;
+  let N = 12; // set at mount from the stored variant (grid size)
   let live = null;
   const CATS = {
     animals: ["CAT", "DOG", "LION", "TIGER", "HORSE", "MONKEY", "RABBIT", "ELEPHANT"],
@@ -51,9 +53,18 @@
     category: "word",
     description: "Find 8 hidden words in the letter grid",
     tags: ["word", "puzzle"],
+    variants: [
+      {key: "12", label: "Classic 12×12"},
+      {key: "14", label: "Big 14×14"},
+      {key: "16", label: "Expert 16×16"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
       let grid, words, found, dragStart = null, dragEnd = null;
+      // Variant: grid size from the persisted choice. Cell size scales
+      // down on bigger grids so the board stays mobile-friendly.
+      N = parseInt(Storage.getVariant("wordsearch", "12"), 10) || 12;
+      const CELL = N <= 12 ? 28 : (N <= 14 ? 24 : 20);
       const catKeys = Object.keys(CATS);
       const pendingTimers = [];
 
@@ -73,7 +84,7 @@
           <div class="score-cell"><div class="label">Theme</div><div class="val" id="ws-theme">-</div></div>
         </div>
         <div class="status info" id="ws-status">Drag across letters to mark a word</div>
-        <div class="center"><div id="ws-grid" style="display:inline-grid;grid-template-columns:repeat(${N},28px);grid-template-rows:repeat(${N},28px);gap:1px;background:var(--border);padding:1px;border-radius:var(--radius-sm);user-select:none;"></div></div>
+        <div class="center"><div id="ws-grid" style="display:inline-grid;grid-template-columns:repeat(${N},${CELL}px);grid-template-rows:repeat(${N},${CELL}px);gap:1px;background:var(--border);padding:1px;border-radius:var(--radius-sm);user-select:none;"></div></div>
         <div id="ws-words" style="margin-top:8px;text-align:center;"></div>
         <p class="hint">Click & drag from start to end of a word. <b>R</b> new puzzle.</p>
       `;
@@ -99,8 +110,8 @@
         for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
           const cell = document.createElement("div");
           cell.className = "mw-cell";
-          cell.style.width = "28px";
-          cell.style.height = "28px";
+          cell.style.width = CELL + "px";
+          cell.style.height = CELL + "px";
           cell.style.background = "var(--bg-elev)";
           cell.style.cursor = "pointer";
           cell.dataset.r = r;

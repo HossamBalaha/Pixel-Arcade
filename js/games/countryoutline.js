@@ -105,6 +105,8 @@
       streak = 0;
 
       function drawOutline() {
+        const st = getComputedStyle(document.documentElement);
+        const text = st.getPropertyValue("--text").trim() || "#e2e8f0";
         ctx.clearRect(0, 0, 240, 240);
         ctx.save();
         ctx.scale(2.2, 2.2);
@@ -114,7 +116,8 @@
         ctx.closePath();
         ctx.fillStyle = "rgba(120,113,108,0.35)";
         ctx.fill();
-        ctx.strokeStyle = "#e2e8f0";
+        // outline follows theme text so it reads on any page background
+        ctx.strokeStyle = text;
         ctx.lineWidth = 1.6;
         ctx.stroke();
         ctx.restore();

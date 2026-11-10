@@ -7,18 +7,21 @@
       start: [0, 0], end: [4, 4],
       walls: [],
       arrows: {}, // "r,c" → direction
+      sol: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [3, 1], [2, 1], [1, 1], [0, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [4, 3], [3, 3], [2, 3], [1, 3], [0, 3], [0, 4], [1, 4], [2, 4], [3, 4], [4, 4]],
     },
     {
       size: 5,
       start: [0, 4], end: [4, 0],
       walls: [],
       arrows: {"2,2": "down"},
+      sol: [[0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [4, 3], [3, 3], [2, 3], [1, 3], [0, 3], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [4, 1], [3, 1], [2, 1], [1, 1], [0, 1], [0, 0], [1, 0], [2, 0], [3, 0], [4, 0]],
     },
     {
       size: 5,
       start: [2, 0], end: [2, 4],
       walls: [[1, 2], [3, 2]],
       arrows: {},
+      // no "sol": this layout has no path that visits every cell exactly once
     },
   ];
   const DIRS = {up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1]};
@@ -201,6 +204,31 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          if (!puzzle.sol) {
+            App.toast("💡 This layout has no path that covers every cell — nothing to reveal", "info");
+            return;
+          }
+          const sol = puzzle.sol;
+          // longest prefix of the player's path that matches the solution
+          let k = 0;
+          while (k < path.length && k < sol.length && path[k][0] === sol[k][0] && path[k][1] === sol[k][1]) k++;
+          if (k >= sol.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const next = sol[k];
+          if (k === path.length) {
+            path.push([next[0], next[1]]);
+            AudioFX.reveal();
+            render();
+            checkAuto();
+            App.toast(`💡 Hint: the path continues at row ${next[0] + 1}, column ${next[1] + 1}`, "info");
+          } else {
+            App.toast(`💡 Hint: step ${k + 1} of a valid path is row ${next[0] + 1}, column ${next[1] + 1} — try Undo`, "info");
+          }
+        },
         solve: function () {
           if (over) return;
           App.toast("Try to find a Hamiltonian path from S to E!", "info");
@@ -211,6 +239,9 @@
         alive = false;
         live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Path Puzzle",

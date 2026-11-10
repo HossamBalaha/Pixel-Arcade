@@ -1,5 +1,6 @@
 /* Thermometer — fill thermometers so rows and columns reach their sums */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "thermometer",
     name: "Thermometer",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 6;
-      let thermos, rowSums, colSums, fills, best, solvedN, checks;
+      let thermos, rowSums, colSums, fills, target, best, solvedN, checks;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -94,6 +95,7 @@
         });
         rowSums = rows;
         colSums = cols;
+        target = fills.slice();
         // player state = all empty
         fills = thermos.map(() => 0);
         checks = 0;
@@ -219,12 +221,34 @@
       });
       root.querySelector("#th-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!target) return;
+          const diff = [];
+          for (let i = 0; i < thermos.length; i++) if (fills[i] !== target[i]) diff.push(i);
+          if (!diff.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const i = diff[Math.floor(Math.random() * diff.length)];
+          const up = fills[i] < target[i];
+          const [x, y] = thermos[i].cells[up ? fills[i] : fills[i] - 1];
+          fills[i] += up ? 1 : -1;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: the cell at row ${y + 1}, column ${x + 1} ${up ? "should be filled" : "should be empty"}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Thermometer",

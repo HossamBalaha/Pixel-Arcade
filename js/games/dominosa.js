@@ -1,6 +1,7 @@
 /* dominosa — deduce the domino layout: pair adjacent numbers, use each domino once. */
 (function () {
   "use strict";
+  let live = null;
   GameRegistry.register({
     id: "dominosa",
     name: "Dominosa",
@@ -195,10 +196,42 @@
         newGame();
       });
 
+      live = {
+        hint: function () {
+          const un = [];
+          for (let i = 0; i < H * W; i++) if (marked[i] === -1 && i !== selCell) un.push(i);
+          if (!un.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const i = un[Math.floor(Math.random() * un.length)];
+          const j = solution.findIndex((s, k) => k !== i && s === solution[i]);
+          marked[i] = j;
+          marked[j] = i;
+          pairs++;
+          render();
+          const r1 = Math.floor(i / W) + 1, c1 = i % W + 1, r2 = Math.floor(j / W) + 1, c2 = j % W + 1;
+          const where = r1 === r2
+            ? `row ${r1}, columns ${Math.min(c1, c2)}–${Math.max(c1, c2)}`
+            : `column ${c1}, rows ${Math.min(r1, r2)}–${Math.max(r1, r2)}`;
+          if (pairs === (H * W) / 2) {
+            setStatus("🎉 Perfect tiling — all dominoes placed correctly!", "win");
+            AudioFX.win();
+            App.recordResult(true, mistakes);
+          } else {
+            AudioFX.reveal();
+          }
+          App.toast(`💡 Hint: a domino spans ${where}`, "info");
+        }
+      };
       newGame();
       return function cleanup() {
         alive = false;
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Dominosa",

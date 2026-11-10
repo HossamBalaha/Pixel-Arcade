@@ -1,4 +1,5 @@
-/* N-Back — 2-back test. Show letters, ask "matches 2-back?" */
+/* N-Back — the classic working-memory test. N is a variant:
+   1-back (warm-up) / 2-back (classic) / 3-back (expert). */
 (function () {
   const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   let live = null;
@@ -7,12 +8,19 @@
     name: "N-Back",
     icon: "🧠",
     category: "logic",
-    description: "Does the current letter match the one 2 steps back?",
+    description: "Does the current letter match the one N steps back?",
     tags: ["memory", "logic"],
+    variants: [
+      {key: "2", label: "2-Back (classic)"},
+      {key: "1", label: "1-Back (warm-up)"},
+      {key: "3", label: "3-Back (expert)"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
       let seq, idx, score, hits, misses, wrongMatches, wrongNonMatches, round, total;
       const pendingTimers = [];
+      // Variant: N from the persisted choice.
+      const N = parseInt(Storage.getVariant("nback", "2"), 10) || 2;
 
       function later(fn, ms) {
         const id = setTimeout(() => {
@@ -33,14 +41,14 @@
           <div class="score-cell"><div class="label">Score</div><div class="val" id="nb-score">0</div></div>
           <div class="score-cell"><div class="label">Best</div><div class="val" id="nb-best">0</div></div>
         </div>
-        <div class="status info" id="nb-status">Click Start to begin the 2-back test</div>
+        <div class="status info" id="nb-status">Click Start to begin the ${N}-back test</div>
         <div class="center"><div id="nb-letter" style="width:160px;height:160px;border-radius:var(--radius);background:var(--bg-elev);border:2px solid var(--border);display:grid;place-items:center;font-size:5rem;font-weight:700;">—</div></div>
         <div class="row" style="justify-content:center;gap:12px;margin-top:14px;">
-          <button class="btn" id="nb-match">✓ Match (2-back)</button>
+          <button class="btn" id="nb-match">✓ Match (${N}-back)</button>
           <button class="btn primary" id="nb-no">✗ No match</button>
           <button class="btn" id="nb-start">Start</button>
         </div>
-        <p class="hint">Each letter shows for ~2s. Decide if it equals the one 2 positions back.</p>
+        <p class="hint">Each letter shows for ~2s. Decide if it equals the one ${N} position${N === 1 ? "" : "s"} back.</p>
       `;
       const letterEl = root.querySelector("#nb-letter");
       const statusEl = root.querySelector("#nb-status");
@@ -55,14 +63,14 @@
         }
         round++;
         root.querySelector("#nb-round").textContent = round + "/" + total;
-        // generate letter (40% chance to match 2-back if possible)
-        const prev2 = seq[seq.length - 2];
+        // generate letter (40% chance to match N-back if possible)
+        const prevN = seq[seq.length - N];
         let letter;
-        if (prev2 && Math.random() < 0.4) letter = prev2;
+        if (prevN && Math.random() < 0.4) letter = prevN;
         else letter = LETTERS[Math.floor(Math.random() * 26)];
         seq.push(letter);
         letterEl.textContent = letter;
-        statusEl.textContent = "Does it match 2 steps back?";
+        statusEl.textContent = `Does it match ${N} step${N === 1 ? "" : "s"} back?`;
         statusEl.className = "status info";
         phase = "await";
         timerInt = setTimeout(() => {
@@ -79,7 +87,7 @@
         clearTimeout(timerInt);
         timerInt = null;
         const cur = seq[seq.length - 1];
-        const back2 = seq[seq.length - 3];
+        const back2 = seq[seq.length - 1 - N];
         const isMatch = cur === back2;
         if (match === isMatch) {
           score++;
@@ -142,8 +150,8 @@
     },
     help: function () {
       App.showModal("How to play N-Back",
-        `A 2-back memory test. Letters appear one at a time (about 2.5 seconds each).
-        <br><br>After the first two letters, decide for each letter whether it matches the one shown <b>2 positions earlier</b>.
+        `A working-memory test (currently set to the level chosen in the header dropdown). Letters appear one at a time (about 2.5 seconds each).
+        <br><br>After the first letters, decide for each letter whether it matches the one shown <b>N positions earlier</b>.
         <br><br>Click <b>Match</b> or <b>No match</b>. If you don't answer in time, it counts as "No match".
         <br>20 rounds total. Best score is saved.`);
     },

@@ -198,7 +198,7 @@
             i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
           }
           ctx.closePath();
-          ctx.fillStyle = "#1e293b";
+          ctx.fillStyle = "#1c2a46";
           ctx.fill();
           ctx.strokeStyle = "#475569";
           ctx.lineWidth = 1.5;

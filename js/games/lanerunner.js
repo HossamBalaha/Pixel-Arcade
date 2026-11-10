@@ -142,7 +142,7 @@
       function render() {
         const st = getComputedStyle(document.documentElement);
         const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#222";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
+        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
         ctx.fillStyle = bgSoft;
         ctx.fillRect(0, 0, W, H);
         // asphalt + lane markers
@@ -158,26 +158,28 @@
           ctx.stroke();
         }
         ctx.setLineDash([]);
-        // coins
-        ctx.fillStyle = "#fbbf24";
+        // coins — amber with a dark rim so they read on light canvases too
+        ctx.strokeStyle = "#b45309";
+        ctx.lineWidth = 1.5;
         for (const c of coins) {
+          ctx.fillStyle = "#fbbf24";
           ctx.beginPath();
           ctx.arc(laneW * c.lane + laneW / 2, c.y, 9, 0, Math.PI * 2);
           ctx.fill();
+          ctx.stroke();
           ctx.fillStyle = "rgba(255,255,255,0.5)";
           ctx.beginPath();
           ctx.arc(laneW * c.lane + laneW / 2 - 3, c.y - 3, 3, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "#fbbf24";
         }
         // traffic
         for (const c of cars) drawCar(laneW * c.lane + laneW / 2, c.y, laneW * 0.62, 46, c.color, false);
-        // player
-        drawCar(laneX, H - 70, laneW * 0.62, 50, "#6366f1", true);
+        // player — theme accent tracks the canvas so it works in every theme
+        drawCar(laneX, H - 70, laneW * 0.62, 50, accent, true);
         if (over) {
           ctx.fillStyle = "rgba(0,0,0,0.65)";
           ctx.fillRect(0, 0, W, H);
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#fff";
           ctx.font = "bold 24px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText("Crashed!", W / 2, H / 2 - 8);

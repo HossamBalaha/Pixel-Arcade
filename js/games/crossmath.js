@@ -183,6 +183,22 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const cands = [];
+          for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid.length; c++) {
+            if (grid[r][c] !== puzzle.grid[r][c]) cands.push([r, c]);
+          }
+          if (!cands.length) {
+            App.toast("Everything is correct so far 💡", "info");
+            return;
+          }
+          const pick = cands[Math.floor(Math.random() * cands.length)];
+          grid[pick[0]][pick[1]] = puzzle.grid[pick[0]][pick[1]].v;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${pick[0] + 1}, column ${pick[1] + 1} revealed`, "info");
+        },
         solve: function () {
           if (over) return;
           for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) grid[r][c] = puzzle.grid[r][c].v;
@@ -202,6 +218,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Cross Math",

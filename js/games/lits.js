@@ -1,5 +1,6 @@
 /* LITS — shade one tetromino per region, no same shapes touching */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "lits",
     name: "LITS",
@@ -171,6 +172,86 @@
         return null;
       }
 
+      // Hint-only pure solver: picks one tetromino per region so the whole board
+      // satisfies every LITS rule (shape, 2×2, same-shape contact, one wall).
+      // Deterministic backtracking with a step budget; never used by gameplay.
+      function solveLits() {
+        const byRegion = {};
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) (byRegion[regions[y][x]] = byRegion[regions[y][x]] || []).push([x, y]);
+        const ids = Object.keys(byRegion);
+        if (!ids.length) return null;
+        const opts = ids.map(id => {
+          const cells = byRegion[id], out = [];
+          const rec = (start, chosen) => {
+            if (chosen.length === 4) {
+              if (isConnected(chosen)) {
+                const sh = shapeOf(chosen);
+                if (sh !== "?") out.push({shape: sh, cells: chosen.slice()});
+              }
+              return;
+            }
+            for (let i = start; i < cells.length; i++) {
+              chosen.push(cells[i]);
+              rec(i + 1, chosen);
+              chosen.pop();
+            }
+          };
+          rec(0, []);
+          return out;
+        });
+        const on = new Set(), onShape = {};
+        const chosen = [];
+        let steps = 0;
+
+        function conflicts(pl) {
+          const plSet = new Set(pl.cells.map(c => c.join(",")));
+          for (const [x, y] of pl.cells) {
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const k = (x + dx) + "," + (y + dy);
+              if (on.has(k) && onShape[k] === pl.shape) return true; // same shape touching across regions
+            }
+            for (const [bx, by] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) {
+              if (bx < 0 || by < 0 || bx + 1 >= N || by + 1 >= N) continue;
+              let full = true;
+              for (const [qx, qy] of [[bx, by], [bx + 1, by], [bx, by + 1], [bx + 1, by + 1]]) {
+                if (!plSet.has(qx + "," + qy) && !on.has(qx + "," + qy)) {
+                  full = false;
+                  break;
+                }
+              }
+              if (full) return true; // 2×2 block
+            }
+          }
+          return false;
+        }
+
+        function bt(k) {
+          if (k === ids.length) {
+            const cells = [];
+            for (const pl of chosen) cells.push(...pl.cells);
+            return cells.length > 0 && isConnected(cells);
+          }
+          if (++steps > 200000) return false;
+          for (const pl of opts[k]) {
+            if (conflicts(pl)) continue;
+            chosen.push(pl);
+            for (const c of pl.cells) {
+              on.add(c.join(","));
+              onShape[c.join(",")] = pl.shape;
+            }
+            if (bt(k + 1)) return true;
+            for (const c of pl.cells) on.delete(c.join(","));
+            chosen.pop();
+          }
+          return false;
+        }
+
+        if (!bt(0)) return null;
+        const cells = [];
+        for (const pl of chosen) cells.push(...pl.cells);
+        return cells;
+      }
+
       function check() {
         const err = validate();
         if (!err) {
@@ -212,12 +293,40 @@
       });
       root.querySelector("#li-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!validate()) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const sol = solveLits();
+          if (!sol) {
+            App.toast("💡 Couldn't find a valid shading — try ↻ Clear and start again", "info");
+            return;
+          }
+          const missing = sol.filter(([x, y]) => !shaded[y][x]);
+          if (!missing.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const pick = missing[Math.floor(Math.random() * missing.length)];
+          shaded[pick[1]][pick[0]] = true;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: cell at row ${pick[1] + 1}, column ${pick[0] + 1} is shaded in one valid solution`, "info");
+        }
+      };
+
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play LITS",

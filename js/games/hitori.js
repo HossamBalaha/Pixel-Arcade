@@ -177,6 +177,22 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const cands = [];
+          for (let r = 0; r < state.length; r++) for (let c = 0; c < state.length; c++) {
+            if (state[r][c] !== puzzle.sol[r][c]) cands.push([r, c]);
+          }
+          if (!cands.length) {
+            App.toast("Everything is correct so far 💡", "info");
+            return;
+          }
+          const pick = cands[Math.floor(Math.random() * cands.length)];
+          state[pick[0]][pick[1]] = puzzle.sol[pick[0]][pick[1]];
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${pick[0] + 1}, column ${pick[1] + 1} revealed`, "info");
+        },
         solve: function () {
           if (over) return;
           state = puzzle.sol.map(r => r.slice());
@@ -195,6 +211,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Hitori",

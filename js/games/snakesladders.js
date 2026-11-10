@@ -41,6 +41,9 @@
       }
 
       let pos, turn, over, busy, rolls, die;
+      // 2P hot-seat mode + pass-screen pref.
+      let mode = "ai";
+      let passOn = Storage.getPassPlay("snakesladders", true);
 
       root.innerHTML = `
         <style>
@@ -63,11 +66,18 @@
           .sl-log .sl-you { color: var(--accent); font-weight: 700; }
           .sl-log .sl-ai { color: var(--danger); font-weight: 700; }
         </style>
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="difficulty" id="snl-mode">
+            <button class="diff-btn active" data-m="ai">vs AI</button>
+            <button class="diff-btn" data-m="2p">2P</button>
+          </div>
+          <button class="diff-btn" id="snl-pass" title="Show a privacy screen between turns when playing 2P">🙈 Pass: ON</button>
+        </div>
         <div class="status info" id="sl-status"></div>
         <div class="scoreboard">
-          <div class="score-cell"><div class="label">You 🔵</div><div class="val" id="sl-p">start</div></div>
+          <div class="score-cell"><div class="label" id="sl-p-label">You 🔵</div><div class="val" id="sl-p">start</div></div>
           <div class="score-cell"><div class="label">Rolls</div><div class="val" id="sl-r">0</div></div>
-          <div class="score-cell"><div class="label">AI 🔴</div><div class="val" id="sl-a">start</div></div>
+          <div class="score-cell"><div class="label" id="sl-a-label">AI 🔴</div><div class="val" id="sl-a">start</div></div>
         </div>
         <div class="center"><div class="sl-board" id="sl-board"></div></div>
         <div class="row center" style="gap:10px;margin-top:6px;flex-wrap:wrap;">
@@ -84,6 +94,32 @@
       const dieEl = root.querySelector("#sl-die");
       const logEl = root.querySelector("#sl-log");
       const rollBtn = root.querySelector("#sl-roll");
+      const nameOf = side => mode === "2p"
+        ? (side === "P" ? "P1 🔵" : "P2 🔴")
+        : (side === "P" ? "You" : "AI");
+      const syncPassBtn = () => {
+        const pb = root.querySelector("#snl-pass");
+        pb.textContent = "🙈 Pass: " + (passOn ? "ON" : "OFF");
+        pb.classList.toggle("active", passOn);
+      };
+      syncPassBtn();
+      root.querySelector("#snl-pass").addEventListener("click", () => {
+        passOn = !passOn;
+        Storage.setPassPlay("snakesladders", passOn);
+        syncPassBtn();
+        AudioFX.click();
+      });
+      root.querySelectorAll("#snl-mode .diff-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          root.querySelectorAll("#snl-mode .diff-btn").forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          mode = btn.dataset.m;
+          AudioFX.click();
+          root.querySelector("#sl-p-label").textContent = mode === "2p" ? "P1 🔵" : "You 🔵";
+          root.querySelector("#sl-a-label").textContent = mode === "2p" ? "P2 🔴" : "AI 🔴";
+          newGame();
+        });
+      });
 
       function setStatus(t, k) {
         statusEl.textContent = t;
@@ -165,7 +201,7 @@
         root.querySelector("#sl-p").textContent = pos.P === 0 ? "start" : pos.P;
         root.querySelector("#sl-a").textContent = pos.A === 0 ? "start" : pos.A;
         root.querySelector("#sl-r").textContent = rolls.P;
-        rollBtn.disabled = !(turn === "P" && !busy && !over);
+        rollBtn.disabled = !(turn === "P" && !busy && !over) && !(mode === "2p" && !busy && !over);
       }
 
       function flashSquare(n) {
@@ -178,11 +214,15 @@
       }
 
       function onRoll() {
-        if (over || busy || turn !== "P") {
+        if (over || busy) {
           AudioFX.error();
           return;
         }
-        takeTurn("P");
+        if (mode === "ai" && turn !== "P") {
+          AudioFX.error();
+          return;
+        }
+        takeTurn(turn);
       }
 
       function takeTurn(side) {
@@ -192,7 +232,7 @@
         rolls[side]++;
         dieEl.textContent = DIE_FACES[r - 1] + " " + r;
         AudioFX.flip();
-        const name = side === "P" ? "You" : "AI";
+        const name = nameOf(side);
         log(name + " rolled " + r, side === "P" ? "sl-you" : "sl-ai");
         const from = pos[side];
         const to = from + r;
@@ -266,13 +306,15 @@
         const next = side === "P" ? "A" : "P";
         turn = next;
         render();
-        if (next === "A") {
+        if (next === "A" && mode === "ai") {
           setStatus("AI is rolling…");
           later(function () {
             takeTurn("A");
           }, 850);
         } else {
-          setStatus("Your turn — roll the die!");
+          const label = nameOf(next);
+          setStatus(label + " — roll the die!");
+          if (mode === "2p" && passOn) App.passTurn(label);
         }
       }
 
@@ -280,6 +322,14 @@
         over = true;
         busy = false;
         render();
+        if (mode === "2p") {
+          const label = nameOf(side);
+          setStatus("🏆 " + label + " landed exactly on 100 — " + label + " wins!", "win");
+          AudioFX.win();
+          App.recordResult(true, rolls.P);
+          App.toast("🏆 Snakes & Ladders — " + label + " wins in " + rolls[side] + " rolls!", "success");
+          return;
+        }
         if (side === "P") {
           setStatus("🏆 You landed exactly on 100 — you win!", "win");
           AudioFX.win();

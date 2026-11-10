@@ -195,9 +195,6 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         // sky
         ctx.fillStyle = "#0b1220";
         ctx.fillRect(0, 0, W, H);
@@ -216,8 +213,8 @@
         ctx.lineTo(W / 2, 38);
         ctx.closePath();
         ctx.fill();
-        // terrain
-        ctx.fillStyle = "#3f2d20";
+        // terrain — kept lighter than the night sky so the silhouette reads
+        ctx.fillStyle = "#5d4023";
         ctx.beginPath();
         ctx.moveTo(0, H);
         terrain.forEach((y, i) => ctx.lineTo(i * 4, y));
@@ -238,7 +235,7 @@
           ctx.lineTo(px + Math.cos(a) * (power * 0.8), groundY(px) - 10 - Math.sin(a) * (power * 0.8));
           ctx.stroke();
           ctx.setLineDash([]);
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#fff";
           ctx.font = "bold 12px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText(`${angle}° ${power}`, px, groundY(px) - 46);

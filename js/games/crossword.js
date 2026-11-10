@@ -1,5 +1,6 @@
 /* Mini Crossword — solve a classic crossword with wordplay clues */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "crossword",
     name: "Mini Crossword",
@@ -296,13 +297,39 @@
       document.addEventListener("keydown", onKey);
       root.querySelector("#cw2-new").addEventListener("click", generate);
 
+      function doHint() {
+        const cands = [];
+        for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+          const c = grid[y][x];
+          if (c && c.letter !== c.sol) cands.push([x, y]);
+        }
+        if (!cands.length) {
+          App.toast("Nothing more to reveal 💡", "info");
+          return;
+        }
+        const [x, y] = cands[Math.floor(Math.random() * cands.length)];
+        const w = words.find(w => wordCells(w).some(([cx, cy]) => cx === x && cy === y));
+        const idx = wordCells(w).findIndex(([cx, cy]) => cx === x && cy === y);
+        grid[y][x].letter = grid[y][x].sol;
+        AudioFX.reveal();
+        render();
+        App.toast(`💡 ${w.num}-${w.d === "A" ? "Across" : "Down"}: letter ${idx + 1} is "${grid[y][x].sol}"`, "info");
+        checkWin();
+      }
+
+      live = {hint: doHint};
+
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
         document.removeEventListener("keydown", onKey);
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Mini Crossword",

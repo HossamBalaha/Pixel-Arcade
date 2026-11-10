@@ -97,9 +97,7 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
+        // fixed night street — bike, rider and meter use fixed colors
         ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, W, H);
         // skyline
@@ -127,13 +125,13 @@
           ctx.arc(c.x - camX + 100, groundY - 12, 7, 0, Math.PI * 2);
           ctx.fill();
         }
-        // bike at x=100
+        // bike at x=100 — fixed yellow frame pops on the night street
         const bx = 100, by = groundY - 1;
         ctx.save();
         ctx.translate(bx, by);
         // rear wheel pivot; frame rotates by ang
         ctx.rotate(-ang);
-        ctx.strokeStyle = accent;
+        ctx.strokeStyle = "#facc15";
         ctx.lineWidth = 3.5;
         ctx.lineCap = "round";
         // frame
@@ -169,7 +167,7 @@
         ctx.stroke();
         ctx.beginPath();
         ctx.arc(39, -50, 5, 0, Math.PI * 2);
-        ctx.fillStyle = text;
+        ctx.fillStyle = "#f8fafc";
         ctx.fill();
         ctx.restore();
         // balance meter
@@ -191,7 +189,7 @@
         zone(1.05, 1.4, "#f97316");
         zone(1.4, Math.PI - 0.06, "#ef4444");
         const na = Math.min(Math.PI - 0.06, ang);
-        ctx.strokeStyle = text;
+        ctx.strokeStyle = "#f8fafc";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(mx, my + 8);

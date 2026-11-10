@@ -125,6 +125,84 @@
         return errs;
       }
 
+      // Hint-only pure solver: extends the current bridges into a full valid layout
+      // (exact island counts, no crossings, all islands connected). Deterministic,
+      // step-bounded, and never used by gameplay.
+      function solveBridges() {
+        const isl = puzzle.islands;
+        const E = [];
+        for (let i = 0; i < isl.length; i++) for (let j = i + 1; j < isl.length; j++) if (canConnect(i, j)) E.push([i, j]);
+        const base = E.map(([i, j]) => bridges[bridgeKey(i, j)] || 0);
+        for (let a = 0; a < E.length; a++) if (base[a]) for (let b = a + 1; b < E.length; b++) if (base[b] && bridgesCross(E[a][0], E[a][1], E[b][0], E[b][1])) return null;
+        const deg = isl.map(() => 0);
+        base.forEach((n, e) => {
+          deg[E[e][0]] += n;
+          deg[E[e][1]] += n;
+        });
+        if (deg.some((d, i) => d > isl[i].n)) return null;
+        const inc = isl.map(() => []);
+        E.forEach(([i, j], e) => {
+          inc[i].push(e);
+          inc[j].push(e);
+        });
+        const counts = base.slice();
+        let steps = 0;
+
+        function rec(e) {
+          if (e === E.length) {
+            if (deg.some((d, i) => d !== isl[i].n)) return false;
+            const adj = isl.map(() => []);
+            E.forEach(([i, j], k) => {
+              if (counts[k]) {
+                adj[i].push(j);
+                adj[j].push(i);
+              }
+            });
+            const seen = new Set([0]), q = [0];
+            while (q.length) {
+              const v = q.pop();
+              for (const w of adj[v]) if (!seen.has(w)) {
+                seen.add(w);
+                q.push(w);
+              }
+            }
+            return seen.size === isl.length;
+          }
+          if (++steps > 100000) return false;
+          const [i, j] = E[e];
+          for (let n = base[e]; n <= 2; n++) {
+            const add = n - base[e];
+            if (deg[i] + add > isl[i].n || deg[j] + add > isl[j].n) break;
+            if (add > 0) {
+              let cross = false;
+              for (let k = 0; k < E.length && !cross; k++) if (k !== e && counts[k] > 0 && bridgesCross(i, j, E[k][0], E[k][1])) cross = true;
+              if (cross) continue;
+            }
+            counts[e] = n;
+            deg[i] += add;
+            deg[j] += add;
+            let feasible = true;
+            for (let v = 0; v < isl.length && feasible; v++) {
+              const need = isl[v].n - deg[v];
+              if (need < 0) feasible = false;
+              else if (need > 0) {
+                let pot = 0;
+                for (const k of inc[v]) if (k > e) pot += 2 - base[k];
+                if (pot < need) feasible = false;
+              }
+            }
+            if (feasible && rec(e + 1)) return true;
+            deg[i] -= add;
+            deg[j] -= add;
+          }
+          counts[e] = base[e];
+          return false;
+        }
+
+        if (!rec(0)) return null;
+        return E.map(([i, j], e) => ({i, j, n: counts[e]}));
+      }
+
       function render() {
         svgEl.innerHTML = "";
         const errs = errors();
@@ -291,6 +369,30 @@
       live = {
         solve: function () {
           if (!over) App.toast("Try to solve it — use Check to validate.", "info");
+        },
+        hint: function () {
+          if (over) return;
+          if (errors().size > 0) {
+            App.toast("💡 Fix the red bridges first — they cross or over-connect", "info");
+            return;
+          }
+          const sol = solveBridges();
+          if (!sol) {
+            App.toast("💡 No solution found from here — try removing a bridge", "info");
+            return;
+          }
+          const missing = sol.filter(b => b.n > (bridges[bridgeKey(b.i, b.j)] || 0));
+          if (!missing.length) {
+            App.toast("All bridges are in place — press Check! 🌉", "info");
+            return;
+          }
+          const pick = missing[Math.floor(Math.random() * missing.length)];
+          const k = bridgeKey(pick.i, pick.j);
+          bridges[k] = (bridges[k] || 0) + 1;
+          AudioFX.reveal();
+          render();
+          const a = puzzle.islands[pick.i], b = puzzle.islands[pick.j];
+          App.toast(`💡 Hint: add a bridge between row ${a.r + 1}, col ${a.c + 1} and row ${b.r + 1}, col ${b.c + 1}${bridges[k] < pick.n ? " (it takes one more too)" : ""}`, "info");
         }
       };
       newGame();
@@ -298,6 +400,9 @@
         alive = false;
         live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Bridges (Hashi)",

@@ -1,5 +1,6 @@
 /* Ball Sort — pour balls between tubes until each holds a single color */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "ballsort",
     name: "Ball Sort",
@@ -163,13 +164,80 @@
       root.querySelector("#bs2-new").addEventListener("click", () => generate(1 + Math.floor(Math.random() * 3)));
       root.querySelector("#bs2-restart").addEventListener("click", () => generate(level));
 
+      // Hint-only heuristic: pick one useful legal pour from the current state (no board changes).
+      function hintMove() {
+        const n = tubes.length;
+        const run = t => {
+          let k = 1;
+          while (k < t.length && t[t.length - 1 - k] === t[t.length - 1]) k++;
+          return k;
+        };
+        const done = t => t.length === CAP && t.every(b => b === t[0]);
+        const legal = (f, d) => {
+          if (f === d || !tubes[f].length || done(tubes[f]) || tubes[d].length >= CAP) return false;
+          return !tubes[d].length || tubes[d][tubes[d].length - 1] === tubes[f][tubes[f].length - 1];
+        };
+        // (a) a pour that fills a tube with one solid color
+        for (let f = 0; f < n; f++) for (let d = 0; d < n; d++) {
+          if (!legal(f, d) || !tubes[d].length) continue;
+          if (tubes[d].every(b => b === tubes[d][0]) && tubes[d].length + run(tubes[f]) >= CAP) return {
+            f,
+            d,
+            completes: true
+          };
+        }
+        // (b) pour the top run onto a matching color (never cap a mixed tube)
+        for (let f = 0; f < n; f++) for (let d = 0; d < n; d++) {
+          if (!legal(f, d) || !tubes[d].length) continue;
+          const fills = tubes[d].length + run(tubes[f]) >= CAP;
+          if (fills && !tubes[d].every(b => b === tubes[d][0])) continue;
+          return {f, d, completes: fills};
+        }
+        // (c) empty the top run of the most mixed tube into an empty tube
+        const empty = tubes.findIndex(t => !t.length);
+        if (empty >= 0) {
+          let bestF = -1, bestMix = 0;
+          for (let f = 0; f < n; f++) {
+            if (!legal(f, empty)) continue;
+            const mix = new Set(tubes[f]).size;
+            if (mix > bestMix) {
+              bestMix = mix;
+              bestF = f;
+            }
+          }
+          if (bestF >= 0) return {f: bestF, d: empty, completes: false};
+        }
+        return null;
+      }
+
+      live = {
+        hint: function () {
+          if (won) return;
+          if (isSolved()) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const mv = hintMove();
+          if (!mv) {
+            App.toast("💡 No legal pour available — try Restart ↻", "info");
+            return;
+          }
+          const color = COLORS[tubes[mv.f][tubes[mv.f].length - 1]].n;
+          App.toast(`💡 Hint: pour the ${color} run from tube ${mv.f + 1} onto tube ${mv.d + 1}${mv.completes ? " — that completes a tube!" : ""}`, "info");
+        }
+      };
+
       generate(1);
       render();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Ball Sort",

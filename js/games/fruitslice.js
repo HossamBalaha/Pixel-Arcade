@@ -156,6 +156,7 @@
       function render() {
         const st = getComputedStyle(document.documentElement);
         const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#111";
+        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
         ctx.fillStyle = bgSoft;
         ctx.fillRect(0, 0, W, H);
         // subtle vignette
@@ -187,9 +188,9 @@
           }
           ctx.restore();
         }
-        // pointer trail
+        // pointer trail — follows the accent so it shows on light canvases too
         if (pointerTrail.length > 2) {
-          ctx.strokeStyle = "rgba(255,255,255,0.7)";
+          ctx.strokeStyle = accent;
           ctx.lineWidth = 3;
           ctx.lineCap = "round";
           ctx.beginPath();

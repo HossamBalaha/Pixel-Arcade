@@ -194,7 +194,7 @@
           ctx.beginPath();
           ctx.arc(b.x - 6, b.y - 6, b.r * 0.35, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#fff";
           ctx.font = "bold 11px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText(b.pts, b.x, b.y + 4);
@@ -226,7 +226,7 @@
         if (over) {
           ctx.fillStyle = "rgba(0,0,0,0.65)";
           ctx.fillRect(0, 0, W, H);
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#fff";
           ctx.font = "bold 26px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText("Game Over", W / 2, H / 2 - 8);

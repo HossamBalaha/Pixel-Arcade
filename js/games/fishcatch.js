@@ -183,7 +183,6 @@
 
       function render() {
         const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
         const text = st.getPropertyValue("--text").trim() || "#eee";
         // sky
         ctx.fillStyle = "#7dd3fc";
@@ -240,14 +239,14 @@
           ctx.restore();
         }
         for (const j of junk) ctx.fillText(j.emoji, j.x, j.y + 8);
-        // line + hook
-        ctx.strokeStyle = "rgba(255,255,255,0.7)";
+        // line + hook — fixed yellow: must pop on the fixed blue water in every theme
+        ctx.strokeStyle = "rgba(253,224,71,0.8)";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(W / 2, 58);
         ctx.lineTo(W / 2, hook.y);
         ctx.stroke();
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#fde047";
         ctx.beginPath();
         ctx.arc(W / 2, hook.y, 5, 0, Math.PI * 2);
         ctx.fill();

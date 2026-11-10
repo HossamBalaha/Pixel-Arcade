@@ -1,5 +1,6 @@
 /* N-Queens — place queens so no two attack each other */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "nqueens",
     name: "N-Queens",
@@ -148,10 +149,65 @@
         updateHud();
       });
 
+      live = {
+        hint: function () {
+          const arr = [...queens].map(q => q.split(",").map(Number));
+          let conflict = null;
+          for (let i = 0; i < arr.length && !conflict; i++) {
+            for (let j = i + 1; j < arr.length; j++) {
+              if (arr[i][0] === arr[j][0] || arr[i][1] === arr[j][1] || Math.abs(arr[i][0] - arr[j][0]) === Math.abs(arr[i][1] - arr[j][1])) {
+                conflict = [arr[i], arr[j]];
+                break;
+              }
+            }
+          }
+          if (conflict) {
+            App.toast(`💡 Hint: the queen at row ${conflict[0][1] + 1}, column ${conflict[0][0] + 1} attacks the one at row ${conflict[1][1] + 1}, column ${conflict[1][0] + 1} — move one`, "info");
+            return;
+          }
+          if (queens.size >= N) {
+            App.toast("Nothing more to reveal 👑", "info");
+            return;
+          }
+          // complete the empty rows with backtracking (small boards — cheap)
+          const usedRows = new Set(arr.map(q => q[1]));
+          const emptyRows = [];
+          for (let y = 0; y < N; y++) if (!usedRows.has(y)) emptyRows.push(y);
+          const okWith = (x, y, placed) => arr.concat(placed).every(([qx, qy]) => qx !== x && qy !== y && Math.abs(qx - x) !== Math.abs(qy - y));
+          const placed = [];
+
+          function place(i) {
+            if (i === emptyRows.length) return true;
+            const y = emptyRows[i];
+            for (let x = 0; x < N; x++) {
+              if (okWith(x, y, placed)) {
+                placed.push([x, y]);
+                if (place(i + 1)) return true;
+                placed.pop();
+              }
+            }
+            return false;
+          }
+
+          if (!place(0)) {
+            App.toast("💡 Hint: the current queens can't grow into a full solution — move one", "info");
+            return;
+          }
+          const [x, y] = placed[0];
+          toggle(x, y);
+          AudioFX.reveal();
+          App.toast(`💡 Hint: a queen belongs at row ${y + 1}, column ${x + 1}`, "info");
+        },
+      };
+
       setN(6);
       return function cleanup() {
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play N-Queens",

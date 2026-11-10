@@ -1,5 +1,6 @@
 /* Water Jugs — fill, empty and pour to measure the exact target */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "waterjugs",
     name: "Water Jugs",
@@ -121,7 +122,7 @@
                   <div class="wj-water" style="height:${(waters[i] / c) * 100}%;"></div>
                 </div>
                 <div class="wj-cap">${waters[i]} / ${c}L</div>
-                <div class="row gap-1">
+                <div class="row">
                   <button class="btn btn-sm" data-fill="${i}" title="Fill">🚰</button>
                   <button class="btn btn-sm" data-empty="${i}" title="Empty">🕳️</button>
                   <button class="btn btn-sm" data-pour="${i}" title="Pour into">↗️</button>
@@ -145,10 +146,73 @@
         jugsEl.querySelector("#wj-restart").addEventListener("click", () => load(level));
       }
 
+      // Hint-only pure BFS over the game's own fill/empty/pour operations
+      // (state space is tiny — product of capacities). Returns the first move
+      // of a shortest path to the target; never used by gameplay.
+      function nextStep() {
+        const key = w => w.join(",");
+        let frontier = [{w: waters.slice(), op: null}];
+        const seen = new Set([key(waters)]);
+        while (frontier.length) {
+          const next = [];
+          for (const node of frontier) {
+            const w = node.w;
+            const moves = [];
+            for (let i = 0; i < caps.length; i++) {
+              if (w[i] < caps[i]) moves.push({k: "fill", i, w2: w.map((v, x) => x === i ? caps[i] : v)});
+              if (w[i] > 0) moves.push({k: "empty", i, w2: w.map((v, x) => x === i ? 0 : v)});
+            }
+            for (let a = 0; a < caps.length; a++) for (let b = 0; b < caps.length; b++) {
+              if (a === b || !w[a]) continue;
+              const amt = Math.min(w[a], caps[b] - w[b]);
+              if (amt > 0) moves.push({
+                k: "pour",
+                a,
+                b,
+                w2: w.map((v, x) => x === a ? v - amt : x === b ? v + amt : v)
+              });
+            }
+            for (const m of moves) {
+              const k2 = key(m.w2);
+              if (seen.has(k2)) continue;
+              const first = node.op || m;
+              if (m.w2.includes(target)) return first;
+              seen.add(k2);
+              next.push({w: m.w2, op: first});
+            }
+          }
+          frontier = next;
+        }
+        return null;
+      }
+
+      live = {
+        hint: function () {
+          if (won) return;
+          if (waters.includes(target)) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const op = nextStep();
+          if (!op) {
+            App.toast(`💡 No sequence reaches ${target}L from here — try ↻ Restart level`, "info");
+            return;
+          }
+          const say = op.k === "fill" ? `fill the ${caps[op.i]}L jug`
+            : op.k === "empty" ? `empty the ${caps[op.i]}L jug`
+              : `pour the ${caps[op.a]}L jug into the ${caps[op.b]}L jug`;
+          App.toast(`💡 Next: ${say}`, "info");
+        }
+      };
+
       load(0);
       return function cleanup() {
         __t.forEach(clearTimeout);
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Water Jugs",

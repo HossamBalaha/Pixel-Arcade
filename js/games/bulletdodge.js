@@ -151,9 +151,6 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         ctx.fillStyle = "#020617";
         ctx.fillRect(0, 0, W, H);
         // starfield
@@ -181,10 +178,10 @@
           ctx.arc(ship.x, ship.y, 27, 0, Math.PI * 2);
           ctx.stroke();
         }
-        // ship
+        // ship — fixed bright: the arena is always near-black
         ctx.save();
         ctx.translate(ship.x, ship.y);
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#f8fafc";
         ctx.beginPath();
         ctx.moveTo(0, -11);
         ctx.lineTo(8, 9);

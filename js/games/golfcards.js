@@ -11,6 +11,7 @@
       const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
       const SUITS = ["♠", "♥", "♦", "♣"];
       let cols, waste, stock, won, score, best;
+      let justDealt = false, dIdx = 0; // deal-in animation
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -49,6 +50,7 @@
         waste = [stock.pop()];
         won = null;
         score = 0;
+        justDealt = true;
         render();
       }
 
@@ -80,7 +82,7 @@
           return;
         }
         waste.push(stock.pop());
-        AudioFX.click();
+        AudioFX.flip();
         render();
       }
 
@@ -117,6 +119,10 @@
             card.className = `gc-card ${(c.s === "♥" || c.s === "♦") ? "red" : "blk"}`;
             card.style.cssText += can ? "border-color:#16a34a;" : (isTop ? "" : "filter:brightness(0.8);");
             card.innerHTML = `${c.r}<br>${c.s}`;
+            if (justDealt) {
+              card.classList.add("deal-in");
+              card.style.animationDelay = Math.min(dIdx++ * 22, 650) + "ms";
+            }
             if (isTop && !won) card.addEventListener("pointerdown", () => play(i));
             el.appendChild(card);
           });
@@ -133,6 +139,10 @@
         `);
         boardEl.querySelector("#gc-stockc").addEventListener("pointerdown", drawStock);
         if (won) boardEl.querySelector("#gc-again").addEventListener("click", deal);
+        if (justDealt) {
+          justDealt = false;
+          dIdx = 0;
+        }
       }
 
       deal();

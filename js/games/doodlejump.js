@@ -115,9 +115,7 @@
 
       function draw() {
         const styles = getComputedStyle(document.documentElement);
-        const accent = styles.getPropertyValue("--accent").trim();
         const accent2 = styles.getPropertyValue("--accent-2").trim();
-        const text = styles.getPropertyValue("--text").trim();
         ctx.clearRect(0, 0, W, H);
         // Background pattern
         ctx.fillStyle = "rgba(255,255,255,0.03)";
@@ -129,8 +127,8 @@
           ctx.fillStyle = "rgba(0,0,0,0.2)";
           ctx.fillRect(p.x, p.y + p.h - 2, p.w, 2);
         }
-        // Player
-        ctx.fillStyle = accent;
+        // Player — fixed classic yellow, always distinct from the pink platforms
+        ctx.fillStyle = "#fde047";
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
         ctx.fill();
@@ -144,7 +142,7 @@
         if (over) {
           ctx.fillStyle = "rgba(0,0,0,0.6)";
           ctx.fillRect(0, 0, W, H);
-          ctx.fillStyle = text;
+          ctx.fillStyle = "#fff";
           ctx.font = "bold 22px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText("Game Over", W / 2, H / 2 - 10);

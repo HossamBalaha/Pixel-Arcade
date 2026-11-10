@@ -134,9 +134,6 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, W, H);
         // backdrop word display
@@ -155,8 +152,8 @@
           ctx.fillStyle = isNext ? "#14532d" : "#1e293b";
           ctx.fillText(d.L, d.x, d.y + 8);
         }
-        // basket
-        ctx.fillStyle = accent;
+        // basket — fixed amber: canvas is always dark, theme accent can go dark too
+        ctx.fillStyle = "#f59e0b";
         ctx.beginPath();
         ctx.moveTo(paddle.x - paddle.w / 2, H - 20);
         ctx.lineTo(paddle.x - paddle.w / 2 + 8, H - 42);
@@ -164,8 +161,8 @@
         ctx.lineTo(paddle.x + paddle.w / 2, H - 20);
         ctx.closePath();
         ctx.fill();
-        // progress
-        ctx.fillStyle = text;
+        // progress — fixed light text on the dark canvas
+        ctx.fillStyle = "#e2e8f0";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "left";
         ctx.fillText(`Missed: ${lives}`, 10, H - 8);

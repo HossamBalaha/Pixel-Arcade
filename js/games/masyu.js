@@ -6,10 +6,12 @@
     {
       size: 5,
       pearls: [[1, 1, "white"], [1, 3, "black"], [3, 1, "black"], [3, 3, "white"]],
+      sol: ["0,0,1,0", "1,0,2,0", "2,0,3,0", "3,0,4,0", "4,0,4,1", "3,1,4,1", "3,1,3,2", "3,2,4,2", "4,2,4,3", "3,3,4,3", "2,3,3,3", "1,3,2,3", "1,2,1,3", "1,2,2,2", "2,1,2,2", "1,1,2,1", "0,1,1,1", "0,0,0,1"],
     },
     {
       size: 5,
       pearls: [[0, 2, "white"], [2, 0, "black"], [2, 4, "white"], [4, 2, "black"]],
+      sol: ["0,0,1,0", "1,0,2,0", "2,0,2,1", "2,1,2,2", "2,2,3,2", "3,2,4,2", "4,2,4,3", "4,3,4,4", "3,4,4,4", "2,4,3,4", "1,4,2,4", "1,3,1,4", "0,3,1,3", "0,2,0,3", "0,1,0,2", "0,0,0,1"],
     },
   ];
 
@@ -237,6 +239,21 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const missing = puzzle.sol.filter(k => edges[k] !== 1);
+          if (!missing.length) {
+            const extras = Object.keys(edges).filter(k => edges[k] === 1 && puzzle.sol.indexOf(k) < 0);
+            App.toast(extras.length ? "💡 All loop edges are placed — remove the extra ones" : "Nothing more to reveal 💡", "info");
+            return;
+          }
+          const pick = missing[Math.floor(Math.random() * missing.length)];
+          edges[pick] = 1;
+          AudioFX.reveal();
+          render();
+          const [r1, c1, r2, c2] = pick.split(",").map(Number);
+          App.toast(`💡 Hint: the loop uses the edge between (${r1 + 1},${c1 + 1}) and (${r2 + 1},${c2 + 1})`, "info");
+        },
         solve: function () {
           if (!over) App.toast("Try to draw the loop — use Check to validate.", "info");
         }
@@ -246,6 +263,9 @@
         alive = false;
         live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Masyu",

@@ -1,5 +1,5 @@
 {
-  "name": "Pixel Arcade — 150 Classic Games",
+  "name": "Pixel Arcade — 300 Classic Games",
   "short_name": "Pixel Arcade",
   "description": "300 classic browser games in one place — word puzzles, logic, arcade, strategy, and more. Playable offline. Built with vanilla HTML, CSS, and JS.",
   "start_url": "./index.html",
@@ -49,36 +49,48 @@
   ],
   "shortcuts": [
     {
-      "name": "Wordle",
-      "url": "./index.html#/wordle"
+      "name": "🎲 Random game",
+      "url": "./index.html?random=1",
+      "icons": [
+        {
+          "src": "assets/icons/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "name": "2048",
-      "url": "./index.html#/2048"
+      "name": "🔢 2048",
+      "url": "./index.html?game=2048",
+      "icons": [
+        {
+          "src": "assets/icons/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "name": "Tic Tac Toe",
-      "url": "./index.html#/tictactoe"
+      "name": "🔤 Wordle",
+      "url": "./index.html?game=wordle",
+      "icons": [
+        {
+          "src": "assets/icons/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "name": "Snake",
-      "url": "./index.html#/snake"
-    },
-    {
-      "name": "Spelling Bee",
-      "url": "./index.html#/spellingbee"
-    },
-    {
-      "name": "Connections",
-      "url": "./index.html#/connections"
-    },
-    {
-      "name": "Solitaire",
-      "url": "./index.html#/solitaire"
-    },
-    {
-      "name": "Sudoku",
-      "url": "./index.html#/sudoku"
+      "name": "💣 Minesweeper",
+      "url": "./index.html?game=minesweeper",
+      "icons": [
+        {
+          "src": "assets/icons/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

@@ -657,6 +657,14 @@ main {
     text-align: left;
 }
 
+/* Perf: skip layout/paint for offscreen cards in the 300-game grid.
+   `auto` in contain-intrinsic-size lets the browser remember each card's real
+   height once rendered, so the scrollbar estimate self-corrects. */
+.grid .card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 300px;
+}
+
 .card:hover {
     transform: translateY(-3px);
     border-color: var(--accent);
@@ -675,7 +683,7 @@ main {
 }
 
 .card .thumb {
-    /* Sizing/placeholder/shimmer now live on .card .thumb-wrap (v8) —
+    /* Sizing/placeholder/shimmer live on .card .thumb-wrap —
        the img itself fills the wrapper and fades in once loaded. */
     object-fit: cover;
 }
@@ -2079,40 +2087,12 @@ footer {
     gap: 8px;
 }
 
-.gap-3 {
-    gap: 12px;
-}
-
-.gap-4 {
-    gap: 16px;
-}
-
-.mt-2 {
-    margin-top: 8px;
-}
-
-.mt-3 {
-    margin-top: 12px;
-}
-
-.mt-4 {
-    margin-top: 16px;
-}
-
-.mb-2 {
-    margin-bottom: 8px;
-}
-
 .text-muted {
     color: var(--text-muted);
 }
 
 .text-sm {
     font-size: 0.85rem;
-}
-
-.text-xs {
-    font-size: 0.75rem;
 }
 
 .mono {
@@ -2202,7 +2182,7 @@ footer {
 }
 
 /* ============================================================
-   v8 enhancements — command palette, batched grid, A–Z bar,
+   Hub discovery features — command palette, batched grid, A–Z bar,
    tag chips, category banner, continue playing, skeleton
    shimmer, hover zoom, difficulty badges, achievements
    progress, custom theme builder
@@ -2836,4 +2816,235 @@ footer {
     display: flex;
     gap: 8px;
     margin-top: 2px;
+}
+
+/* ============================================================
+   Shell features — daily challenge, collections,
+   keyboard nav focus, session wrap-up, pass-and-play curtain,
+   variant selector, data health, save-data mode, deal animation
+   ============================================================ */
+
+/* ---------- Daily challenge: streak flame + done state ---------- */
+.daily-streak {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(230, 23, 60, 0.12);
+    color: #e6173c;
+    font-size: 0.72rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+#daily-play.btn-outline {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+}
+
+/* ---------- Curated collections shelf ---------- */
+.collection-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 170px;
+    max-width: 200px;
+    padding: 14px;
+    text-align: left;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    color: var(--text);
+}
+
+.collection-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+}
+
+.collection-icon {
+    font-size: 26px;
+    line-height: 1;
+}
+
+.collection-name {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.collection-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Anti-rut nudge rail card — subtle accent outline */
+.rail-card.nudge {
+    border: 1px dashed var(--accent);
+    background: var(--accent-soft);
+}
+
+/* ---------- Keyboard grid navigation ---------- */
+.card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Session wrap-up card ---------- */
+.session-wrapup {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 14px 0 4px;
+    padding: 14px 44px 14px 18px;
+    background: var(--bg-elev);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.session-emoji {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.session-text {
+    flex: 1;
+    min-width: 180px;
+    font-weight: 600;
+    font-family: var(--font-heading);
+}
+
+.session-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.session-close:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+}
+
+/* ---------- Pass-and-play curtain ---------- */
+.passplay-curtain {
+    position: fixed;
+    inset: 0;
+    z-index: 260; /* above modals (200), below the command palette (300) */
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+    /* nearly opaque — the previous player's hand must not leak through */
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.passplay-card {
+    text-align: center;
+    padding: 32px 40px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, var(--radius));
+    box-shadow: var(--shadow-lg);
+}
+
+.passplay-icon {
+    font-size: 44px;
+    margin-bottom: 10px;
+}
+
+.passplay-title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+
+/* ---------- Variant (difficulty) selector ---------- */
+.variant-select {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.variant-select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* ---------- Data health line ---------- */
+.data-health {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.data-health .data-warn {
+    color: var(--warning, #d97706);
+    font-weight: 600;
+}
+
+/* ---------- Save-Data / 2G mode ---------- */
+[data-save-data] .card .thumb-wrap::before {
+    animation: none;
+}
+
+@media (hover: hover) {
+    [data-save-data] .card:hover .thumb {
+        transform: none;
+    }
+
+    [data-save-data] .card:hover .thumb-preview {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+/* ---------- Card dealing animation ---------- */
+/* Applied by the solitaire-family games right after a deal. */
+@keyframes dealIn {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) rotate(-3deg) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.deal-in {
+    animation: dealIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .deal-in {
+        animation: none;
+    }
+}
+
+[data-a11y-motion="on"] .deal-in {
+    animation: none;
 }

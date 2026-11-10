@@ -11,6 +11,7 @@
       const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
       const SUITS = ["♠", "♥", "♦", "♣"];
       let deck, you, ai, piles, won, wins, best, aiTimer;
+      let justDealt = false, dIdx = 0; // deal-in animation
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -42,6 +43,7 @@
         ai = deck.splice(0, 5);
         piles = [deck.pop(), deck.pop()];
         won = null;
+        justDealt = true;
         render();
         scheduleAI();
       }
@@ -151,9 +153,17 @@
             font-weight:800;font-size:15px;text-align:center;padding-top:6px;cursor:pointer;
             border:2px solid ${can ? "#16a34a" : "#cbd5e1"};${can ? "" : "opacity:0.6;"}`;
           el.innerHTML = `${c.r}<br>${c.s}`;
+          if (justDealt) {
+            el.classList.add("deal-in");
+            el.style.animationDelay = Math.min(dIdx++ * 55, 350) + "ms";
+          }
           el.addEventListener("pointerdown", () => playCard(c));
           handEl.appendChild(el);
         });
+        if (justDealt) {
+          justDealt = false;
+          dIdx = 0;
+        }
         if (won) {
           handEl.insertAdjacentHTML("beforeend", `<button class="btn btn-sm primary" id="sp-again" style="margin-left:12px;">↻ Rematch</button>`);
           handEl.querySelector("#sp-again").addEventListener("click", deal);

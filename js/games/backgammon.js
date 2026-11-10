@@ -255,8 +255,8 @@
         ctx.fillStyle = "#3f2a1d";
         ctx.fillRect(0, 0, 560, 330);
         const W = 560, PAD = 16, PW = (W - PAD * 2 - 8) / 12;
-        // bar
-        ctx.fillStyle = "#241708";
+        // bar — darker divider so it separates from the board face
+        ctx.fillStyle = "#171009";
         ctx.fillRect(W / 2 - 4, 10, 8, 310);
         const highlight = selected !== null ? new Set(legalMoves("player").filter(m => m.from === selected).map(m => m.to)) : new Set();
         for (let col = 0; col < 12; col++) {

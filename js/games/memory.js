@@ -1,4 +1,6 @@
-/* Memory Match — flip cards to find pairs */
+/* Memory Match — flip cards to find pairs.
+   Pair count is a variant: Quick 6 pairs / Classic 8 pairs / Marathon 12 pairs —
+   chosen in the game-header dropdown, persisted per player. */
 (function () {
   const DECKS = {
     classic: {
@@ -68,6 +70,7 @@
     return arr;
   }
 
+  let live = null;
   GameRegistry.register({
     id: "memory",
     name: "Memory Match",
@@ -75,11 +78,17 @@
     category: "logic",
     description: "Flip cards and find all the matching pairs — 14 themed decks",
     tags: ["memory", "classic"],
+    variants: [
+      {key: "easy", label: "Quick · 6 pairs"},
+      {key: "medium", label: "Classic · 8 pairs"},
+      {key: "hard", label: "Marathon · 12 pairs"},
+    ],
     mount: function (root, {App, AudioFX, Storage}) {
       let alive = true;
       let cards = [], first = null, lock = false, moves = 0, matches = 0, totalPairs = 8, started = false,
         startTime = 0;
-      let level = "easy"; // easy=4x3 (6 pairs), med=4x4 (8), hard=6x4 (12)
+      // Variant: board size / pair count from the persisted choice.
+      let level = Storage.getVariant("memory", "easy") || "easy"; // easy=4x3 (6 pairs), med=4x4 (8), hard=6x4 (12)
       let deck = "classic";
       let flipTimer = null;
 
@@ -244,12 +253,59 @@
         newGame();
       }));
 
+      live = {
+        hint: function () {
+          if (lock) return;
+          if (matches === totalPairs) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          let a = null, b = null;
+          if (first && !first.matched) {
+            // show the partner of the card the player already flipped
+            a = first;
+            b = cards.find(c => c !== a && !c.matched && c.emoji === a.emoji);
+          }
+          if (!b) {
+            const pools = {};
+            cards.forEach(c => {
+              if (!c.matched && c !== first) (pools[c.emoji] = pools[c.emoji] || []).push(c);
+            });
+            const avail = Object.values(pools).filter(p => p.length >= 2);
+            if (!avail.length) {
+              App.toast("Nothing more to reveal 💡", "info");
+              return;
+            }
+            const pool = avail[Math.floor(Math.random() * avail.length)];
+            a = pool[0];
+            b = pool[1];
+          }
+          const shown = a === first ? [b] : [a, b]; // never unflip the player's own pick
+          shown.forEach(c => {
+            c.flipped = true;
+          });
+          AudioFX.reveal();
+          render();
+          App.toast("💡 Hint: a matching pair — memorize it!", "info");
+          setTimeout(() => {
+            if (!alive) return;
+            shown.forEach(c => {
+              if (c.flipped && !c.matched) c.flipped = false;
+            });
+            render();
+          }, 1000);
+        }
+      };
       newGame();
       return function cleanup() {
         alive = false;
+        live = null;
         clearInterval(timerInterval);
         if (flipTimer) clearTimeout(flipTimer);
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Memory Match",

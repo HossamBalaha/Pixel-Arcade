@@ -182,10 +182,8 @@
       }
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const bgSoft = st.getPropertyValue("--bg-soft").trim() || "#111";
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        ctx.fillStyle = bgSoft;
+        // fixed arcade-black field — maze, dots and player all use fixed colors
+        ctx.fillStyle = "#020617";
         ctx.fillRect(0, 0, W, H);
         // walls
         for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
@@ -214,8 +212,8 @@
           ctx.arc(g.x * CELL + CELL / 2 - 2, g.y * CELL + CELL / 2 - 2, 2, 0, Math.PI * 2);
           ctx.fill();
         }
-        // player
-        ctx.fillStyle = accent;
+        // player — fixed amber muncher on the black field
+        ctx.fillStyle = "#fbbf24";
         ctx.beginPath();
         ctx.arc(player.x * CELL + CELL / 2, player.y * CELL + CELL / 2 - 1, CELL / 2 - 3, Math.PI, 0);
         ctx.lineTo(player.x * CELL + CELL / 2 + CELL / 2 - 3, player.y * CELL + CELL / 2 + 5);

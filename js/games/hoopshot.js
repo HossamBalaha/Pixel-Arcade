@@ -188,8 +188,8 @@
           ctx.stroke();
           ctx.setLineDash([]);
         }
-        // hoop: backboard, rim, net
-        ctx.fillStyle = "#e2e8f0";
+        // hoop: backboard, rim, net — backboard follows theme text so it reads on the soft canvas
+        ctx.fillStyle = text;
         ctx.fillRect(hoop.x + 26, hoop.y - 46, 6, 52);
         ctx.strokeStyle = "#f59e0b";
         ctx.lineWidth = 5;

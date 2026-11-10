@@ -149,10 +149,6 @@
       canvas.addEventListener("pointermove", move);
 
       function render() {
-        const st = getComputedStyle(document.documentElement);
-        const accent = st.getPropertyValue("--accent").trim() || "#6366f1";
-        const accent2 = st.getPropertyValue("--accent-2").trim() || "#ec4899";
-        const text = st.getPropertyValue("--text").trim() || "#eee";
         ctx.fillStyle = "#0f172a";
         ctx.fillRect(0, 0, W, H);
         // markings
@@ -174,8 +170,8 @@
         ctx.fillRect(W / 2 - 55, 0, 110, 8);
         ctx.fillStyle = "#ef4444";
         ctx.fillRect(W / 2 - 55, H - 8, 110, 8);
-        // paddles
-        ctx.fillStyle = accent2;
+        // paddles — fixed bright colors: the rink is always dark, theme accents can go dark
+        ctx.fillStyle = "#f472b6";
         ctx.beginPath();
         ctx.arc(you.x, you.y, 24, 0, Math.PI * 2);
         ctx.fill();
@@ -183,12 +179,13 @@
         ctx.beginPath();
         ctx.arc(you.x - 7, you.y - 7, 8, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = accent;
+        ctx.fillStyle = "#60a5fa";
         ctx.beginPath();
         ctx.arc(ai.x, ai.y, 24, 0, Math.PI * 2);
         ctx.fill();
-        // puck
-        ctx.fillStyle = text;
+        // puck — fixed bright color: the rink is always dark, so the puck must
+        // never follow the theme text color (invisible in light themes otherwise)
+        ctx.fillStyle = "#f8fafc";
         ctx.beginPath();
         ctx.arc(puck.x, puck.y, 12, 0, Math.PI * 2);
         ctx.fill();

@@ -150,8 +150,8 @@
         ctx.fillRect(0, H - 40, W, 40);
         ctx.fillStyle = "#3f6212";
         ctx.fillRect(0, H - 40, W, 6);
-        // trap house
-        ctx.fillStyle = "#1c1917";
+        // trap house — warm brown so it reads against both the olive ground and dark skies
+        ctx.fillStyle = "#78350f";
         ctx.fillRect(10, H - 52, 34, 14);
         // clays
         for (const c of clays) {
@@ -162,6 +162,11 @@
           ctx.beginPath();
           ctx.ellipse(0, 0, c.r, c.r * 0.45, 0, 0, Math.PI * 2);
           ctx.fill();
+          ctx.strokeStyle = "#7c2d12";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, c.r, c.r * 0.45, 0, 0, Math.PI * 2);
+          ctx.stroke();
           ctx.fillStyle = "#c2410c";
           ctx.beginPath();
           ctx.ellipse(0, 2, c.r * 0.7, c.r * 0.28, 0, 0, Math.PI * 2);

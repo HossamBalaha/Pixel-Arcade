@@ -12,6 +12,8 @@
       const VAL = {A: 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, J: 11, Q: 12, K: 13};
       const SUITS = ["♠", "♥", "♦", "♣"];
       let pyramid, stock, waste, sel, won, bestScore, score, moves;
+      // Deal-in animation
+      let justDealt = false, dealIdx = 0;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -59,6 +61,7 @@
         won = null;
         score = 0;
         moves = 0;
+        justDealt = true;
         render();
       }
 
@@ -160,14 +163,14 @@
           if (!recycled && waste.length) {
             stock = waste.splice(0).reverse();
             recycled = true;
-            AudioFX.click();
+            AudioFX.flip();
           } else AudioFX.error();
           render();
           return;
         }
         waste.push(stock.pop());
         sel = null;
-        AudioFX.click();
+        AudioFX.flip();
         render();
       }
 
@@ -204,6 +207,10 @@
             el.className = `py2-card ${(c.s === "♥" || c.s === "♦") ? "red" : "blk"} ${cell.gone ? "gone" : ""} ${isSel ? "sel" : ""}`;
             el.style.cssText += can || cell.gone ? "" : "filter:brightness(0.55);";
             el.innerHTML = `${c.r}<br>${c.s}`;
+            if (justDealt) {
+              el.classList.add("deal-in");
+              el.style.animationDelay = Math.min(dealIdx++ * 25, 700) + "ms";
+            }
             if (!cell.gone) el.addEventListener("pointerdown", () => clickPyramid(row, col));
             line.appendChild(el);
           }
@@ -219,6 +226,10 @@
         `;
         rowEl.querySelector("#py2-stock").addEventListener("pointerdown", clickStock);
         rowEl.querySelector("#py2-waste").addEventListener("pointerdown", clickWaste);
+        if (justDealt) {
+          justDealt = false;
+          dealIdx = 0;
+        }
         if (won) {
           rowEl.insertAdjacentHTML("beforeend", `<button class="btn btn-sm primary" id="py2-again" style="margin-left:12px;">↻ Play again</button>`);
           rowEl.querySelector("#py2-again").addEventListener("click", deal);

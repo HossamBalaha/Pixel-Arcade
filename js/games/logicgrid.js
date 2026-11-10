@@ -192,7 +192,22 @@
         statusEl.className = "status lose";
       }
 
-      live = {solve: doSolve};
+      live = {
+        solve: doSolve,
+        hint: function () {
+          const wrong = [];
+          p.people.forEach(person => p.attributes.forEach(a => {
+            if (picks[person][a.name] !== p.solution[person][a.name]) wrong.push([person, a, p.solution[person][a.name]]);
+          }));
+          if (!wrong.length) {
+            App.toast("Nothing more to reveal 💡", "info");
+            return;
+          }
+          const [person, a, value] = wrong[Math.floor(Math.random() * wrong.length)];
+          AudioFX.reveal();
+          App.toast(`💡 Hint: ${person}'s ${a.name} is ${value}`, "info");
+        }
+      };
       newGame();
       return function cleanup() {
         alive = false;
@@ -201,6 +216,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Logic Grid",

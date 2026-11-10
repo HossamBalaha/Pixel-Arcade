@@ -173,6 +173,29 @@
       }
 
       live = {
+        hint: function () {
+          if (over) return;
+          const toRemove = [], toKeep = [];
+          for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+            if (!puzzle.kept[r][c] && !removed[r][c]) toRemove.push([r, c]);
+            if (puzzle.kept[r][c] && removed[r][c]) toKeep.push([r, c]);
+          }
+          if (toRemove.length) {
+            const [r, c] = toRemove[Math.floor(Math.random() * toRemove.length)];
+            removed[r][c] = true;
+            AudioFX.reveal();
+            render();
+            App.toast(`💡 Hint: delete the ${puzzle.grid[r][c]} at row ${r + 1}, column ${c + 1}`, "info");
+          } else if (toKeep.length) {
+            const [r, c] = toKeep[Math.floor(Math.random() * toKeep.length)];
+            removed[r][c] = false;
+            AudioFX.reveal();
+            render();
+            App.toast(`💡 Hint: the ${puzzle.grid[r][c]} at row ${r + 1}, column ${c + 1} must stay`, "info");
+          } else {
+            App.toast("Nothing more to reveal 💡", "info");
+          }
+        },
         solve: function () {
           if (over) return;
           removed = Array.from({length: N}, (_, r) => puzzle.kept[r].map(v => !v));
@@ -191,6 +214,9 @@
     },
     solve: function () {
       if (live && live.solve) live.solve();
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Sumplete",

@@ -496,8 +496,8 @@
     --bg-soft: #306230;
     --text: #9bbc0f;
     --text-muted: #8bac0f;
-    --border: #306230;
-    --border-strong: #0f380f;
+    --border: #8bac0f;
+    --border-strong: #9bbc0f;
     --accent: #9bbc0f;
     --accent-2: #8bac0f;
     --accent-soft: rgba(155, 188, 15, 0.18);
@@ -561,7 +561,7 @@
     --bg: #000000;
     --bg-elev: #0a0a0a;
     --bg-elev-2: #1a1a1a;
-    --bg-soft: #c0c0c0;
+    --bg-soft: #2e2e2e;
     --text: #c0c0c0;
     --text-muted: #808080;
     --border: #808080;

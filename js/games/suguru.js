@@ -1,5 +1,6 @@
 /* Suguru — fill regions with 1..N, neighbors never repeat a digit */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "suguru",
     name: "Suguru",
@@ -20,7 +21,7 @@
         return h;
       };
       const N = 7;
-      let regions, values, given, solvedCount, best, sel;
+      let regions, values, given, solution, solvedCount, best, sel;
 
       root.innerHTML = `
         <div class="scoreboard">
@@ -155,6 +156,7 @@
         } while ((!sol || sizes.some(s => s < 1)) && attempts < 12);
         if (!sol) return generate();
         regions = reg;
+        solution = sol;
         values = Array.from({length: N}, () => Array(N).fill(0));
         given = Array.from({length: N}, () => Array(N).fill(false));
         // givens: ~45% of cells
@@ -260,13 +262,35 @@
       document.addEventListener("keydown", onKey);
 
       root.querySelector("#sg-new").addEventListener("click", generate);
+
+      live = {
+        hint: function () {
+          if (!solution) return;
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!given[y][x] && values[y][x] !== solution[y][x]) wrong.push([x, y]);
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [x, y] = wrong[Math.floor(Math.random() * wrong.length)];
+          values[y][x] = solution[y][x];
+          sel = null;
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} should be ${solution[y][x]}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
         document.removeEventListener("keydown", onKey);
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Suguru",

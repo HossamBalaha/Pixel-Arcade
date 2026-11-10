@@ -1,5 +1,6 @@
 /* Pipe Connect — rotate the pipes to link the source to the sink */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "pipelines",
     name: "Pipe Connect",
@@ -212,12 +213,38 @@
 
       root.querySelector("#pp-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          // a "path" tile is correctly rotated when its openings match the generated layout
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+            const c = cells[y][x];
+            if (c.kind !== "path") continue;
+            const have = new Set(actualDirs(c));
+            if (have.size !== c.dirs.length || !c.dirs.every(d => have.has(d))) wrong.push([x, y]);
+          }
+          if (!wrong.length) {
+            App.toast("All water-carrying pipes are already aligned 💧", "info");
+            return;
+          }
+          const pick = wrong[Math.floor(Math.random() * wrong.length)];
+          cells[pick[1]][pick[0]].rot = 0;
+          AudioFX.reveal();
+          render();
+          checkWin();
+          App.toast(`💡 Hint: snapped the pipe at column ${pick[0] + 1}, row ${pick[1] + 1} into place`, "info");
+        }
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Pipe Connect",

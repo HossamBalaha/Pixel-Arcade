@@ -1,5 +1,6 @@
 /* Tapa — shade cells so each clue's lengths and gaps come true */
 (function () {
+  let live = null;
   GameRegistry.register({
     id: "tapa",
     name: "Tapa",
@@ -206,12 +207,32 @@
       });
       root.querySelector("#tp-new").addEventListener("click", generate);
 
+      live = {
+        hint: function () {
+          if (!target) return;
+          const wrong = [];
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shaded[y][x] !== target[y][x]) wrong.push([x, y]);
+          if (!wrong.length) {
+            App.toast("Nothing to reveal — you're on track!", "info");
+            return;
+          }
+          const [x, y] = wrong[Math.floor(Math.random() * wrong.length)];
+          shaded[y][x] = target[y][x];
+          AudioFX.reveal();
+          render();
+          App.toast(`💡 Hint: row ${y + 1}, column ${x + 1} ${target[y][x] ? "should be shaded" : "should not be shaded"}`, "info");
+        },
+      };
       generate();
       return function cleanup() {
         __t.forEach(clearTimeout);
         __t.forEach(clearTimeout);
         style.remove();
+        live = null;
       };
+    },
+    hint: function () {
+      if (live && live.hint) live.hint();
     },
     help: function () {
       App.showModal("How to play Tapa",

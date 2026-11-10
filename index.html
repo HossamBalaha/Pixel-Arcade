@@ -3523,6 +3523,7 @@
             </button>
           </div>
           <input accept="application/json" id="data-import-file" style="display:none;" type="file"/>
+          <div class="data-health" id="data-health"></div>
         </div>
         <button class="btn btn-sm a11y-reset-all" id="a11y-reset-all" title="Reset all accessibility settings">Reset
           accessibility
@@ -3618,15 +3619,26 @@
     <button class="btn btn-sm" id="install-dismiss">Not now</button>
   </div>
 
-  <!-- Daily challenge — featured game rotates daily -->
+  <!-- Daily challenge — featured game rotates daily. While today's puzzle
+       is not yet completed, opening it deals a date-seeded (identical for
+       everyone) round — see app.js Daily Challenge. -->
   <div class="daily-banner" id="daily-banner" style="display:none;">
     <div class="daily-left">
-      <div class="daily-label">Daily challenge</div>
+      <div class="daily-label">Daily challenge <span class="daily-streak" id="daily-streak"></span></div>
       <div class="daily-name" id="daily-name">—</div>
       <div class="daily-desc" id="daily-desc">—</div>
     </div>
     <button class="btn primary" id="daily-play">Play today's →</button>
   </div>
+
+  <!-- Session wrap-up — a friendly stopping cue after a good visit. -->
+  <aside aria-label="Session summary" class="session-wrapup" id="session-wrapup" style="display:none;">
+    <button aria-label="Dismiss session summary" class="session-close" id="session-wrapup-close" type="button">✕
+    </button>
+    <div class="session-emoji">🏁</div>
+    <div class="session-text" id="session-wrapup-text"></div>
+    <button class="btn btn-sm primary" id="session-wrapup-share" type="button">📋 Share my session</button>
+  </aside>
 
   <div class="filters">
     <span class="filter-label">Type</span>
@@ -3700,6 +3712,13 @@
     <button class="btn btn-sm" id="category-clear" title="Clear the category filter">✕ View all games</button>
   </div>
 
+  <!-- Curated collections — editorial shelves across categories.
+       Populated by app.js from js/collections.js; hidden when filtering. -->
+  <div class="home-rail home-collections" id="home-collections" style="display:none;">
+    <div class="rail-title">Curated collections</div>
+    <div class="rail-row" id="home-collections-row"></div>
+  </div>
+
   <!-- Recommended — merges trending (most-played this week) with
        personalized for-you picks, capped at 8 cards. Hidden when filters
        are active or when there is too little play history to suggest. -->
@@ -3747,6 +3766,9 @@
     <span class="icon" id="game-icon">🎮</span>
     <span id="game-title">Game</span>
     <span class="breadcrumb" id="game-breadcrumb"></span>
+    <!-- Variant (difficulty) selector host — filled by app.js when
+         the open game declares `variants`. -->
+    <span id="game-variant-host"></span>
   </header>
   <nav aria-label="Game controls" class="game-controls-bar">
     <button class="btn btn-sm" id="game-fav-btn" title="Add to favorites">♡</button>
@@ -3835,6 +3857,7 @@
 
 <!-- v5 batch — 150 new games (ancient + old + modern) -->
 <script defer src="js/catalog.js"></script>
+<script defer src="js/collections.js"></script>
 <script defer src="js/game-metadata.js"></script>
 
 <!-- Main app -->
